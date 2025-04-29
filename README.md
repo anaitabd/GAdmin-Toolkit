@@ -4,8 +4,9 @@ This project is a full automation suite designed to manage users in Google Works
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
+```bash
 .
 ├── files/
 │   ├── arcore_01.csv
