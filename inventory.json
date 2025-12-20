@@ -1,0 +1,366 @@
+{
+  "metadata": {
+    "repo": "anaitabd/GAdmin-Toolkit",
+    "scanDate": "2025-12-20",
+    "totalScripts": 10,
+    "languages": {
+      "javascript": 4,
+      "python": 6
+    }
+  },
+  "scripts": [
+    {
+      "path": "main/api/generate.js",
+      "lang": "javascript",
+      "name": "generate_users",
+      "description": "Generate random CSV file with user data (email, password, givenName, familyName) from names.csv",
+      "invocation": "node main/api/generate.js <domain> <numRecords>",
+      "inputs": {
+        "domain": "string, email domain (e.g., verifiedverse.com)",
+        "numRecords": "integer, number of users to generate (>0)"
+      },
+      "outputs": {
+        "stdout": "Log messages (CSV file generated: ...)",
+        "files": "files/user_list.csv (generated CSV)"
+      },
+      "sideEffects": "Writes to files/user_list.csv (overwrites if exists)",
+      "runMode": "sync",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 30000,
+      "paramsSchema": {
+        "type": "object",
+        "required": ["domain", "numRecords"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+            "description": "Email domain"
+          },
+          "numRecords": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Number of users to generate"
+          }
+        }
+      },
+      "notes": "Reads from files/names.csv; uses fixed password 'Password123@'; dryRun would just validate params without writing file"
+    },
+    {
+      "path": "main/api/create.js",
+      "lang": "javascript",
+      "name": "create_users",
+      "description": "Create users in Google Workspace from files/user_list.csv (requires Google API cred.json)",
+      "invocation": "node main/api/create.js",
+      "inputs": {
+        "csvFile": "files/user_list.csv (hardcoded path)",
+        "credFile": "main/api/cred.json (Google API service account key)"
+      },
+      "outputs": {
+        "stdout": "Log messages (creation status, progress, total created)",
+        "exitCode": 0 on success
+      },
+      "sideEffects": "Creates users in Google Workspace; modifies Google org; persistent external impact",
+      "runMode": "async",
+      "adminOnly": true,
+      "destructive": true,
+      "dryRunCapable": false,
+      "timeoutMs": 600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "HIGH-RISK: requires admin token, Google API credentials, and org access. No input params; reads from fixed CSV path. dryRun not feasible (would need mock Google API). Logs user creation to stdout."
+    },
+    {
+      "path": "main/api/delete.js",
+      "lang": "javascript",
+      "name": "delete_users",
+      "description": "Delete all non-admin users from Google Workspace (lists users, filters out admin, deletes in batches)",
+      "invocation": "node main/api/delete.js",
+      "inputs": {
+        "credFile": "main/api/cred.json (Google API service account key)",
+        "adminEmail": "Hardcoded admin email (admin@decieodom.com)"
+      },
+      "outputs": {
+        "stdout": "Log messages (deletion status, total deleted)",
+        "exitCode": 0 on success
+      },
+      "sideEffects": "Deletes all non-admin users from Google Workspace; permanent data loss; persistent external impact",
+      "runMode": "async",
+      "adminOnly": true,
+      "destructive": true,
+      "dryRunCapable": true,
+      "timeoutMs": 600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "CRITICAL-RISK: permanent deletion. dryRun would list users to be deleted without actually deleting. Requires admin token and explicit approval."
+    },
+    {
+      "path": "main/api/sendApi.js",
+      "lang": "javascript",
+      "name": "send_gmail_api",
+      "description": "Send emails using Google Gmail API from multiple user accounts (worker threads, quota-aware)",
+      "invocation": "node main/api/sendApi.js",
+      "inputs": {
+        "csvFiles": "files/data.csv (recipients), files/info.csv (subject/from), files/html.txt (email body)",
+        "credFile": "main/api/cred.json (Google API)"
+      },
+      "outputs": {
+        "stdout": "Log messages (sent count, email addresses, timestamps)",
+        "logFile": "main/api/email_logs.txt (appended)"
+      },
+      "sideEffects": "Sends bulk emails via Gmail API; external email delivery; logs to file",
+      "runMode": "async",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 3600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Quota-aware (300 requests/email, 1.2M quota/min). Worker threads for parallelism. dryRun would validate CSV format and log count without sending."
+    },
+    {
+      "path": "main/api/bounce.js",
+      "lang": "javascript",
+      "name": "extract_bounce_emails",
+      "description": "Extract bounce/delivery-failure emails from Gmail and save to CSV (filters message snippets)",
+      "invocation": "node main/api/bounce.js",
+      "inputs": {
+        "query": "Gmail query (hardcoded to search bounce/failure messages)",
+        "credFile": "main/api/cred.json"
+      },
+      "outputs": {
+        "stdout": "Log messages (emails found, processing status)",
+        "csvFile": "bounce_emails.csv (generated)"
+      },
+      "sideEffects": "Reads Gmail messages (read-only); writes CSV file",
+      "runMode": "async",
+      "adminOnly": true,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 300000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Requires Gmail API access. dryRun would list emails to be extracted without writing file. adminOnly due to Gmail API credential sensitivity."
+    },
+    {
+      "path": "main/api/smtp.js",
+      "lang": "javascript",
+      "name": "send_smtp",
+      "description": "Send emails via SMTP using nodemailer (multi-threaded, quota-aware)",
+      "invocation": "node main/api/smtp.js",
+      "inputs": {
+        "csvFiles": "files/*.csv (SMTP credentials, recipients, subject/from)",
+        "htmlFile": "files/html.txt (email body)"
+      },
+      "outputs": {
+        "stdout": "Log messages (sent count, timestamps)",
+        "logFile": "main/api/smtp_email_logs.txt (appended)"
+      },
+      "sideEffects": "Sends bulk emails via SMTP; external email delivery; logs to file",
+      "runMode": "async",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 3600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Multi-threaded email sending. dryRun would validate SMTP connections and count recipients without sending."
+    },
+    {
+      "path": "py/send.py",
+      "lang": "python",
+      "name": "send_email_python",
+      "description": "Send emails via SMTP using Python threading (reads CSV, sends with configured SMTP)",
+      "invocation": "python3 py/send.py",
+      "inputs": {
+        "csvFiles": "files/working_smtp.csv, files/data.csv, files/info.csv, files/html.txt"
+      },
+      "outputs": {
+        "stdout": "Log messages (email progress)",
+        "logFile": "py/email_logs.txt (appended)"
+      },
+      "sideEffects": "Sends bulk emails; logs to file; multi-threaded (50 emails/user per iteration)",
+      "runMode": "async",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 3600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Python SMTP implementation. dryRun would validate CSV structure and log email counts without sending."
+    },
+    {
+      "path": "py/checkSmtp.py",
+      "lang": "python",
+      "name": "check_smtp",
+      "description": "Validate SMTP connections concurrently (reads processed_users.csv, tests each SMTP server, exports working/non-working)",
+      "invocation": "python3 py/checkSmtp.py",
+      "inputs": {
+        "csvFile": "files/processed_users.csv (SMTP credentials: smtp, port, email, password)"
+      },
+      "outputs": {
+        "csvFiles": "files/working_smtp.csv, files/non_working_smtp.csv (generated/overwritten)"
+      },
+      "sideEffects": "Network I/O (SMTP connections); overwrites output CSV files",
+      "runMode": "async",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "ThreadPoolExecutor with 1000 workers. dryRun would validate CSV schema and count records without testing SMTP."
+    },
+    {
+      "path": "py/split.py",
+      "lang": "python",
+      "name": "split_by_domain",
+      "description": "Split SMTP CSV by email domain (reads working_smtp.csv, creates per-domain CSVs)",
+      "invocation": "python3 py/split.py",
+      "inputs": {
+        "csvFile": "working_smtp.csv (hardcoded path, in py/ dir)"
+      },
+      "outputs": {
+        "csvFiles": "<domain>.csv files (one per unique email domain, created in py/ dir)"
+      },
+      "sideEffects": "Creates multiple CSV files in working directory",
+      "runMode": "sync",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 30000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Fast file I/O. dryRun would validate CSV structure and report domain count without creating files."
+    },
+    {
+      "path": "py/duplicate.py",
+      "lang": "python",
+      "name": "extract_unique_emails",
+      "description": "Extract unique emails from users.csv (removes duplicates, exports to unique_data.csv)",
+      "invocation": "python3 py/duplicate.py",
+      "inputs": {
+        "csvFile": "files/users.csv (hardcoded path)"
+      },
+      "outputs": {
+        "csvFile": "py/unique_data.csv (generated in py/ dir)"
+      },
+      "sideEffects": "Creates/overwrites unique_data.csv in py/ directory",
+      "runMode": "sync",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 30000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Simple set-based deduplication. dryRun would report unique count without writing file."
+    },
+    {
+      "path": "py/filterProssesdEmail.py",
+      "lang": "python",
+      "name": "filter_unprocessed_emails",
+      "description": "Find emails in user_list.csv not in unique_data.csv (set difference operation)",
+      "invocation": "python3 py/filterProssesdEmail.py",
+      "inputs": {
+        "csvFiles": "files/user_list.csv, py/unique_data.csv (hardcoded paths)"
+      },
+      "outputs": {
+        "csvFile": "py/users_not_used.csv (generated in py/ dir)"
+      },
+      "sideEffects": "Creates/overwrites users_not_used.csv",
+      "runMode": "sync",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 30000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Set difference operation (user_list - unique_data). dryRun would report count of unprocessed emails without writing file."
+    },
+    {
+      "path": "py/chunk.py",
+      "lang": "python",
+      "name": "chunk_csv",
+      "description": "Split CSV into chunks of configurable size (default 50k rows/chunk)",
+      "invocation": "python3 py/chunk.py",
+      "inputs": {
+        "csvFile": "input file (hardcoded in script or via stdin)",
+        "chunkSize": "rows per chunk (default 50000)"
+      },
+      "outputs": {
+        "csvFiles": "output_chunk_*.csv files in output directory"
+      },
+      "sideEffects": "Creates multiple CSV chunk files",
+      "runMode": "sync",
+      "adminOnly": false,
+      "destructive": false,
+      "dryRunCapable": true,
+      "timeoutMs": 60000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "Currently hardcoded paths; needs parameterization for input/output/chunkSize. dryRun would report chunk count without writing files."
+    },
+    {
+      "path": "py/activateLessSecureApp.py",
+      "lang": "python",
+      "name": "activate_less_secure",
+      "description": "Activate 'less secure app' access for Google accounts using Selenium (headless Chrome, multi-process)",
+      "invocation": "python3 py/activateLessSecureApp.py",
+      "inputs": {
+        "csvFile": "files/user_list.csv (email, password columns)"
+      },
+      "outputs": {
+        "stdout": "Log messages (login status, page navigation)",
+        "logFile": "py/logfile.log (appended)"
+      },
+      "sideEffects": "Launches headless Chrome browser(s); modifies Google account settings; external side effects",
+      "runMode": "async",
+      "adminOnly": true,
+      "destructive": false,
+      "dryRunCapable": false,
+      "timeoutMs": 3600000,
+      "paramsSchema": {
+        "type": "object",
+        "required": [],
+        "properties": {}
+      },
+      "notes": "REQUIRES: chromedriver (auto-installed), Selenium, headless Chrome, user_list.csv with correct columns. Multi-process (multiprocessing.Pool). dryRun not feasible (web automation). HIGH-RISK: modifies 3rd-party accounts."
+    }
+  ]
+}
+

@@ -1,0 +1,337 @@
+# GAdmin-Toolkit Script Whitelist & Metadata
+# This file explicitly enumerates all scripts allowed to run via the web API.
+# Changes to this file require deployment and are audited.
+
+scripts:
+  # ============================================================================
+  # FAST SYNC SCRIPTS (< 5s, safe, non-destructive)
+  # ============================================================================
+
+  generate_users:
+    path: main/api/generate.js
+    lang: javascript
+    category: data-generation
+    description: Generate random user CSV (email, password, names)
+    defaultRunMode: sync
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 30000
+    params:
+      domain:
+        type: string
+        pattern: '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        description: Email domain (e.g., verifiedverse.com)
+        example: verifiedverse.com
+      numRecords:
+        type: integer
+        minimum: 1
+        maximum: 100000
+        description: Number of users to generate
+        example: 100
+    env: {}  # No special env vars required
+    notes: |
+      Reads from files/names.csv (must exist).
+      Writes to files/user_list.csv (overwrites).
+      dryRun: validates params, reports row count, does NOT write file.
+
+  split_by_domain:
+    path: py/split.py
+    lang: python
+    category: data-transformation
+    description: Split SMTP CSV by email domain
+    defaultRunMode: sync
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 30000
+    params: {}
+    env: {}
+    notes: |
+      Reads hardcoded: working_smtp.csv (in py/ dir).
+      Writes domain_*.csv files to py/ dir.
+      dryRun: validates CSV, reports domain count, does NOT write files.
+
+  extract_unique_emails:
+    path: py/duplicate.py
+    lang: python
+    category: data-transformation
+    description: Deduplicate users.csv
+    defaultRunMode: sync
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 30000
+    params: {}
+    env: {}
+    notes: |
+      Reads hardcoded: files/users.csv.
+      Writes: py/unique_data.csv.
+      dryRun: reports unique count, does NOT write file.
+
+  filter_unprocessed_emails:
+    path: py/filterProssesdEmail.py
+    lang: python
+    category: data-transformation
+    description: Find unprocessed emails (user_list - unique_data)
+    defaultRunMode: sync
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 30000
+    params: {}
+    env: {}
+    notes: |
+      Reads hardcoded: files/user_list.csv, py/unique_data.csv.
+      Writes: py/users_not_used.csv.
+      dryRun: reports count, does NOT write file.
+
+  chunk_csv:
+    path: py/chunk.py
+    lang: python
+    category: data-transformation
+    description: Split CSV into chunks (default 50k rows per chunk)
+    defaultRunMode: sync
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 60000
+    params: {}
+    env: {}
+    notes: |
+      Hardcoded paths (needs improvement for parameterization).
+      Reads: input file (configurable in future).
+      Writes: output_chunk_*.csv in output dir.
+      dryRun: reports chunk count, does NOT write files.
+
+  # ============================================================================
+  # MEDIUM ASYNC SCRIPTS (10s - 10min, data-heavy, network I/O)
+  # ============================================================================
+
+  check_smtp:
+    path: py/checkSmtp.py
+    lang: python
+    category: validation
+    description: Validate SMTP connections concurrently (1000 parallel)
+    defaultRunMode: async
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 600000  # 10 min
+    params: {}
+    env: {}
+    notes: |
+      Reads: files/processed_users.csv (SMTP credentials).
+      Writes: files/working_smtp.csv, files/non_working_smtp.csv (overwrites).
+      Uses ThreadPoolExecutor with 1000 workers.
+      dryRun: validates CSV schema, reports count, does NOT test SMTP.
+
+  send_gmail_api:
+    path: main/api/sendApi.js
+    lang: javascript
+    category: email-sending
+    description: Send bulk emails via Google Gmail API
+    defaultRunMode: async
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 3600000  # 1 hour
+    params: {}
+    env: {}
+    notes: |
+      Requires: main/api/cred.json (Google API service account).
+      Reads: files/data.csv (recipients), files/info.csv (subject/from), files/html.txt (body).
+      Uses Worker threads for parallelism.
+      Quota-aware: 300 requests/email, 1.2M quota/min.
+      dryRun: validates CSVs, reports count, does NOT send emails.
+
+  send_smtp:
+    path: main/api/smtp.js
+    lang: javascript
+    category: email-sending
+    description: Send bulk emails via SMTP using nodemailer
+    defaultRunMode: async
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 3600000  # 1 hour
+    params: {}
+    env: {}
+    notes: |
+      Reads: files/*.csv (SMTP credentials, recipients), files/html.txt (body).
+      Logs to: main/api/smtp_email_logs.txt.
+      Multi-threaded, quota-aware.
+      dryRun: validates SMTP connections, reports count, does NOT send emails.
+
+  send_email_python:
+    path: py/send.py
+    lang: python
+    category: email-sending
+    description: Send bulk emails via SMTP (Python threading)
+    defaultRunMode: async
+    adminOnly: false
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 3600000  # 1 hour
+    params: {}
+    env: {}
+    notes: |
+      Reads: files/working_smtp.csv, files/data.csv, files/info.csv, files/html.txt.
+      Logs to: py/email_logs.txt.
+      Uses threading (50 emails/user per iteration).
+      dryRun: validates CSVs, reports count, does NOT send emails.
+
+  # ============================================================================
+  # LONG ASYNC SCRIPTS (30min - several hours, admin-only, destructive)
+  # ============================================================================
+
+  create_users:
+    path: main/api/create.js
+    lang: javascript
+    category: user-management
+    description: Create users in Google Workspace (from user_list.csv)
+    defaultRunMode: async
+    adminOnly: true
+    destructive: true
+    dryRunCapable: false
+    timeoutMs: 600000  # 10 min (adjust per batch size)
+    params: {}
+    env: {}
+    notes: |
+      REQUIRES: admin token + main/api/cred.json (Google API service account).
+      Reads: files/user_list.csv (email, password, givenName, familyName).
+      Creates users in Google Workspace.
+      HIGH-RISK: modifies org, persistent external impact.
+      dryRun: NOT FEASIBLE (would need mock Google API).
+      Logs to stdout.
+
+  delete_users:
+    path: main/api/delete.js
+    lang: javascript
+    category: user-management
+    description: Delete all non-admin users from Google Workspace
+    defaultRunMode: async
+    adminOnly: true
+    destructive: true
+    dryRunCapable: true
+    timeoutMs: 600000  # 10 min
+    params: {}
+    env: {}
+    notes: |
+      REQUIRES: admin token + main/api/cred.json (Google API service account).
+      LISTS all users, filters out admin, DELETES all others.
+      CRITICAL-RISK: permanent data loss, persistent external impact.
+      dryRun: LISTS users to be deleted WITHOUT deleting (--dry-run flag).
+      Logs to stdout.
+
+  extract_bounce_emails:
+    path: main/api/bounce.js
+    lang: javascript
+    category: email-analysis
+    description: Extract bounce/delivery-failure emails from Gmail
+    defaultRunMode: async
+    adminOnly: true
+    destructive: false
+    dryRunCapable: true
+    timeoutMs: 300000  # 5 min
+    params: {}
+    env: {}
+    notes: |
+      REQUIRES: admin token + main/api/cred.json (Google API service account).
+      Reads Gmail messages (query: bounce/failure snippets).
+      Writes: bounce_emails.csv.
+      adminOnly: requires Gmail API access.
+      dryRun: LISTS emails to be extracted WITHOUT writing file.
+      Logs to stdout.
+
+  activate_less_secure:
+    path: py/activateLessSecureApp.py
+    lang: python
+    category: account-configuration
+    description: Activate 'less secure app' for Google accounts (Selenium automation)
+    defaultRunMode: async
+    adminOnly: true
+    destructive: false
+    dryRunCapable: false
+    timeoutMs: 3600000  # 1 hour (per-user 30s timeout in script)
+    params: {}
+    env: {}
+    notes: |
+      REQUIRES: admin token, files/user_list.csv (email, password columns).
+      Launches headless Chrome (multi-process, auto-installs chromedriver).
+      MODIFIES: 3rd-party Google account settings (external side effect).
+      HIGH-RISK: account compromise risk, bot detection risk, per-account timeout.
+      dryRun: NOT FEASIBLE (web automation cannot be safely simulated).
+      Logs to: py/logfile.log.
+
+  # ============================================================================
+  # GLOBAL SETTINGS
+  # ============================================================================
+
+globalConfig:
+  # File path where runner jobs are stored/logged
+  jobStorePath: /var/lib/gadmin-toolkit/jobs/
+
+  # Max concurrent jobs running at once (BullMQ concurrency)
+  maxConcurrentJobs: 10
+
+  # Default job timeout if script doesn't specify
+  defaultTimeoutMs: 300000  # 5 min
+
+  # Rate limiting: max requests per token per minute
+  rateLimitPerTokenPerMin: 100
+
+  # Rate limiting: max requests globally per second
+  rateLimitGlobalPerSec: 50
+
+  # Max log size per job (rest goes to S3/object storage)
+  maxLogSizeBytes: 1048576  # 1 MB
+
+  # Temp directory for job execution (each job gets isolated subdir)
+  tempDirBase: /tmp/gadmin-toolkit-jobs/
+
+  # Whitelisted file paths for input (CSV, cred.json, etc.)
+  # Paths outside this list are rejected (unless explicitly marked as 'allowAbsolutePath')
+  whitelistedInputDirs:
+    - ./files/
+    - ./main/api/
+    - ./py/
+
+  # Paths where scripts are allowed to write output
+  whitelistedOutputDirs:
+    - ./files/
+    - ./main/api/
+    - ./py/
+    - /var/lib/gadmin-toolkit/output/
+
+  # Admin approval required for scripts marked 'destructive: true'
+  requireAdminApprovalForDestructive: true
+
+  # Log destructive operations to separate audit log
+  auditLogPath: /var/log/gadmin-toolkit/audit.log
+
+# ============================================================================
+# EXAMPLES: How to run via API
+# ============================================================================
+#
+# Sync script (generate_users):
+#   POST /api/run/generate_users
+#   Body: {
+#     "params": { "domain": "verifiedverse.com", "numRecords": 100 },
+#     "dryRun": false
+#   }
+#   Response: { "status": "success", "exitCode": 0, "stdout": "...", "durationMs": 1234 }
+#
+# Async script (check_smtp):
+#   POST /api/run/check_smtp
+#   Body: { "runAsync": true }
+#   Response: { "jobId": "uuid-1234", "status": "queued", "queuedAt": "2025-12-20T..." }
+#   Then: GET /api/job/uuid-1234 -> poll for status
+#
+# Admin-only destructive (delete_users):
+#   POST /api/run/delete_users
+#   Headers: { "Authorization": "Bearer <admin-token>" }
+#   Body: { "dryRun": true }  # Validate first
+#   Response: { "jobId": "uuid-5678", "dryRunOutput": "Would delete X users..." }
+#
+
