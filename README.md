@@ -1,6 +1,48 @@
 # Google Workspace Automation Toolkit
 
-This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python.
+A modern, secure **web application** for managing Google Workspace users with a REST API backend and React frontend.
+
+> ⚠️ **Version 2.0 - Now with Web Interface!** This toolkit has been transformed from CLI-based scripts into a full-featured web application. The legacy CLI scripts are still available in the `main/` and `py/` directories for backward compatibility.
+
+## ✨ New Features
+
+- 🌐 **Web-based Admin Dashboard** - Intuitive React UI for user management
+- 🔐 **Secure REST API** - JWT authentication and rate limiting
+- 📊 **Real-time Operations** - Live feedback on bulk operations
+- 📁 **CSV Upload** - Bulk user creation from CSV files
+- 🎲 **User Generation** - Create test users with random data
+- 🛡️ **Enterprise Security** - Input validation, CORS, and security headers
+
+## 🚀 Quick Start
+
+### For Web Application (Recommended)
+
+```bash
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# Configure Google Workspace credentials
+# See QUICKSTART.md for detailed setup
+
+# Start backend (Terminal 1)
+cd backend && npm run dev
+
+# Start frontend (Terminal 2)
+cd frontend && npm run dev
+
+# Access at http://localhost:3000
+# Default login: admin / admin123
+```
+
+📖 **See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions**  
+📚 **See [README_NEW.md](README_NEW.md) for complete documentation**
+
+---
+
+## 🎯 Legacy CLI Scripts (Deprecated)
+
+This project originally included CLI-based scripts for managing users in Google Workspace using Node.js and Python. These scripts are still available but are no longer the recommended approach.
 
 ---
 

@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.docker
+backend/.env
+frontend/.env
+
+# Credentials
+backend/config/cred.json
+main/api/cred.json
+cred.json
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+backend/logs/
+main/api/email_logs.txt
+py/logfile.log
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# Uploads
+backend/uploads/
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+py/venv/
+ENV/
+env/
+
+# CSV outputs (keep templates)
+files/user_list.csv
+files/processed_users.csv
+files/unprocessed_users.csv
+
+# Temporary files
+tmp/
+temp/
+*.tmp
