@@ -1,7 +1,18 @@
 import { create } from 'zustand';
 
+const safeParseUser = () => {
+    try {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+        console.error('Failed to parse user data from localStorage:', error);
+        localStorage.removeItem('user');
+        return null;
+    }
+};
+
 export const useAuthStore = create((set) => ({
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user: safeParseUser(),
     token: localStorage.getItem('token') || null,
     isAuthenticated: !!localStorage.getItem('token'),
     

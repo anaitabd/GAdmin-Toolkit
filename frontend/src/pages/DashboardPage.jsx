@@ -270,7 +270,7 @@ export default function DashboardPage() {
                         <div className="form-group">
                             <label className="label">Password</label>
                             <input
-                                type="text"
+                                type="password"
                                 className="input"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
