@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gadmin-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - GOOGLE_ADMIN_EMAIL=${GOOGLE_ADMIN_EMAIL}
+      - CORS_ORIGIN=http://localhost
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+      - ./main/api/cred.json:/app/config/cred.json:ro
+      - ./files:/app/files
+    restart: unless-stopped
+    networks:
+      - gadmin-network
+
+  # Frontend Web App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gadmin-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - gadmin-network
+
+  # Redis (optional, for job queue)
+  redis:
+    image: redis:7-alpine
+    container_name: gadmin-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - gadmin-network
+
+networks:
+  gadmin-network:
+    driver: bridge
+
+volumes:
+  redis-data:
