@@ -12,7 +12,7 @@ const users = [
         id: 1,
         username: 'admin',
         // Default password: 'admin123' (change this in production!)
-        passwordHash: '$2a$10$8K1p/a0dL3LMZEPr3xJYdOCAm/cL6eEAk.8xBXcxBZ1cz/0KN7B3G',
+        passwordHash: '$2a$10$2A1oObOkRBl1MLOAj3xa4OQ4sd9U/N7Qq2KnHvBQ5MZoVLaK.U536',
         role: 'admin'
     }
 ];
