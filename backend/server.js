@@ -30,11 +30,13 @@ app.use('/api/', limiter);
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const statusRoutes = require('./routes/status');
+const emailRoutes = require('./routes/email');
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/status', statusRoutes);
+app.use('/api/email', emailRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

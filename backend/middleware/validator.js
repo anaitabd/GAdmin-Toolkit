@@ -22,4 +22,22 @@ const validateRequest = (schema) => {
     };
 };
 
+// Email validation schema
+const emailSendSchema = Joi.object({
+    method: Joi.string().valid('api', 'smtp').required(),
+    user: Joi.string().email().required(),
+    password: Joi.string().when('method', {
+        is: 'smtp',
+        then: Joi.required(),
+        otherwise: Joi.optional()
+    }),
+    recipient: Joi.string().email().required(),
+    from: Joi.string().required(),
+    subject: Joi.string().required(),
+    htmlContent: Joi.string().required()
+});
+
+const validateEmailSend = validateRequest(emailSendSchema);
+
 module.exports = validateRequest;
+module.exports.validateEmailSend = validateEmailSend;
