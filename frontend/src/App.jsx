@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import EmailSendingPage from './pages/EmailSendingPage';
 import { useAuthStore } from './store';
 
 function App() {
@@ -24,6 +25,14 @@ function App() {
                     element={
                         <PrivateRoute>
                             <DashboardPage />
+                        </PrivateRoute>
+                    } 
+                />
+                <Route 
+                    path="/email" 
+                    element={
+                        <PrivateRoute>
+                            <EmailSendingPage />
                         </PrivateRoute>
                     } 
                 />

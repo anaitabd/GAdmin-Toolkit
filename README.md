@@ -12,6 +12,8 @@ A modern, secure **web application** for managing Google Workspace users with a 
 - 📁 **CSV Upload** - Bulk user creation from CSV files
 - 🎲 **User Generation** - Create test users with random data
 - 🛡️ **Enterprise Security** - Input validation, CORS, and security headers
+- ✉️ **Email Sending** - Integrated SendAPI and SMTP email functionality
+- 🐍 **Python Integration** - Execute Python email scripts from web interface
 
 ## 🚀 Quick Start
 
@@ -36,7 +38,8 @@ cd frontend && npm run dev
 ```
 
 📖 **See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions**  
-📚 **See [README_NEW.md](README_NEW.md) for complete documentation**
+📚 **See [README_NEW.md](README_NEW.md) for complete documentation**  
+📧 **See [EMAIL_FEATURE.md](EMAIL_FEATURE.md) for email sending documentation**
 
 ---
 
@@ -130,6 +133,31 @@ node main/api/delete.js
 Activate Less Secure App Access
 
 python py/activateLessSecureApp.py
+
+## 📧 Email Sending Features
+
+The toolkit now includes integrated email sending functionality in the web interface:
+
+### Features
+- **Single Email**: Send individual emails via Google API or SMTP
+- **Bulk Email**: Send emails to multiple recipients with automatic distribution
+- **Python Script**: Execute the legacy Python email script from the web UI
+- **CSV Upload**: Upload sender accounts and recipient lists via CSV
+- **Rate Limiting**: Automatic rate limiting to prevent quota exhaustion
+
+### Usage
+1. Log in to the web application
+2. Navigate to "Email Sending" in the navigation bar
+3. Choose your sending method:
+   - **Single Email**: For individual test sends
+   - **Bulk Email**: For mass email campaigns
+   - **Python Script**: For legacy script execution
+
+### Supported Methods
+- **Google API (SendAPI)**: Uses Google Workspace API (300 emails per account)
+- **SMTP**: Direct SMTP connection via nodemailer (20 emails per account)
+
+For detailed documentation, see [EMAIL_FEATURE.md](EMAIL_FEATURE.md).
 
 
 

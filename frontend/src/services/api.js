@@ -64,4 +64,29 @@ export const statusAPI = {
     delete: (operationId) => api.delete(`/api/status/${operationId}`)
 };
 
+// Email API
+export const emailAPI = {
+    send: (emailData) => api.post('/api/email/send', emailData),
+    sendBulk: (bulkData) => api.post('/api/email/send-bulk', bulkData),
+    sendPython: () => api.post('/api/email/send-python'),
+    uploadRecipients: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/api/email/upload-recipients', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    },
+    uploadUsers: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/api/email/upload-users', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+    }
+};
+
 export default api;

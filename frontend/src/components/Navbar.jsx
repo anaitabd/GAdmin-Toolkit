@@ -1,10 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store';
 
 export default function Navbar() {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
@@ -16,6 +17,20 @@ export default function Navbar() {
             <div className="navbar-content">
                 <div className="navbar-brand">
                     🔧 GAdmin Toolkit
+                </div>
+                <div className="navbar-links">
+                    <button 
+                        className={location.pathname === '/dashboard' ? 'nav-link active' : 'nav-link'}
+                        onClick={() => navigate('/dashboard')}
+                    >
+                        Dashboard
+                    </button>
+                    <button 
+                        className={location.pathname === '/email' ? 'nav-link active' : 'nav-link'}
+                        onClick={() => navigate('/email')}
+                    >
+                        Email Sending
+                    </button>
                 </div>
                 {user && (
                     <div className="navbar-actions">
