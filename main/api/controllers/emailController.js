@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const csv = require('csv-parser');
 const { google } = require('googleapis');
 const axios = require('axios');
@@ -39,7 +40,7 @@ const sendEmailViaAPI = async (req, res) => {
         // Read users from CSV
         const users = [];
         await new Promise((resolve, reject) => {
-            fs.createReadStream('../../files/users.csv')
+            fs.createReadStream(path.resolve(__dirname, '../../files/users.csv'))
                 .pipe(csv())
                 .on('data', (row) => users.push(row))
                 .on('end', resolve)
@@ -123,7 +124,7 @@ const sendEmailViaSMTP = async (req, res) => {
         // Read users from CSV
         const users = [];
         await new Promise((resolve, reject) => {
-            fs.createReadStream('../../files/users.csv')
+            fs.createReadStream(path.resolve(__dirname, '../../files/users.csv'))
                 .pipe(csv())
                 .on('data', (row) => users.push(row))
                 .on('end', resolve)
@@ -203,7 +204,7 @@ const getBouncedEmails = async (req, res) => {
         // Read users from CSV
         const users = [];
         await new Promise((resolve, reject) => {
-            fs.createReadStream('../../files/users.csv')
+            fs.createReadStream(path.resolve(__dirname, '../../files/users.csv'))
                 .pipe(csv())
                 .on('data', (row) => users.push(row))
                 .on('end', resolve)

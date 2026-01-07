@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const csv = require('csv-parser');
 const { google } = require('googleapis');
 const { getDB } = require('../config/database');
@@ -26,7 +27,7 @@ const generateUserList = async (req, res) => {
             return res.status(400).json({ error: 'Domain and numRecords are required' });
         }
 
-        const namesFilePath = '../../files/names.csv';
+        const namesFilePath = path.resolve(__dirname, '../../files/names.csv');
         
         // Read names from CSV
         const names = [];
@@ -77,7 +78,7 @@ const generateUserList = async (req, res) => {
         // Also save to CSV file for compatibility
         const csvContent = 'email,password,givenName,familyName\n' + 
             users.map(u => `${u.email},${u.password},${u.givenName},${u.familyName}`).join('\n');
-        fs.writeFileSync('../../files/user_list.csv', csvContent);
+        fs.writeFileSync(path.resolve(__dirname, '../../files/user_list.csv'), csvContent);
 
         res.json({
             message: 'User list generated successfully',

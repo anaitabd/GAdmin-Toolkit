@@ -29,7 +29,10 @@ const login = async (req, res) => {
         }
 
         // Generate JWT token
-        const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET is not configured');
+        }
         const token = jwt.sign(
             { 
                 id: admin._id, 

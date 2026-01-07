@@ -10,6 +10,13 @@ const { connectDB } = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Validate required environment variables
+if (!process.env.JWT_SECRET) {
+    console.error('ERROR: JWT_SECRET environment variable is required!');
+    console.error('Please set JWT_SECRET in your .env file or environment variables.');
+    process.exit(1);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());

@@ -12,7 +12,10 @@ const authMiddleware = (req, res, next) => {
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
         
         // Verify token
-        const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET is not configured');
+        }
         const decoded = jwt.verify(token, jwtSecret);
         
         // Add user info to request
