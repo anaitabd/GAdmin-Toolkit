@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
+const { apiLimiter } = require('../middleware/rateLimiter');
 const {
     generateUserList,
     createGoogleUsers,
@@ -8,8 +9,9 @@ const {
     getGeneratedUsers
 } = require('../controllers/userController');
 
-// All user routes require authentication
+// All user routes require authentication and rate limiting
 router.use(authMiddleware);
+router.use(apiLimiter);
 
 router.post('/generate', generateUserList);
 router.post('/create', createGoogleUsers);
