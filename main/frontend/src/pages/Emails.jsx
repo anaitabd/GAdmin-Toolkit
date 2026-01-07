@@ -24,6 +24,7 @@ const Emails = () => {
     } else if (activeTab === 'bounced') {
       loadBounced();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, pagination.page]);
 
   const loadLogs = async () => {
