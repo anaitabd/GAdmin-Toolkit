@@ -27,9 +27,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear auth state
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Use window.location for hard redirect to clear all React state
+      // This ensures a fresh start when token is invalid
       window.location.href = '/login';
     }
     return Promise.reject(error);

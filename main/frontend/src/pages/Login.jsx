@@ -82,7 +82,7 @@ const Login = () => {
 
         <div className="login-footer">
           <p className="text-muted">
-            Default credentials: admin / YourSecurePassword123!
+            Use your admin credentials to sign in
           </p>
         </div>
       </div>
