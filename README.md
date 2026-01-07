@@ -1,10 +1,41 @@
 # Google Workspace Automation Toolkit
 
-This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python.
+This project is a full automation suite designed to manage users in Google Workspace. It includes a modern React frontend, REST API backend, and automation scripts using Node.js and Python.
 
-## 🚀 New: REST API Backend
+## 🎨 New: React Frontend
 
-The `main/api` folder now includes a **fully functional REST API backend** with:
+The `main/frontend` folder includes a **modern React frontend application** with:
+- ✅ **Professional UI** with responsive design
+- ✅ **Dashboard** with statistics and quick actions
+- ✅ **User Management** interface
+- ✅ **Email Operations** interface
+- ✅ **JWT Authentication** integration
+- ✅ **Real-time updates** and loading states
+
+👉 **[Frontend Documentation](main/frontend/README.md)**
+
+### Quick Start - Frontend
+
+```bash
+# 1. Install dependencies
+cd main/frontend
+npm install
+
+# 2. Start development server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+**Default Login:**
+- Username: `admin`
+- Password: `YourSecurePassword123!`
+
+---
+
+## 🚀 REST API Backend
+
+The `main/api` folder includes a **fully functional REST API backend** with:
 - ✅ **Admin-only authentication** with JWT tokens
 - ✅ **MongoDB NoSQL database** integration
 - ✅ **Rate limiting** for security
@@ -50,12 +81,21 @@ The API will be available at `http://localhost:3000`
 │   └── users.csv
 ├── main/
 │   ├── package.json
+│   ├── frontend/              # NEW: React frontend application
+│   │   ├── src/
+│   │   │   ├── components/    # Reusable components
+│   │   │   ├── contexts/      # React contexts (Auth)
+│   │   │   ├── pages/         # Page components
+│   │   │   ├── services/      # API integration
+│   │   │   └── ...
+│   │   ├── package.json
+│   │   └── vite.config.js     # Vite configuration
 │   └── api/
-│       ├── server.js         # NEW: Main API server
-│       ├── config/           # NEW: Database configuration
-│       ├── controllers/      # NEW: API controllers
-│       ├── middleware/       # NEW: Auth & rate limiting
-│       ├── routes/           # NEW: API routes
+│       ├── server.js         # Main API server
+│       ├── config/           # Database configuration
+│       ├── controllers/      # API controllers
+│       ├── middleware/       # Auth & rate limiting
+│       ├── routes/           # API routes
 │       ├── bounce.js         # Original bounce detection script
 │       ├── create.js         # Original user creation script
 │       ├── delete.js         # Original user deletion script
@@ -78,7 +118,45 @@ The API will be available at `http://localhost:3000`
 
 ## ⚙️ Setup Instructions
 
-### Option 1: REST API (Recommended)
+### Option 1: Full Stack with Frontend (Recommended)
+
+**1. Install Backend Dependencies**
+```bash
+cd main
+npm install
+```
+
+**2. Setup Backend API**
+```bash
+cd api
+cp .env.example .env
+# Edit .env with your MongoDB URI and JWT_SECRET
+node setup-admin.js admin YourPassword123!
+```
+
+**3. Install Frontend Dependencies**
+```bash
+cd ../frontend
+npm install
+```
+
+**4. Start Both Services**
+
+In one terminal (Backend):
+```bash
+cd main/api
+node server.js
+```
+
+In another terminal (Frontend):
+```bash
+cd main/frontend
+npm run dev
+```
+
+Now visit `http://localhost:5173` to access the web interface!
+
+### Option 2: API Only
 
 See the [API Documentation](main/api/API_README.md) for complete setup instructions.
 
@@ -93,7 +171,7 @@ node setup-admin.js admin YourPassword123!
 npm start
 ```
 
-### Option 2: Original Scripts
+### Option 3: Original Scripts
 
 **1. Install Dependencies**
 
@@ -116,6 +194,29 @@ Add your Google API credentials:
 ---
 
 ## 🚀 Usage
+
+### Using the React Frontend (Easiest)
+
+1. **Start the backend API:**
+```bash
+cd main/api
+node server.js
+```
+
+2. **Start the frontend (in a new terminal):**
+```bash
+cd main/frontend
+npm run dev
+```
+
+3. **Open your browser:**
+- Navigate to `http://localhost:5173`
+- Login with username: `admin` and password: `YourSecurePassword123!`
+- Use the intuitive web interface to:
+  - View dashboard statistics
+  - Generate and manage users
+  - Send emails via Gmail API or SMTP
+  - Monitor email logs and bounced emails
 
 ### Using the REST API
 
