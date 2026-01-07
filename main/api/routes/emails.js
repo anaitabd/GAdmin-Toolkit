@@ -9,8 +9,8 @@ const {
     getEmailLogs
 } = require('../controllers/emailController');
 
-// All email routes require authentication
-router.use(authMiddleware);
+// All email routes require authentication and rate limiting
+router.use(apiLimiter, authMiddleware);
 
 // Email sending operations with stricter rate limiting
 router.post('/send-api', emailLimiter, sendEmailViaAPI);

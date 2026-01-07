@@ -8,7 +8,7 @@ const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
 router.post('/login', authLimiter, login);
 router.post('/setup', authLimiter, setupAdmin);
 
-// Protected routes with API rate limiting
-router.post('/change-password', authMiddleware, apiLimiter, changePassword);
+// Protected routes with API rate limiting (apply rate limiter before auth)
+router.post('/change-password', apiLimiter, authMiddleware, changePassword);
 
 module.exports = router;

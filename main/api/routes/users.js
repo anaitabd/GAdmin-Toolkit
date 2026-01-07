@@ -10,8 +10,7 @@ const {
 } = require('../controllers/userController');
 
 // All user routes require authentication and rate limiting
-router.use(authMiddleware);
-router.use(apiLimiter);
+router.use(apiLimiter, authMiddleware);
 
 router.post('/generate', generateUserList);
 router.post('/create', createGoogleUsers);
