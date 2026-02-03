@@ -26,9 +26,10 @@ cred.json
 *.key
 
 # Database
-*.sql
 *.db
 *.sqlite
+# Allow migration files
+!src/db/migrations/*.sql
 
 # IDE
 .vscode/
