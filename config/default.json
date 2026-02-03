@@ -1,0 +1,65 @@
+{
+  "workers": {
+    "maxRestarts": 3,
+    "restartDelay": 5000,
+    "healthCheckInterval": 30000,
+    "stuckWorkerThreshold": 300000
+  },
+  "queue": {
+    "defaultBatchSize": 50,
+    "maxRetries": 3,
+    "retryBackoff": [60000, 300000, 900000]
+  },
+  "tracking": {
+    "openPixelEnabled": true,
+    "clickTrackingEnabled": true
+  },
+  "limits": {
+    "defaultDailyLimit": 2000,
+    "defaultSendDelayMs": 100,
+    "bounceRateThreshold": 0.05,
+    "errorRateThreshold": 0.10,
+    "consecutiveErrorThreshold": 10
+  },
+  "warmup": {
+    "enabled": true,
+    "schedule": [
+      { "stage": 1, "days": 7, "dailyLimit": 50, "sendDelayMs": 60000, "batchSize": 10 },
+      { "stage": 2, "days": 7, "dailyLimit": 100, "sendDelayMs": 30000, "batchSize": 20 },
+      { "stage": 3, "days": 7, "dailyLimit": 250, "sendDelayMs": 12000, "batchSize": 30 },
+      { "stage": 4, "days": 7, "dailyLimit": 500, "sendDelayMs": 7500, "batchSize": 40 },
+      { "stage": 5, "days": 7, "dailyLimit": 1000, "sendDelayMs": 6000, "batchSize": 50 },
+      { "stage": 6, "days": 999, "dailyLimit": 2000, "sendDelayMs": 3000, "batchSize": 50 }
+    ]
+  },
+  "database": {
+    "poolMin": 2,
+    "poolMax": 20,
+    "idleTimeoutMillis": 30000,
+    "connectionTimeoutMillis": 2000
+  },
+  "monitoring": {
+    "metricsEnabled": true,
+    "alertsEnabled": true,
+    "alertRules": [
+      {
+        "name": "High Bounce Rate",
+        "condition": "bounceRate > 0.05",
+        "severity": "critical",
+        "action": "pause_account"
+      },
+      {
+        "name": "Authentication Failed",
+        "condition": "status === 'suspended'",
+        "severity": "critical",
+        "action": "notify_admin"
+      },
+      {
+        "name": "Queue Depth High",
+        "condition": "queueDepth > 10000",
+        "severity": "warning",
+        "action": "notify_admin"
+      }
+    ]
+  }
+}
