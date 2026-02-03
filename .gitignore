@@ -15,6 +15,7 @@ yarn-error.log*
 
 # Log files
 *.log
+logs/
 email_logs.txt
 smtp_email_logs.txt
 bounced_emails.csv
