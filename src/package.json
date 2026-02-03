@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "migrate": "node db/migrate.js",
     "migrate:rollback": "node db/migrate.js --rollback",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/smoke-test.js",
+    "test:smoke": "node tests/smoke-test.js"
   },
   "keywords": [
     "google-workspace",
@@ -20,14 +21,15 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "pg": "^8.11.3",
-    "express": "^4.18.3",
     "cors": "^2.8.5",
-    "nodemailer": "^6.9.13",
     "dotenv": "^17.2.3",
+    "express": "^4.18.3",
+    "nodemailer": "^7.0.7",
+    "pg": "^8.11.3",
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "supertest": "^7.1.3"
   }
 }
