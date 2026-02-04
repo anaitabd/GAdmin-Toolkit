@@ -196,9 +196,252 @@ curl https://yourdomain.com/api/admin/stats \\
 MIT License - see LICENSE file for details.
 
 ## 🙏 Acknowledgments
+### Option 1: Docker Deployment (Recommended for Production) 🐳
+
+**The easiest way to deploy the complete application with all services!**
+
+#### Quick Setup (Automated)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/anaitabd/GAdmin-Toolkit.git
+cd GAdmin-Toolkit
+
+# 2. Run the automated setup script
+chmod +x docker-setup.sh
+./docker-setup.sh
+```
+
+The script will:
+- ✓ Validate Docker installation
+- ✓ Check and create .env file
+- ✓ Validate configuration
+- ✓ Build Docker images
+- ✓ Start all services
+- ✓ Help create admin user
+
+#### Manual Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/anaitabd/GAdmin-Toolkit.git
+cd GAdmin-Toolkit
+
+# 2. Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your settings (see DOCKER_GUIDE.md)
+
+# 3. Start all services
+docker compose up -d
+
+# 4. Create admin user
+docker compose exec backend node setup-admin.js admin YourPassword123!
+
+# 5. Access the application
+# Frontend: http://localhost
+# Backend API: http://localhost:3000
+```
+
+✅ **Includes:** MongoDB, Backend API, Frontend, and Redis
+📖 **Full guide:** See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete documentation
+
+---
+
+### Option 2: Full Stack with Frontend (Development)
+
+**1. Install Backend Dependencies**
+```bash
+cd main
+npm install
+```
+
+**2. Setup Backend API**
+```bash
+cd api
+cp .env.example .env
+# Edit .env with your MongoDB URI and JWT_SECRET
+node setup-admin.js admin YourPassword123!
+```
+
+**3. Install Frontend Dependencies**
+```bash
+cd ../frontend
+npm install
+```
+
+**4. Start Both Services**
+
+In one terminal (Backend):
+```bash
+cd main/api
+node server.js
+```
+
+In another terminal (Frontend):
+```bash
+cd main/frontend
+npm run dev
+```
+
+Now visit `http://localhost:5173` to access the web interface!
+
+### Option 3: API Only
+
+See the [API Documentation](main/api/API_README.md) for complete setup instructions.
+
+Quick setup:
+```bash
+cd main
+npm install
+cd api
+cp .env.example .env
+# Edit .env with your configuration
+node setup-admin.js admin YourPassword123!
+npm start
+```
+
+### Option 4: Original Scripts
+
+**1. Install Dependencies**
+
+**Node.js**
+```bash
+cd main
+npm install
+```
+
+**Python**
+```bash
+pip install -r py/requirement.txt
+```
+
+**2. Google API Credentials**
+
+Add your Google API credentials:
+- Place your `cred.json` file in the `main/api/` directory.
+
+---
+
+## 🚀 Usage
+
+### Using the React Frontend (Easiest)
+
+1. **Start the backend API:**
+```bash
+cd main/api
+node server.js
+```
+
+2. **Start the frontend (in a new terminal):**
+```bash
+cd main/frontend
+npm run dev
+```
+
+3. **Open your browser:**
+- Navigate to `http://localhost:5173`
+- Login with username: `admin` and password: `YourSecurePassword123!`
+- Use the intuitive web interface to:
+  - View dashboard statistics
+  - Generate and manage users
+  - Send emails via Gmail API or SMTP
+  - Monitor email logs and bounced emails
+
+### Using the REST API
+
+```bash
+# Start the server
+cd main && npm start
+
+# Login to get a token
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123!"}'
+
+# Use the API with the token
+curl -X GET http://localhost:3000/api/users \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+See [TESTING.md](main/api/TESTING.md) for complete API examples.
+
+### Using Original Scripts
+
+**1. Run All Scripts (Automated)**
+
+Use the automated `script.sh` to:
+- Delete existing users
+- Generate new user data
+- Create users in Google Workspace
+- Activate less secure app access
+
+```bash
+bash script.sh
+```
+
+**2. Run Scripts Individually**
+
+Generate User Data:
+```bash
+node main/api/generate.js
+```
+
+Create Users:
+```bash
+node main/api/create.js
+```
+
+Delete Users:
+```bash
+node main/api/delete.js
+```
+
+Activate Less Secure App Access:
+```bash
+python py/activateLessSecureApp.py
+```
+
+---
+
+## 🛠 Configuration
+
+### API Configuration
+- Edit `main/api/.env` for database, JWT secrets, and server settings
+- See `.env.example` for all available options
+
+### Script Configuration
+- Update CSV files in the `files/` directory: `data.csv`, `info.csv`, `names.csv`, `users.csv`, etc.
+- Modify constants like `emailsPerWorker` and `REQUESTS_PER_EMAIL` inside the scripts if needed
+
+---
+
+## 🔒 Security Features
+
+The new API backend includes:
+- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: Bcrypt for secure password storage
+- **Rate Limiting**: Protects against brute force and DoS attacks
+  - Auth endpoints: 5 requests per 15 minutes
+  - Email operations: 10 requests per hour
+  - General API: 100 requests per 15 minutes
+- **Environment Variables**: Sensitive data protected in .env files
+- **Input Validation**: Request validation on all endpoints
+- **CORS Support**: Configurable cross-origin resource sharing
+
+---
+
+---
+
+## 📄 License
 
 Built with Node.js, Express, PostgreSQL, Gmail API, and Nodemailer.
 
 ---
 
 **Built with ❤️ for reliable, scalable email delivery**
+
+## 🤝 Contributing
+
+Contributions are welcome!
+Please submit a pull request or open an issue for enhancements or bug fixes.
+

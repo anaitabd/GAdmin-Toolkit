@@ -3,6 +3,13 @@ node_modules/
 package-lock.json
 
 # Environment variables
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
 .env
 .env.local
 .env.*.local
@@ -24,12 +31,25 @@ pids
 cred.json
 *.pem
 *.key
+# Google credentials
+**/cred.json
+**/credentials.json
+
+# Log files
+*.log
+email_logs.txt
+smtp_email_logs.txt
+bounced_emails.csv
 
 # Database
 *.db
 *.sqlite
 # Allow migration files
 !src/db/migrations/*.sql
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -65,3 +85,16 @@ temp/
 # CSV data files (keep examples, ignore large data)
 files/*.csv
 !files/example.csv
+# Temporary files
+/tmp/
+temp/
+*.tmp
+
+# Build outputs
+dist/
+build/
+
+# Docker
+.env
+.env.production
+docker-compose.override.yml

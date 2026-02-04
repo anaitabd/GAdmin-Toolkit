@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+*.md
+tests
+coverage
+email_logs.txt
+smtp_email_logs.txt
+bounced_emails.csv
+*.log
+.DS_Store
