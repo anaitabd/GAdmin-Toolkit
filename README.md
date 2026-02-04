@@ -12,6 +12,7 @@ This project is a full automation suite designed to manage users in Google Works
 - **[IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)** - Detailed plan for missing components and future enhancements
 - **[IMPLEMENTATION_PROMPTS.md](IMPLEMENTATION_PROMPTS.md)** - Ready-to-use prompt templates for implementing features
 - **[DOCKER_GUIDE.md](DOCKER_GUIDE.md)** - **NEW!** Complete Docker deployment guide
+- **[DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md)** - **NEW!** Docker troubleshooting and common issues
 - **[QUICK_START.md](QUICK_START.md)** - Quick setup guide for getting started
 - **[FRONTEND_FEATURES.md](FRONTEND_FEATURES.md)** - Complete frontend feature documentation
 - **[SECURITY_SUMMARY.md](SECURITY_SUMMARY.md)** - Security analysis and best practices
@@ -135,6 +136,28 @@ The API will be available at `http://localhost:3000`
 ### Option 1: Docker Deployment (Recommended for Production) 🐳
 
 **The easiest way to deploy the complete application with all services!**
+
+#### Quick Setup (Automated)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/anaitabd/GAdmin-Toolkit.git
+cd GAdmin-Toolkit
+
+# 2. Run the automated setup script
+chmod +x docker-setup.sh
+./docker-setup.sh
+```
+
+The script will:
+- ✓ Validate Docker installation
+- ✓ Check and create .env file
+- ✓ Validate configuration
+- ✓ Build Docker images
+- ✓ Start all services
+- ✓ Help create admin user
+
+#### Manual Setup
 
 ```bash
 # 1. Clone the repository
