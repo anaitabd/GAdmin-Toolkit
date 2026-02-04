@@ -1,4 +1,4 @@
-const { Route53Client, ChangeResourceRecordSetsCommand, GetChangeCommand, ListHostedZonesByNameCommand } = require('@aws-sdk/client-route53');
+const { Route53Client, ChangeResourceRecordSetsCommand, GetChangeCommand, ListHostedZonesByNameCommand } = require('@aws-sdk/client-route-53');
 const { query } = require('../../db');
 const logger = require('../../utils/logger');
 
