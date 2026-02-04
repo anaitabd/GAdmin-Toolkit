@@ -1,3 +1,8 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
 # Node modules
 node_modules/
 npm-debug.log*
@@ -9,6 +14,23 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Credentials
+cred.json
+*.pem
+*.key
 # Google credentials
 **/cred.json
 **/credentials.json
@@ -22,6 +44,8 @@ bounced_emails.csv
 # Database
 *.db
 *.sqlite
+# Allow migration files
+!src/db/migrations/*.sql
 
 # OS files
 .DS_Store
@@ -34,6 +58,33 @@ Thumbs.db
 *.swo
 *~
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+*.tgz
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# PM2
+.pm2/
+
+# Backup files
+*.backup
+*.bak
+
+# CSV data files (keep examples, ignore large data)
+files/*.csv
+!files/example.csv
 # Temporary files
 /tmp/
 temp/

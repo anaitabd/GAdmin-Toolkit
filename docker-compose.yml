@@ -1,110 +1,126 @@
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: gadmin-mongodb
-    restart: unless-stopped
+  postgres:
+    image: postgres:15-alpine
+    container_name: gadmin-postgres
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-change_this_password}
-      MONGO_INITDB_DATABASE: ${DB_NAME:-gadmin-toolkit}
-    ports:
-      - "${MONGO_PORT:-27017}:27017"
+      POSTGRES_DB: gadmin_toolkit
+      POSTGRES_USER: gadmin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/db/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
     networks:
       - gadmin-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U gadmin"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 40s
 
-  # Backend API
-  backend:
-    build:
-      context: ./main/api
-      dockerfile: Dockerfile
-    container_name: gadmin-backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-change_this_password}@mongodb:27017
-      DB_NAME: ${DB_NAME:-gadmin-toolkit}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRY: ${JWT_EXPIRY:-24h}
-      GOOGLE_ADMIN_USER: ${GOOGLE_ADMIN_USER}
-    ports:
-      - "${BACKEND_PORT:-3000}:3000"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    volumes:
-      # Mount credentials file if it exists
-      - ./main/api/cred.json:/app/cred.json:ro
-      # Mount logs for persistence
-      - backend_logs:/app/logs
-    networks:
-      - gadmin-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
-
-  # Frontend
-  frontend:
-    build:
-      context: ./main/frontend
-      dockerfile: Dockerfile
-    container_name: gadmin-frontend
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - gadmin-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
-
-  # Redis (for future use - caching, queues, etc.)
   redis:
     image: redis:7-alpine
     container_name: gadmin-redis
-    restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
+      - "6379:6379"
     networks:
       - gadmin-network
+    volumes:
+      - redis-data:/data
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gadmin-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://gadmin:${DB_PASSWORD}@postgres:5432/gadmin_toolkit
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_SECURITY_GROUP_ID: ${AWS_SECURITY_GROUP_ID}
+      AWS_KEY_PAIR_NAME: ${AWS_KEY_PAIR_NAME}
+      AWS_ROUTE53_HOSTED_ZONE_ID: ${AWS_ROUTE53_HOSTED_ZONE_ID}
+      PORT: 3000
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      TRACKING_BASE_URL: ${TRACKING_BASE_URL:-http://localhost:3000}
+      TRACKING_BASE_DOMAIN: ${TRACKING_BASE_DOMAIN}
+      TRACKING_SECRET: ${TRACKING_SECRET}
+    volumes:
+      - ./files:/app/files
+      - ./logs:/app/logs
+    ports:
+      - "3000:3000"
+    networks:
+      - gadmin-network
+    restart: unless-stopped
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gadmin-orchestrator
+    command: node src/workers/orchestrator.js
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://gadmin:${DB_PASSWORD}@postgres:5432/gadmin_toolkit
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WORKER_BATCH_SIZE: ${WORKER_BATCH_SIZE:-10}
+      WORKER_DELAY_MS: ${WORKER_DELAY_MS:-1000}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - gadmin-network
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gadmin-scheduler
+    command: node src/workers/cronScheduler.js
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://gadmin:${DB_PASSWORD}@postgres:5432/gadmin_toolkit
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - gadmin-network
+    restart: unless-stopped
 
 networks:
   gadmin-network:
     driver: bridge
 
 volumes:
-  mongodb_data:
-    driver: local
-  mongodb_config:
-    driver: local
-  backend_logs:
-    driver: local
-  redis_data:
-    driver: local
+  postgres-data:
+  redis-data:
