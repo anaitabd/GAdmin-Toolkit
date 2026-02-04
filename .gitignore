@@ -42,3 +42,8 @@ temp/
 # Build outputs
 dist/
 build/
+
+# Docker
+.env
+.env.production
+docker-compose.override.yml

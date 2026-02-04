@@ -11,6 +11,7 @@ This project is a full automation suite designed to manage users in Google Works
 - **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Complete overview of everything built in this project
 - **[IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md)** - Detailed plan for missing components and future enhancements
 - **[IMPLEMENTATION_PROMPTS.md](IMPLEMENTATION_PROMPTS.md)** - Ready-to-use prompt templates for implementing features
+- **[DOCKER_GUIDE.md](DOCKER_GUIDE.md)** - **NEW!** Complete Docker deployment guide
 - **[QUICK_START.md](QUICK_START.md)** - Quick setup guide for getting started
 - **[FRONTEND_FEATURES.md](FRONTEND_FEATURES.md)** - Complete frontend feature documentation
 - **[SECURITY_SUMMARY.md](SECURITY_SUMMARY.md)** - Security analysis and best practices
@@ -131,7 +132,36 @@ The API will be available at `http://localhost:3000`
 
 ## ⚙️ Setup Instructions
 
-### Option 1: Full Stack with Frontend (Recommended)
+### Option 1: Docker Deployment (Recommended for Production) 🐳
+
+**The easiest way to deploy the complete application with all services!**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/anaitabd/GAdmin-Toolkit.git
+cd GAdmin-Toolkit
+
+# 2. Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your settings (see DOCKER_GUIDE.md)
+
+# 3. Start all services
+docker-compose up -d
+
+# 4. Create admin user
+docker-compose exec backend node setup-admin.js admin YourPassword123!
+
+# 5. Access the application
+# Frontend: http://localhost
+# Backend API: http://localhost:3000
+```
+
+✅ **Includes:** MongoDB, Backend API, Frontend, and Redis
+📖 **Full guide:** See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete documentation
+
+---
+
+### Option 2: Full Stack with Frontend (Development)
 
 **1. Install Backend Dependencies**
 ```bash
@@ -169,7 +199,7 @@ npm run dev
 
 Now visit `http://localhost:5173` to access the web interface!
 
-### Option 2: API Only
+### Option 3: API Only
 
 See the [API Documentation](main/api/API_README.md) for complete setup instructions.
 
@@ -184,7 +214,7 @@ node setup-admin.js admin YourPassword123!
 npm start
 ```
 
-### Option 3: Original Scripts
+### Option 4: Original Scripts
 
 **1. Install Dependencies**
 
