@@ -1,30 +1,19 @@
-# Multi-stage build for optimized production image
-FROM node:18-alpine AS base
+# Production image
+FROM node:18-alpine
 
-# Install dependencies for native modules
-RUN apk add --no-cache python3 make g++
-
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Production stage
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy dependencies from base stage
-COPY --from=base /app/node_modules ./node_modules
+# Install production dependencies
+# Use --ignore-scripts to skip native builds if pre-built binaries exist
+RUN npm ci --only=production --ignore-scripts || npm ci --only=production
 
 # Copy application code
 COPY . .
 
-# Create non-root user
+# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     chown -R nodejs:nodejs /app

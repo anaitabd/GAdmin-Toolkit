@@ -146,10 +146,10 @@ cp .env.example .env
 # Edit .env with your settings (see DOCKER_GUIDE.md)
 
 # 3. Start all services
-docker-compose up -d
+docker compose up -d
 
 # 4. Create admin user
-docker-compose exec backend node setup-admin.js admin YourPassword123!
+docker compose exec backend node setup-admin.js admin YourPassword123!
 
 # 5. Access the application
 # Frontend: http://localhost

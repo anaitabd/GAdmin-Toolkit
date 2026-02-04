@@ -41,7 +41,7 @@ GOOGLE_ADMIN_USER=admin@yourdomain.com
 ### 3. Start All Services
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This will start:
@@ -53,7 +53,7 @@ This will start:
 ### 4. Check Service Status
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 All services should show as "healthy" after a few moments.
@@ -63,7 +63,7 @@ All services should show as "healthy" after a few moments.
 Once the backend is running, create an admin user:
 
 ```bash
-docker-compose exec backend node setup-admin.js admin YourSecurePassword123!
+docker compose exec backend node setup-admin.js admin YourSecurePassword123!
 ```
 
 ### 6. Access the Application
@@ -108,67 +108,67 @@ Login with:
 ### Start Services
 ```bash
 # Start all services in detached mode
-docker-compose up -d
+docker compose up -d
 
 # Start specific service
-docker-compose up -d backend
+docker compose up -d backend
 
 # Start with build (rebuild images)
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Stop Services
 ```bash
 # Stop all services
-docker-compose stop
+docker compose stop
 
 # Stop specific service
-docker-compose stop backend
+docker compose stop backend
 
 # Stop and remove containers
-docker-compose down
+docker compose down
 ```
 
 ### View Logs
 ```bash
 # View all logs
-docker-compose logs
+docker compose logs
 
 # Follow logs in real-time
-docker-compose logs -f
+docker compose logs -f
 
 # View logs for specific service
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # View last 100 lines
-docker-compose logs --tail=100 backend
+docker compose logs --tail=100 backend
 ```
 
 ### Execute Commands in Containers
 ```bash
 # Open shell in backend container
-docker-compose exec backend sh
+docker compose exec backend sh
 
 # Run a command in backend
-docker-compose exec backend node setup-admin.js admin password123
+docker compose exec backend node setup-admin.js admin password123
 
 # View MongoDB data
-docker-compose exec mongodb mongosh -u admin -p your_password
+docker compose exec mongodb mongosh -u admin -p your_password
 ```
 
 ### Restart Services
 ```bash
 # Restart all services
-docker-compose restart
+docker compose restart
 
 # Restart specific service
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### View Service Status
 ```bash
 # Check all services
-docker-compose ps
+docker compose ps
 
 # Check resource usage
 docker stats
@@ -183,10 +183,10 @@ docker stats
 git pull
 
 # Rebuild and restart services
-docker-compose up -d --build
+docker compose up -d --build
 
 # Or rebuild specific service
-docker-compose up -d --build backend
+docker compose up -d --build backend
 ```
 
 ## 🗄️ Data Management
@@ -195,7 +195,7 @@ docker-compose up -d --build backend
 
 ```bash
 # Create backup
-docker-compose exec mongodb mongodump --out=/data/backup --authenticationDatabase=admin -u admin -p your_password
+docker compose exec mongodb mongodump --out=/data/backup --authenticationDatabase=admin -u admin -p your_password
 
 # Copy backup to host
 docker cp gadmin-mongodb:/data/backup ./mongodb-backup-$(date +%Y%m%d)
@@ -208,7 +208,7 @@ docker cp gadmin-mongodb:/data/backup ./mongodb-backup-$(date +%Y%m%d)
 docker cp ./mongodb-backup-YYYYMMDD gadmin-mongodb:/data/restore
 
 # Restore backup
-docker-compose exec mongodb mongorestore /data/restore --authenticationDatabase=admin -u admin -p your_password
+docker compose exec mongodb mongorestore /data/restore --authenticationDatabase=admin -u admin -p your_password
 ```
 
 ### View Volumes
@@ -225,7 +225,7 @@ docker volume inspect gadmin-toolkit_mongodb_data
 
 ```bash
 # Stop and remove containers, networks, and volumes
-docker-compose down -v
+docker compose down -v
 ```
 
 ## 🐛 Troubleshooting
@@ -234,7 +234,7 @@ docker-compose down -v
 
 Check logs for the failing service:
 ```bash
-docker-compose logs backend
+docker compose logs backend
 ```
 
 Common issues:
@@ -251,7 +251,7 @@ curl http://localhost:3000/health
 
 2. Check backend logs:
 ```bash
-docker-compose logs backend
+docker compose logs backend
 ```
 
 3. Verify environment variables in .env file
@@ -260,20 +260,20 @@ docker-compose logs backend
 
 1. Stop all services:
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 2. Update MongoDB password in .env file
 
 3. Start services again:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### View Container Health Status
 
 ```bash
-docker-compose ps
+docker compose ps
 docker inspect --format='{{.State.Health}}' gadmin-backend
 ```
 
@@ -292,11 +292,9 @@ docker inspect --format='{{.State.Health}}' gadmin-backend
 
 ### Recommended Production Configuration
 
-Create a `docker-compose.prod.yml` file:
+Create a `docker compose.prod.yml` file:
 
 ```yaml
-version: '3.8'
-
 services:
   backend:
     restart: always
@@ -325,7 +323,7 @@ services:
 
 Deploy with:
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker compose.yml -f docker compose.prod.yml up -d
 ```
 
 ### HTTPS with Reverse Proxy
@@ -369,7 +367,7 @@ The Dockerfiles are already configured for production builds with:
 
 Scale backend for high load:
 ```bash
-docker-compose up -d --scale backend=3
+docker compose up -d --scale backend=3
 ```
 
 ### Monitor Resource Usage
@@ -386,9 +384,9 @@ docker stats gadmin-backend
 
 For local development with hot-reload:
 
-1. Use docker-compose for database only:
+1. Use docker compose for database only:
 ```bash
-docker-compose up -d mongodb redis
+docker compose up -d mongodb redis
 ```
 
 2. Run backend locally:
@@ -416,7 +414,7 @@ npm run dev
 ### Getting Help
 
 If you encounter issues:
-1. Check the logs: `docker-compose logs -f`
+1. Check the logs: `docker compose logs -f`
 2. Verify configuration in .env file
 3. Ensure all ports are available
 4. Check Docker daemon is running: `docker ps`
