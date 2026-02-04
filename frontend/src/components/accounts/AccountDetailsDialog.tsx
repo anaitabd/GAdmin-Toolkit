@@ -8,7 +8,6 @@ import {
   Button,
   Box,
   Typography,
-  Grid,
   Card,
   CardContent,
   CircularProgress,
@@ -108,42 +107,42 @@ export default function AccountDetailsDialog({
           <Typography variant="subtitle2" gutterBottom>
             Account Information
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Provider
               </Typography>
               <Typography variant="body2" textTransform="uppercase">
                 {account.auth_type}
               </Typography>
-            </Grid>
-            <Grid item xs={6}>
+            </Box>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Daily Limit
               </Typography>
               <Typography variant="body2">{formatNumber(account.daily_limit)}</Typography>
-            </Grid>
-            <Grid item xs={6}>
+            </Box>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Batch Size
               </Typography>
               <Typography variant="body2">{account.batch_size}</Typography>
-            </Grid>
-            <Grid item xs={6}>
+            </Box>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Send Delay
               </Typography>
               <Typography variant="body2">{account.send_delay_ms}ms</Typography>
-            </Grid>
-            <Grid item xs={6}>
+            </Box>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Created
               </Typography>
               <Typography variant="body2">
                 {format(new Date(account.created_at), 'MMM dd, yyyy')}
               </Typography>
-            </Grid>
-            <Grid item xs={6}>
+            </Box>
+            <Box>
               <Typography variant="caption" color="text.secondary">
                 Last Used
               </Typography>
@@ -152,8 +151,8 @@ export default function AccountDetailsDialog({
                   ? format(new Date(account.last_used_at), 'MMM dd, yyyy')
                   : 'Never'}
               </Typography>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Box>
 
         {/* 30-Day Stats */}
@@ -166,76 +165,64 @@ export default function AccountDetailsDialog({
             <Typography variant="subtitle2" gutterBottom>
               30-Day Performance
             </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Total Sent
-                    </Typography>
-                    <Typography variant="h6">{formatNumber(Number(stats.total_sent))}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Successful
-                    </Typography>
-                    <Typography variant="h6" color="success.main">
-                      {formatNumber(Number(stats.successful))}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Failed
-                    </Typography>
-                    <Typography variant="h6" color="error.main">
-                      {formatNumber(Number(stats.failed))}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Opens
-                    </Typography>
-                    <Typography variant="h6">{formatNumber(stats.total_opens)}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Clicks
-                    </Typography>
-                    <Typography variant="h6">{formatNumber(stats.total_clicks)}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6} sm={4}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      Avg Response Time
-                    </Typography>
-                    <Typography variant="h6">
-                      {stats.avg_response_time
-                        ? `${Math.round(Number(stats.avg_response_time))}ms`
-                        : 'N/A'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Total Sent
+                  </Typography>
+                  <Typography variant="h6">{formatNumber(Number(stats.total_sent))}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Successful
+                  </Typography>
+                  <Typography variant="h6" color="success.main">
+                    {formatNumber(Number(stats.successful))}
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Failed
+                  </Typography>
+                  <Typography variant="h6" color="error.main">
+                    {formatNumber(Number(stats.failed))}
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Opens
+                  </Typography>
+                  <Typography variant="h6">{formatNumber(stats.total_opens)}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Clicks
+                  </Typography>
+                  <Typography variant="h6">{formatNumber(stats.total_clicks)}</Typography>
+                </CardContent>
+              </Card>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Avg Response Time
+                  </Typography>
+                  <Typography variant="h6">
+                    {stats.avg_response_time
+                      ? `${Math.round(Number(stats.avg_response_time))}ms`
+                      : 'N/A'}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
 
             {/* Chart */}
             <Typography variant="subtitle2" gutterBottom>
