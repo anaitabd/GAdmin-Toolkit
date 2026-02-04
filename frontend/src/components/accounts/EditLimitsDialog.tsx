@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -44,13 +45,15 @@ export default function EditLimitsDialog({
   });
 
   // Update form when account changes
-  if (account && open) {
-    reset({
-      daily_limit: account.daily_limit,
-      batch_size: account.batch_size,
-      send_delay_ms: account.send_delay_ms,
-    });
-  }
+  useEffect(() => {
+    if (account && open) {
+      reset({
+        daily_limit: account.daily_limit,
+        batch_size: account.batch_size,
+        send_delay_ms: account.send_delay_ms,
+      });
+    }
+  }, [account?.id, open, reset]);
 
   const onFormSubmit = (data: LimitsFormData) => {
     if (account) {

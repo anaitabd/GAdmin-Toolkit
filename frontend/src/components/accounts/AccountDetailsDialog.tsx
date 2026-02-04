@@ -55,7 +55,7 @@ export default function AccountDetailsDialog({
     if (open && account) {
       fetchStats();
     }
-  }, [open, account]);
+  }, [open, account?.id]);
 
   const fetchStats = async () => {
     if (!account) return;
@@ -199,7 +199,7 @@ export default function AccountDetailsDialog({
                   <Typography variant="caption" color="text.secondary">
                     Opens
                   </Typography>
-                  <Typography variant="h6">{formatNumber(stats.total_opens)}</Typography>
+                  <Typography variant="h6">{formatNumber(Number(stats.total_opens))}</Typography>
                 </CardContent>
               </Card>
               <Card variant="outlined">
@@ -207,7 +207,7 @@ export default function AccountDetailsDialog({
                   <Typography variant="caption" color="text.secondary">
                     Clicks
                   </Typography>
-                  <Typography variant="h6">{formatNumber(stats.total_clicks)}</Typography>
+                  <Typography variant="h6">{formatNumber(Number(stats.total_clicks))}</Typography>
                 </CardContent>
               </Card>
               <Card variant="outlined">
