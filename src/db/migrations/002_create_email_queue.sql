@@ -51,10 +51,15 @@ CREATE INDEX idx_email_queue_campaign
 CREATE INDEX idx_email_queue_tracking_token 
     ON email_queue(tracking_token);
 
--- Partial index for pending emails (most common query)
-CREATE INDEX idx_email_queue_pending 
+-- Index for pending emails with nullable next_retry_at
+CREATE INDEX idx_email_queue_pending_null_retry 
     ON email_queue(created_at) 
-    WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= NOW());
+    WHERE status = 'pending' AND next_retry_at IS NULL;
+
+-- Index for pending emails with retry time
+CREATE INDEX idx_email_queue_pending_with_retry 
+    ON email_queue(next_retry_at) 
+    WHERE status = 'pending' AND next_retry_at IS NOT NULL;
 
 -- Trigger for updated_at
 CREATE TRIGGER update_email_queue_updated_at BEFORE UPDATE ON email_queue

@@ -43,7 +43,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.post('/api/auth/login', authLimiter, authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/accounts', apiLimiter, accountsRoutes);
 app.use('/api/campaigns', apiLimiter, campaignsRoutes);
 app.use('/api/queue', apiLimiter, queueRoutes);
