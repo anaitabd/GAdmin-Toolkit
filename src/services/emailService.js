@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
+const serviceAccountAuth = require('./gsuite/serviceAccountAuth');
 
 class GmailService {
   constructor(credentials) {
@@ -176,4 +177,117 @@ class SMTPService {
   }
 }
 
-module.exports = { GmailService, SMTPService };
+class GmailJWTService {
+  constructor(senderAccountId) {
+    this.senderAccountId = senderAccountId;
+    this.gmail = null;
+    this.account = null;
+  }
+
+  async authenticate() {
+    try {
+      // Get Gmail client with JWT authentication
+      const { gmail, account } = await serviceAccountAuth.getGmailClient(this.senderAccountId);
+      this.gmail = gmail;
+      this.account = account;
+
+      // Test authentication
+      await this.gmail.users.getProfile({ userId: 'me' });
+      logger.info('Gmail JWT authentication successful', { 
+        senderAccountId: this.senderAccountId,
+        email: account.email 
+      });
+      
+      return true;
+    } catch (error) {
+      logger.error('Gmail JWT authentication failed', { 
+        error: error.message,
+        senderAccountId: this.senderAccountId 
+      });
+      throw error;
+    }
+  }
+
+  async sendEmail(emailData) {
+    const { to, subject, html, text, from } = emailData;
+    
+    const message = [
+      `From: ${from}`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      html || text
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    const startTime = Date.now();
+    try {
+      const response = await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage
+        }
+      });
+
+      return {
+        success: true,
+        messageId: response.data.id,
+        responseTime: Date.now() - startTime
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        responseTime: Date.now() - startTime
+      };
+    }
+  }
+
+  async checkBounces() {
+    try {
+      const response = await this.gmail.users.messages.list({
+        userId: 'me',
+        q: 'from:mailer-daemon@ OR from:postmaster@ is:unread',
+        maxResults: 50
+      });
+
+      const bounces = [];
+      if (response.data.messages) {
+        for (const message of response.data.messages) {
+          const detail = await this.gmail.users.messages.get({
+            userId: 'me',
+            id: message.id
+          });
+
+          bounces.push({
+            id: message.id,
+            snippet: detail.data.snippet,
+            headers: detail.data.payload.headers
+          });
+
+          await this.gmail.users.messages.modify({
+            userId: 'me',
+            id: message.id,
+            requestBody: {
+              removeLabelIds: ['UNREAD']
+            }
+          });
+        }
+      }
+
+      return bounces;
+    } catch (error) {
+      logger.error('Error checking bounces', { error: error.message });
+      return [];
+    }
+  }
+}
+
+module.exports = { GmailService, SMTPService, GmailJWTService };

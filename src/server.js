@@ -13,6 +13,7 @@ const campaignsRoutes = require('./routes/campaigns');
 const queueRoutes = require('./routes/queue');
 const analyticsRoutes = require('./routes/analytics');
 const trackingRoutes = require('./routes/tracking');
+const gsuiteRoutes = require('./routes/gsuiteManagement');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ app.use('/api/accounts', apiLimiter, accountsRoutes);
 app.use('/api/campaigns', apiLimiter, campaignsRoutes);
 app.use('/api/queue', apiLimiter, queueRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
+app.use('/api/gsuite', apiLimiter, gsuiteRoutes);
 app.use('/track', trackingRoutes);
 
 app.use((req, res) => {
