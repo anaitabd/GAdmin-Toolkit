@@ -27,16 +27,7 @@ async function createAdmin() {
       process.exit(1);
     }
 
-    const existingUser = await query(
-      'SELECT id FROM admin_users WHERE username = $1',
-      [username]
-    );
-
-    if (existingUser.rows.length > 0) {
-      console.error('User already exists');
-      process.exit(1);
-    }
-
+    // Create table first if it doesn't exist
     await query(`
       CREATE TABLE IF NOT EXISTS admin_users (
         id SERIAL PRIMARY KEY,
@@ -48,6 +39,17 @@ async function createAdmin() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Then check if user exists
+    const existingUser = await query(
+      'SELECT id FROM admin_users WHERE username = $1',
+      [username]
+    );
+
+    if (existingUser.rows.length > 0) {
+      console.error('User already exists');
+      process.exit(1);
+    }
 
     const passwordHash = await hashPassword(password);
 
