@@ -86,12 +86,16 @@ check_env_file() {
         print_success ".env file exists"
         
         # Check for default values that should be changed
-        if grep -q "your-super-secret-jwt-key-change-this-in-production" .env; then
+        if grep -q "your_jwt_secret_here" .env; then
             print_warning "JWT_SECRET still has default value - please update it!"
         fi
         
-        if grep -q "change_this_password_in_production" .env; then
-            print_warning "MONGO_ROOT_PASSWORD still has default value - please update it!"
+        if grep -q "your_secure_password" .env; then
+            print_warning "DB_PASSWORD still has default value - please update it!"
+        fi
+        
+        if grep -q "your_encryption_key_here" .env; then
+            print_warning "ENCRYPTION_KEY still has default value - please update it!"
         fi
     fi
 }
@@ -125,9 +129,9 @@ check_ports() {
         fi
     }
     
-    check_port 80 "Frontend" || true
-    check_port 3000 "Backend API" || true
-    check_port 27017 "MongoDB" || true
+    check_port 3000 "API Server" || true
+    check_port 3001 "Frontend" || true
+    check_port 5432 "PostgreSQL" || true
     check_port 6379 "Redis" || true
 }
 
@@ -135,11 +139,27 @@ check_ports() {
 build_images() {
     print_header "Building Docker Images"
     
-    print_info "Building backend image..."
-    if docker compose build backend; then
-        print_success "Backend image built successfully"
+    print_info "Building API image..."
+    if docker compose build api; then
+        print_success "API image built successfully"
     else
-        print_error "Failed to build backend image"
+        print_error "Failed to build API image"
+        exit 1
+    fi
+    
+    print_info "Building orchestrator image..."
+    if docker compose build orchestrator; then
+        print_success "Orchestrator image built successfully"
+    else
+        print_error "Failed to build orchestrator image"
+        exit 1
+    fi
+    
+    print_info "Building scheduler image..."
+    if docker compose build scheduler; then
+        print_success "Scheduler image built successfully"
+    else
+        print_error "Failed to build scheduler image"
         exit 1
     fi
     
@@ -186,7 +206,7 @@ setup_admin() {
         fi
         
         print_info "Creating admin user..."
-        if docker compose exec -T backend node setup-admin.js "$username" "$password"; then
+        if docker compose exec -T api node src/scripts/quickCreateAdmin.js "$username" "$password"; then
             print_success "Admin user created successfully!"
         else
             print_warning "Admin user may already exist or there was an error"
@@ -200,9 +220,11 @@ display_access_info() {
     
     echo "Your GAdmin-Toolkit is now running!"
     echo ""
-    echo -e "Frontend:      ${GREEN}http://localhost${NC}"
-    echo -e "Backend API:   ${GREEN}http://localhost:3000${NC}"
+    echo -e "Frontend:      ${GREEN}http://localhost:3001${NC}"
+    echo -e "API Server:    ${GREEN}http://localhost:3000${NC}"
     echo -e "Health Check:  ${GREEN}http://localhost:3000/health${NC}"
+    echo -e "PostgreSQL:    ${GREEN}localhost:5432${NC}"
+    echo -e "Redis:         ${GREEN}localhost:6379${NC}"
     echo ""
     echo "Useful commands:"
     echo "  View logs:          docker compose logs -f"
