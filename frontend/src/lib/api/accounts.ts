@@ -4,38 +4,38 @@ import type { SenderAccount } from '@/types/models';
 
 export const accountsApi = {
   getAll: async (): Promise<SenderAccount[]> => {
-    const { data } = await apiClient.get<ApiResponse<SenderAccount[]>>('/api/accounts');
+    const { data } = await apiClient.get<ApiResponse<{ accounts: SenderAccount[] }>>('/api/accounts');
     if (!data.success || !data.data) {
       throw new Error(data.error?.message || 'Failed to fetch accounts');
     }
-    return data.data;
+    return data.data.accounts;
   },
 
   getById: async (id: number): Promise<SenderAccount> => {
-    const { data } = await apiClient.get<ApiResponse<SenderAccount>>(`/api/accounts/${id}`);
+    const { data } = await apiClient.get<ApiResponse<{ account: SenderAccount }>>(`/api/accounts/${id}`);
     if (!data.success || !data.data) {
       throw new Error(data.error?.message || 'Failed to fetch account');
     }
-    return data.data;
+    return data.data.account;
   },
 
   create: async (account: Partial<SenderAccount>): Promise<SenderAccount> => {
-    const { data } = await apiClient.post<ApiResponse<SenderAccount>>('/api/accounts', account);
+    const { data } = await apiClient.post<ApiResponse<{ account: SenderAccount }>>('/api/accounts', account);
     if (!data.success || !data.data) {
       throw new Error(data.error?.message || 'Failed to create account');
     }
-    return data.data;
+    return data.data.account;
   },
 
   update: async (id: number, updates: Partial<SenderAccount>): Promise<SenderAccount> => {
-    const { data } = await apiClient.patch<ApiResponse<SenderAccount>>(
+    const { data } = await apiClient.patch<ApiResponse<{ account: SenderAccount }>>(
       `/api/accounts/${id}`,
       updates
     );
     if (!data.success || !data.data) {
       throw new Error(data.error?.message || 'Failed to update account');
     }
-    return data.data;
+    return data.data.account;
   },
 
   delete: async (id: number): Promise<void> => {
