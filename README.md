@@ -2,6 +2,10 @@
 
 This project is a full automation suite designed to manage users in Google Workspace. It includes a modern React frontend, REST API backend, and automation scripts using Node.js and Python.
 
+## 🎯 New to This Project?
+
+👉 **[START HERE: Your Implementation Guide](START_HERE.md)** - Complete guide for understanding and implementing features
+
 ## 📚 Documentation
 
 - **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Complete overview of everything built in this project
