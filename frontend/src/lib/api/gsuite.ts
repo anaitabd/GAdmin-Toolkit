@@ -74,4 +74,42 @@ export const gsuiteApi = {
       throw new Error(data.error?.message || 'Failed to start bulk delete');
     }
   },
+
+  syncFromGoogle: async (domainId: number): Promise<void> => {
+    const { data } = await apiClient.post<ApiResponse<void>>(
+      `/api/gsuite/domains/${domainId}/sync`
+    );
+    if (!data.success) {
+      throw new Error(data.error?.message || 'Failed to sync from Google');
+    }
+  },
+
+  createSenderAccounts: async (domainId: number, userIds: number[]): Promise<void> => {
+    const { data } = await apiClient.post<ApiResponse<void>>(
+      `/api/gsuite/domains/${domainId}/create-senders`,
+      { userIds }
+    );
+    if (!data.success) {
+      throw new Error(data.error?.message || 'Failed to create sender accounts');
+    }
+  },
+
+  testAuthentication: async (domainId: number): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.post<ApiResponse<{ success: boolean; message: string }>>(
+      `/api/gsuite/domains/${domainId}/test-auth`
+    );
+    if (!data.success || !data.data) {
+      throw new Error(data.error?.message || 'Failed to test authentication');
+    }
+    return data.data;
+  },
+
+  deleteDomain: async (domainId: number): Promise<void> => {
+    const { data } = await apiClient.delete<ApiResponse<void>>(
+      `/api/gsuite/domains/${domainId}`
+    );
+    if (!data.success) {
+      throw new Error(data.error?.message || 'Failed to delete domain');
+    }
+  },
 };
