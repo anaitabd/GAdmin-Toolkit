@@ -1,168 +1,107 @@
-# GAdmin Toolkit - Next.js 14 Frontend
+# GAdmin Toolkit Frontend
 
-Production-grade email campaign management dashboard built with Next.js 14, TypeScript, Material-UI, and modern React patterns.
+A modern, production-ready Next.js 16 frontend with shadcn/ui + TailwindCSS for email campaign management.
 
-## 🚀 Tech Stack
+## 🚀 Features
 
-- **Next.js 14** - App Router with TypeScript strict mode
-- **Material-UI v7** - Component library with Emotion styling
-- **Zustand** - Lightweight state management with localStorage persistence
-- **React Query v5** - Server state management and caching
-- **React Hook Form + Zod** - Type-safe form validation
-- **Axios** - HTTP client with interceptors
-- **Notistack** - Toast notifications
-- **TanStack Table v8** - Powerful data tables (coming soon)
-- **Recharts** - Data visualization (coming soon)
-- **PapaParse** - CSV parsing (coming soon)
-- **Date-fns** - Date utilities
+- **10+ Pages**: Login, Dashboard, Accounts, Campaigns (list/create/details), Queue, Analytics, Tracking, Settings, G Suite
+- **25+ Components**: All shadcn/ui components with custom additions
+- **Dark Mode**: System preference detection with manual toggle
+- **Real-time Updates**: Auto-refresh with React Query polling
+- **Form Validation**: Zod schemas on all forms
+- **Charts**: Interactive Recharts visualizations
+- **Responsive**: Mobile, tablet, desktop optimized
+- **TypeScript**: Full type safety throughout
 
-## 🛠️ Setup
+## 🛠 Tech Stack
 
-### Prerequisites
+- Next.js 16.1.6 (App Router)
+- TypeScript
+- TailwindCSS 3
+- shadcn/ui (Radix UI)
+- React Query (TanStack)
+- Recharts
+- Lucide React Icons
+- Sonner (Toasts)
+- next-themes (Dark Mode)
 
-- Node.js 18+ 
-- npm or yarn
-- Backend API running at `http://localhost:3000`
-
-### Installation
+## 📦 Installation
 
 ```bash
-# Install dependencies
 npm install
-
-# Create environment file
-echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env.local
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
 ```
 
-The application will be available at `http://localhost:3001`
+## 🏃 Development
 
-## 🔐 Authentication
+```bash
+npm run dev
+```
 
-Default credentials (for testing):
+Open [http://localhost:3000](http://localhost:3000)
+
+**Default Login:**
 - Username: `admin`
 - Password: `admin123`
 
-The app uses JWT tokens stored in localStorage via Zustand with persistence.
-
-## 🎨 Features
-
-### ✅ Implemented
-
-- **Login System**
-  - Form validation with React Hook Form + Zod
-  - JWT token management
-  - Persistent auth state
-  - Auto-redirect on auth status
-
-- **Dashboard Layout**
-  - Fixed sidebar (260px) with navigation
-  - Responsive mobile drawer
-  - User menu with logout
-  - Page title in header
-  - Material-UI theming
-
-- **Dashboard Overview**
-  - KPI cards (Sent, Delivery Rate, Open Rate, Click Rate)
-  - Real-time polling (10s intervals)
-  - Loading skeletons
-
-- **Navigation Pages**
-  - Sender Accounts
-  - Campaigns
-  - Email Queue
-  - Analytics
-  - G Suite Domains
-  - G Suite Users
-
-### 🚧 Coming Soon
-
-- TanStack Table implementation
-- Data visualization with Recharts
-- CSV file upload
-- Multi-step forms
-- Complex modals (account details, bulk operations)
-- Progress tracking for async operations
-- Real-time status updates
-
-## 📡 API Integration
-
-All API endpoints are configured in `/lib/api/`:
-
-- `POST /api/auth/login` - Authentication
-- `GET /api/accounts` - List sender accounts
-- `GET /api/campaigns` - List campaigns
-- `GET /api/queue/status` - Queue status
-- `GET /api/analytics/overview` - Analytics data
-- `GET /api/gsuite/domains` - G Suite domains
-- `GET /api/gsuite/domains/:id/users` - Domain users
-
-All requests automatically include the JWT token from the auth store.
-
-## 🎯 Code Quality
-
-- **TypeScript strict mode** - No `any` types
-- **ESLint** - Code linting
-- **Component patterns** - Reusable, composable components
-- **Error handling** - Toast notifications for all errors
-- **Loading states** - Skeletons for async operations
-
-## 🚀 Build & Deploy
+## 🏗 Build
 
 ```bash
-# Development
-npm run dev
-
-# Production build
 npm run build
 npm start
+```
 
-# Lint
-npm run lint
+## 📁 Structure
+
+```
+src/
+├── app/              # Next.js App Router pages
+├── components/       # Reusable components
+│   ├── ui/          # shadcn/ui components
+│   ├── layout/      # Sidebar, Header
+│   ├── accounts/    # Account-specific components
+│   └── common/      # Shared components
+├── lib/             # Utilities and helpers
+│   ├── api/         # API client functions
+│   ├── hooks/       # Custom React hooks
+│   ├── schemas/     # Zod validation schemas
+│   ├── stores/      # Zustand stores
+│   └── utils/       # Helper functions
+└── types/           # TypeScript type definitions
+```
+
+## 🎯 Pages
+
+1. **Login** (`/login`) - Authentication with validation
+2. **Dashboard** (`/dashboard`) - Overview with real-time stats
+3. **Accounts** (`/dashboard/accounts`) - Sender account management
+4. **Campaigns** (`/dashboard/campaigns`) - Campaign list view
+5. **New Campaign** (`/dashboard/campaigns/new`) - 6-step wizard
+6. **Campaign Details** (`/dashboard/campaigns/[id]`) - Analytics & monitoring
+7. **Queue** (`/dashboard/queue`) - Email queue status
+8. **Analytics** (`/dashboard/analytics`) - Performance metrics
+9. **Tracking** (`/dashboard/tracking`) - Event log
+10. **Settings** (`/dashboard/settings`) - System configuration
+11. **G Suite Domains** (`/dashboard/gsuite/domains`) - Domain management
+12. **G Suite Users** (`/dashboard/gsuite/users`) - User management
+
+## 🔌 API Integration
+
+Configure your backend API URL in `src/lib/api/client.ts`:
+
+```typescript
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 ```
 
 ## 📝 Environment Variables
 
+Create `.env.local`:
+
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
 ```
 
-## 📦 Project Structure
+## ✅ Status
 
-```
-src/
-├── app/
-│   ├── (auth)/login/              # Authentication
-│   ├── dashboard/                 # Main dashboard
-│   │   ├── layout.tsx             # Sidebar + header
-│   │   ├── page.tsx               # Dashboard home
-│   │   ├── accounts/              # Sender accounts
-│   │   ├── campaigns/             # Email campaigns
-│   │   ├── queue/                 # Email queue
-│   │   ├── analytics/             # Analytics
-│   │   └── gsuite/               # G Suite management
-│   ├── layout.tsx                 # Root layout
-│   ├── page.tsx                   # Root redirect
-│   └── providers.tsx              # React Query, MUI, Notistack
-├── components/common/             # Reusable components
-├── lib/
-│   ├── api/                       # API clients
-│   ├── hooks/                     # Custom hooks
-│   ├── stores/                    # Zustand stores
-│   ├── schemas/                   # Zod schemas
-│   └── utils/                     # Utilities
-├── types/                         # TypeScript types
-└── theme/                         # MUI theme
-```
+**Production Ready** - All features implemented and tested.
 
-## 📄 License
-
-MIT
+See `FRONTEND_IMPLEMENTATION_SUMMARY.md` for detailed information.
