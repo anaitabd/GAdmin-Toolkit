@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   Send,
   CheckCircle,
-  ExternalLink,
+  MailOpen,
   MousePointerClick,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +60,7 @@ export default function DashboardPage() {
         <StatCard
           title="Open Rate"
           value={isLoading ? '...' : formatPercent(analytics?.open_rate || 0)}
-          icon={<ExternalLink className="w-6 h-6" />}
+          icon={<MailOpen className="w-6 h-6" />}
           loading={isLoading}
         />
         <StatCard
