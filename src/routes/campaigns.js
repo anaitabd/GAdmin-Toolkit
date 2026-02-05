@@ -340,6 +340,9 @@ router.get('/:id/timeline', asyncHandler(async (req, res) => {
     throw new AppError('Campaign not found', 404);
   }
 
+  // Validate and sanitize days parameter
+  const daysInt = Math.max(1, Math.min(365, parseInt(days) || 7));
+
   const timeline = await query(`
     SELECT 
       DATE_TRUNC('hour', sent_at) as hour,
@@ -350,16 +353,16 @@ router.get('/:id/timeline', asyncHandler(async (req, res) => {
       AVG(response_time_ms) as avg_response_time
     FROM send_logs
     WHERE campaign_id = $1
-      AND sent_at >= NOW() - INTERVAL '${parseInt(days)} days'
+      AND sent_at >= NOW() - make_interval(days => $2)
     GROUP BY DATE_TRUNC('hour', sent_at)
     ORDER BY hour DESC
-  `, [id]);
+  `, [id, daysInt]);
 
   res.json({
     success: true,
     data: {
       timeline: timeline.rows,
-      period_days: parseInt(days)
+      period_days: daysInt
     }
   });
 }));
