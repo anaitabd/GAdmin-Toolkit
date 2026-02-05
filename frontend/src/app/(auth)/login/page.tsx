@@ -1,18 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Container,
-  Alert,
-} from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/authSchema';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -50,83 +46,78 @@ export default function LoginPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Card elevation={10} sx={{ borderRadius: 3 }}>
-          <CardContent sx={{ p: 5 }}>
-            <Typography variant="h4" align="center" gutterBottom fontWeight={600}>
-              GAdmin Toolkit
-            </Typography>
-            <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 4 }}>
-              Sign in to your dashboard
-            </Typography>
-
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-purple-800 p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-2xl">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-bold">GAdmin Toolkit</CardTitle>
+            <CardDescription>Sign in to your dashboard</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                {error}
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Controller
-                name="username"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Username"
-                    fullWidth
-                    margin="normal"
-                    error={!!errors.username}
-                    helperText={errors.username?.message}
-                    disabled={isLoading}
-                  />
-                )}
-              />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Controller
+                  name="username"
+                  control={control}
+                  render={({ field }) => (
+                    <>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        {...field}
+                        id="username"
+                        placeholder="Enter your username"
+                        disabled={isLoading}
+                        className={errors.username ? 'border-red-500' : ''}
+                      />
+                      {errors.username && (
+                        <p className="text-sm text-red-500">{errors.username.message}</p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
 
-              <Controller
-                name="password"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Password"
-                    type="password"
-                    fullWidth
-                    margin="normal"
-                    error={!!errors.password}
-                    helperText={errors.password?.message}
-                    disabled={isLoading}
-                  />
-                )}
-              />
+              <div className="space-y-2">
+                <Controller
+                  name="password"
+                  control={control}
+                  render={({ field }) => (
+                    <>
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        {...field}
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        disabled={isLoading}
+                        className={errors.password ? 'border-red-500' : ''}
+                      />
+                      {errors.password && (
+                        <p className="text-sm text-red-500">{errors.password.message}</p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
 
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                disabled={isLoading}
-                sx={{ mt: 3, py: 1.5 }}
-              >
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
 
-            <Typography variant="caption" color="text.secondary" align="center" display="block" sx={{ mt: 3 }}>
+            <p className="text-xs text-center text-muted-foreground mt-4">
               Default: admin / admin123
-            </Typography>
+            </p>
           </CardContent>
         </Card>
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 }

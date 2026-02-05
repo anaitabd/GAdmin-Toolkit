@@ -14,29 +14,28 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableHeader,
   TableRow,
-  Paper,
-  IconButton,
-  Box,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
-  ArrowUpward,
-  ArrowDownward,
-} from '@mui/icons-material';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  PlayCircle,
+  Pause,
+  Edit,
+  Trash2,
+  Eye,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 import StatusBadge from '@/components/common/StatusBadge';
 import { SenderAccount } from '@/types/models';
 import { formatNumber } from '@/lib/utils/formatters';
@@ -68,24 +67,20 @@ export default function AccountsTable({
       columnHelper.accessor('email', {
         header: 'Email',
         cell: (info) => (
-          <Box>
-            <Typography variant="body2" fontWeight={500}>
-              {info.getValue()}
-            </Typography>
+          <div>
+            <div className="font-medium">{info.getValue()}</div>
             {info.row.original.display_name && (
-              <Typography variant="caption" color="text.secondary">
+              <div className="text-sm text-muted-foreground">
                 {info.row.original.display_name}
-              </Typography>
+              </div>
             )}
-          </Box>
+          </div>
         ),
       }),
       columnHelper.accessor('auth_type', {
         header: 'Provider',
         cell: (info) => (
-          <Typography variant="body2" textTransform="uppercase">
-            {info.getValue()}
-          </Typography>
+          <span className="uppercase text-sm">{info.getValue()}</span>
         ),
       }),
       columnHelper.accessor('status', {
@@ -95,14 +90,14 @@ export default function AccountsTable({
       columnHelper.accessor('daily_sent', {
         header: 'Usage',
         cell: (info) => (
-          <Box>
-            <Typography variant="body2">
+          <div>
+            <div className="text-sm">
               {formatNumber(info.getValue())} / {formatNumber(info.row.original.daily_limit)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
+            </div>
+            <div className="text-xs text-muted-foreground">
               {Math.round((info.getValue() / info.row.original.daily_limit) * 100)}% used
-            </Typography>
-          </Box>
+            </div>
+          </div>
         ),
       }),
       columnHelper.display({
@@ -114,37 +109,54 @@ export default function AccountsTable({
           const canResume = account.status === 'paused' || account.status === 'paused_limit_reached';
 
           return (
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="View Details">
-                <IconButton size="small" onClick={() => onViewDetails(account)}>
-                  <ViewIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onViewDetails(account)}
+                title="View Details"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
               {canPause && (
-                <Tooltip title="Pause">
-                  <IconButton size="small" onClick={() => onPauseResume(account)}>
-                    <PauseIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onPauseResume(account)}
+                  title="Pause"
+                >
+                  <Pause className="h-4 w-4" />
+                </Button>
               )}
               {canResume && (
-                <Tooltip title="Resume">
-                  <IconButton size="small" color="primary" onClick={() => onPauseResume(account)}>
-                    <PlayIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onPauseResume(account)}
+                  title="Resume"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <PlayCircle className="h-4 w-4" />
+                </Button>
               )}
-              <Tooltip title="Edit Limits">
-                <IconButton size="small" onClick={() => onEditLimits(account)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete">
-                <IconButton size="small" color="error" onClick={() => onDelete(account)}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEditLimits(account)}
+                title="Edit Limits"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(account)}
+                title="Delete"
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           );
         },
       }),
@@ -152,7 +164,6 @@ export default function AccountsTable({
     [onViewDetails, onPauseResume, onEditLimits, onDelete]
   );
 
-  // Filter accounts based on status and email search
   const filteredAccounts = useMemo(() => {
     return accounts.filter((account) => {
       const matchesStatus = statusFilter === 'all' || account.status === statusFilter;
@@ -176,77 +187,67 @@ export default function AccountsTable({
   });
 
   return (
-    <Box>
-      {/* Filters */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <TextField
+    <div className="space-y-4">
+      <div className="flex gap-4">
+        <Input
           placeholder="Search by email..."
           value={emailSearch}
           onChange={(e) => setEmailSearch(e.target.value)}
-          sx={{ flex: 1 }}
-          size="small"
+          className="flex-1"
         />
-        <FormControl sx={{ minWidth: 200 }} size="small">
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={statusFilter}
-            label="Status"
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <MenuItem value="all">All Status</MenuItem>
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="paused">Paused</MenuItem>
-            <MenuItem value="warming_up">Warming Up</MenuItem>
-            <MenuItem value="suspended">Suspended</MenuItem>
-            <MenuItem value="paused_limit_reached">Limit Reached</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="paused">Paused</SelectItem>
+            <SelectItem value="warming_up">Warming Up</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="paused_limit_reached">Limit Reached</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* Table */}
-      <TableContainer component={Paper}>
+      <div className="rounded-md border">
         <Table>
-          <TableHead>
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell
+                  <TableHead
                     key={header.id}
                     onClick={header.column.getToggleSortingHandler()}
-                    sx={{
-                      cursor: header.column.getCanSort() ? 'pointer' : 'default',
-                      userSelect: 'none',
-                    }}
+                    className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <div className="flex items-center gap-2">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getIsSorted() && (
-                        <Box component="span">
+                        <span>
                           {header.column.getIsSorted() === 'asc' ? (
-                            <ArrowUpward fontSize="small" />
+                            <ArrowUp className="h-4 w-4" />
                           ) : (
-                            <ArrowDownward fontSize="small" />
+                            <ArrowDown className="h-4 w-4" />
                           )}
-                        </Box>
+                        </span>
                       )}
-                    </Box>
-                  </TableCell>
+                    </div>
+                  </TableHead>
                 ))}
               </TableRow>
             ))}
-          </TableHead>
+          </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center">
-                  <Typography variant="body2" color="text.secondary" py={4}>
-                    No accounts found
-                  </Typography>
+                <TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">
+                  No accounts found
                 </TableCell>
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} hover>
+                <TableRow key={row.id} className="hover:bg-muted/50">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -257,7 +258,7 @@ export default function AccountsTable({
             )}
           </TableBody>
         </Table>
-      </TableContainer>
-    </Box>
+      </div>
+    </div>
   );
 }

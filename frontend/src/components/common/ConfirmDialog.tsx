@@ -1,11 +1,12 @@
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-} from '@mui/material';
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -15,7 +16,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   confirmText?: string;
   cancelText?: string;
-  confirmColor?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+  confirmColor?: 'default' | 'destructive';
 }
 
 export default function ConfirmDialog({
@@ -26,20 +27,27 @@ export default function ConfirmDialog({
   onCancel,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  confirmColor = 'primary',
+  confirmColor = 'default',
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onClose={onCancel}>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent>
-        <DialogContentText>{message}</DialogContentText>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{message}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            {cancelText}
+          </Button>
+          <Button
+            variant={confirmColor === 'destructive' ? 'destructive' : 'default'}
+            onClick={onConfirm}
+          >
+            {confirmText}
+          </Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>{cancelText}</Button>
-        <Button onClick={onConfirm} color={confirmColor} variant="contained" autoFocus>
-          {confirmText}
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 }

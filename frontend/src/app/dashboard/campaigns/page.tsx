@@ -1,43 +1,64 @@
 'use client';
-import { Box, Typography, Card, CardContent, Button } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function CampaignsPage() {
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={600} gutterBottom>
-            Campaigns
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your email campaigns and view their performance
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+          </p>
+        </div>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
           Create Campaign
         </Button>
-      </Box>
+      </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Coming Soon</CardTitle>
+          <CardDescription>
+            The campaigns table and details page will be implemented here
+          </CardDescription>
+        </CardHeader>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Coming Soon
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            The campaigns table and details page will be implemented here. Features include:
-          </Typography>
-          <ul>
-            <li>Table with name, status, sent, opens, clicks, and rates</li>
-            <li>Filter by status (All, Active, Cancelled)</li>
-            <li>Search by campaign name</li>
-            <li>Campaign creation dialog</li>
-            <li>Details page with KPI cards, timeline chart, and tabs</li>
-            <li>Cancel campaign functionality</li>
-            <li>Real-time polling every 10 seconds</li>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Table with name, status, sent, opens, clicks, and rates
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Filter by status (All, Active, Cancelled)
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Search by campaign name
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Campaign creation dialog
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Details page with KPI cards, timeline chart, and tabs
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Cancel campaign functionality
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              Real-time polling every 10 seconds
+            </li>
           </ul>
         </CardContent>
       </Card>
-    </Box>
+    </div>
   );
 }
