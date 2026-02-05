@@ -11,6 +11,8 @@ import {
   Globe,
   Menu,
   X,
+  Activity,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -21,7 +23,9 @@ const menuItems = [
   { text: 'Campaigns', icon: Send, path: '/dashboard/campaigns' },
   { text: 'Email Queue', icon: Menu, path: '/dashboard/queue' },
   { text: 'Analytics', icon: BarChart3, path: '/dashboard/analytics' },
+  { text: 'Tracking', icon: Activity, path: '/dashboard/tracking' },
   { text: 'G Suite', icon: Globe, path: '/dashboard/gsuite/domains' },
+  { text: 'Settings', icon: Settings, path: '/dashboard/settings' },
 ];
 
 export function Sidebar() {
