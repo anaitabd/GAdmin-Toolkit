@@ -16,15 +16,54 @@ export interface Campaign {
   id: number;
   name: string;
   description: string;
-  status: 'active' | 'cancelled';
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
   created_at: string;
+  updated_at?: string;
+  sponsor_id?: string;
+  subject?: string;
+  from_name?: string;
+  scheduled_at?: string;
+  priority?: number;
   stats: {
     total_sent: number;
+    total_delivered: number;
     total_opened: number;
     total_clicked: number;
+    total_bounced: number;
+    total_unsubscribed: number;
     open_rate: number;
     click_rate: number;
+    bounce_rate: number;
+    delivery_rate: number;
   };
+}
+
+export interface CampaignEmail {
+  id: number;
+  campaign_id: number;
+  recipient: string;
+  status: 'pending' | 'processing' | 'sent' | 'failed' | 'bounced';
+  sent_at?: string;
+  opened_at?: string;
+  clicked_at?: string;
+  error_message?: string;
+  sender_account_id?: number;
+}
+
+export interface CampaignTimeline {
+  date: string;
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+}
+
+export interface TopPerformer {
+  recipient: string;
+  opens: number;
+  clicks: number;
+  last_opened?: string;
 }
 
 export interface GSuiteDomain {
