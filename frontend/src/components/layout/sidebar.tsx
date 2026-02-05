@@ -13,6 +13,8 @@ import {
   X,
   Activity,
   Settings,
+  Cpu,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -22,8 +24,10 @@ const menuItems = [
   { text: 'Sender Accounts', icon: Mail, path: '/dashboard/accounts' },
   { text: 'Campaigns', icon: Send, path: '/dashboard/campaigns' },
   { text: 'Email Queue', icon: Menu, path: '/dashboard/queue' },
+  { text: 'Workers', icon: Cpu, path: '/dashboard/workers' },
   { text: 'Analytics', icon: BarChart3, path: '/dashboard/analytics' },
   { text: 'Tracking', icon: Activity, path: '/dashboard/tracking' },
+  { text: 'Tracking Domains', icon: LinkIcon, path: '/dashboard/tracking-domains' },
   { text: 'G Suite', icon: Globe, path: '/dashboard/gsuite/domains' },
   { text: 'Settings', icon: Settings, path: '/dashboard/settings' },
 ];
