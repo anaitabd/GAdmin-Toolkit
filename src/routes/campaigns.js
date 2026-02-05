@@ -120,19 +120,27 @@ router.post('/:id/pause', asyncHandler(async (req, res) => {
     throw new AppError('Campaign is already paused', 400);
   }
 
-  await query(`
-    UPDATE campaigns 
-    SET status = $1, paused_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-    WHERE id = $2
-  `, ['paused', id]);
+  await transaction(async (client) => {
+    // Update campaign status to paused
+    await client.query(`
+      UPDATE campaigns 
+      SET status = $1, paused_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `, ['paused', id]);
 
-  // TODO: Pause workers associated with this campaign via orchestrator
-  // This would require an orchestrator API or event system
+    // Reset any processing emails back to pending
+    // Workers will now skip them due to campaign being paused
+    await client.query(`
+      UPDATE email_queue
+      SET status = 'pending', assigned_worker_id = NULL, assigned_at = NULL
+      WHERE campaign_id = $1 AND status = 'processing'
+    `, [id]);
+  });
 
   res.json({
     success: true,
     data: { 
-      message: 'Campaign paused successfully',
+      message: 'Campaign paused successfully. Workers will skip emails from this campaign.',
       campaign_id: id
     }
   });
@@ -158,13 +166,13 @@ router.post('/:id/resume', asyncHandler(async (req, res) => {
     WHERE id = $2
   `, ['active', id]);
 
-  // TODO: Resume workers via orchestrator
-  // This would require an orchestrator API or event system
+  // Workers will automatically pick up pending emails from this campaign
+  // No need to manually trigger workers as they continuously poll for pending emails
 
   res.json({
     success: true,
     data: { 
-      message: 'Campaign resumed successfully',
+      message: 'Campaign resumed successfully. Workers will now process emails from this campaign.',
       campaign_id: id
     }
   });

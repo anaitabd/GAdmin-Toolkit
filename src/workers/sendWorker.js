@@ -87,18 +87,20 @@ class SendWorker {
   async fetchBatch() {
     return await transaction(async (client) => {
       const result = await client.query(`
-        SELECT * FROM email_queue
-        WHERE status = 'pending'
-        AND retry_count < $1
-        AND (next_retry_at IS NULL OR next_retry_at <= NOW())
-        AND recipient_email NOT IN (
+        SELECT eq.* FROM email_queue eq
+        LEFT JOIN campaigns c ON c.id::text = eq.campaign_id
+        WHERE eq.status = 'pending'
+        AND eq.retry_count < $1
+        AND (eq.next_retry_at IS NULL OR eq.next_retry_at <= NOW())
+        AND (c.id IS NULL OR c.status NOT IN ('paused', 'cancelled'))
+        AND eq.recipient_email NOT IN (
           SELECT email FROM bounce_list WHERE bounce_type = 'hard'
           UNION
           SELECT email FROM unsubscribe_list
         )
-        ORDER BY priority DESC, created_at ASC
+        ORDER BY eq.priority DESC, eq.created_at ASC
         LIMIT $2
-        FOR UPDATE SKIP LOCKED
+        FOR UPDATE OF eq SKIP LOCKED
       `, [this.maxRetries, this.batchSize]);
 
       if (result.rows.length === 0) {
