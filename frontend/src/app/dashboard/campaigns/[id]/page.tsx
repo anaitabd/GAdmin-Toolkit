@@ -131,12 +131,13 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
     );
   }
 
-  const emailStatusCounts = {
-    pending: emails.filter(e => e.status === 'pending').length,
-    processing: emails.filter(e => e.status === 'processing').length,
-    sent: emails.filter(e => e.status === 'sent').length,
-    failed: emails.filter(e => e.status === 'failed' || e.status === 'bounced').length,
-  };
+  const emailStatusCounts = emails.reduce((acc, email) => {
+    if (email.status === 'pending') acc.pending++;
+    else if (email.status === 'processing') acc.processing++;
+    else if (email.status === 'sent') acc.sent++;
+    else if (email.status === 'failed' || email.status === 'bounced') acc.failed++;
+    return acc;
+  }, { pending: 0, processing: 0, sent: 0, failed: 0 });
 
   return (
     <div>

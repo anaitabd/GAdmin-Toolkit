@@ -85,6 +85,7 @@ export default function NewCampaignPage() {
   const parseRecipients = () => {
     const emails: string[] = [];
     const lines = recipientsText.split('\n');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
     lines.forEach(line => {
       const trimmed = line.trim();
@@ -96,13 +97,13 @@ export default function NewCampaignPage() {
             if (Array.isArray(row)) {
               row.forEach((cell: string) => {
                 const email = cell.trim();
-                if (email && email.includes('@')) {
+                if (email && emailRegex.test(email)) {
                   emails.push(email);
                 }
               });
             }
           });
-        } else if (trimmed.includes('@')) {
+        } else if (emailRegex.test(trimmed)) {
           emails.push(trimmed);
         }
       }
