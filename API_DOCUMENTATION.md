@@ -491,6 +491,233 @@ GET /api/campaigns/:id/ssl
 }
 ```
 
+### Pause Campaign
+
+```http
+POST /api/campaigns/:id/pause
+```
+
+**Description:** Pause a campaign to stop workers from processing its emails. Any emails currently being processed will be reset to pending status.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Campaign paused successfully. Workers will skip emails from this campaign.",
+    "campaign_id": "1"
+  }
+}
+```
+
+### Resume Campaign
+
+```http
+POST /api/campaigns/:id/resume
+```
+
+**Description:** Resume a paused campaign. Workers will automatically start processing pending emails from this campaign.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Campaign resumed successfully. Workers will now process emails from this campaign.",
+    "campaign_id": "1"
+  }
+}
+```
+
+### Update Campaign
+
+```http
+PATCH /api/campaigns/:id
+Content-Type: application/json
+```
+
+**Description:** Update campaign details. Only specified fields will be updated.
+
+**Request Body:**
+```json
+{
+  "name": "Updated Campaign Name",
+  "description": "Updated description",
+  "subject": "New subject line",
+  "html_template": "<p>Updated template</p>",
+  "text_template": "Updated text version"
+}
+```
+
+**Allowed Fields:**
+- `name` - Campaign name
+- `description` - Campaign description
+- `subject` - Email subject line
+- `html_template` - HTML email template
+- `text_template` - Plain text email template
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "campaign": {
+      "id": 1,
+      "name": "Updated Campaign Name",
+      "description": "Updated description",
+      "subject": "New subject line",
+      "status": "active",
+      "updated_at": "2026-02-05T12:00:00Z"
+    }
+  }
+}
+```
+
+### Duplicate Campaign
+
+```http
+POST /api/campaigns/:id/duplicate
+```
+
+**Description:** Create a copy of an existing campaign. The new campaign will have "(Copy)" appended to its name and will be in "active" status.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "campaign": {
+      "id": 2,
+      "name": "Black Friday Campaign (Copy)",
+      "description": "Same as original",
+      "subject": "Black Friday Deals!",
+      "status": "active",
+      "created_at": "2026-02-05T12:00:00Z"
+    },
+    "message": "Campaign duplicated successfully"
+  }
+}
+```
+
+### Get Campaign Emails
+
+```http
+GET /api/campaigns/:id/emails?status=pending&limit=50&offset=0
+```
+
+**Description:** Get paginated list of emails in the campaign queue.
+
+**Query Parameters:**
+- `status` (optional) - Filter by email status (pending, processing, sent, failed, cancelled)
+- `limit` (optional, default: 50) - Number of results per page
+- `offset` (optional, default: 0) - Offset for pagination
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "emails": [
+      {
+        "id": 1001,
+        "recipient_email": "user@example.com",
+        "recipient_name": "John Doe",
+        "subject": "Black Friday Deals!",
+        "status": "pending",
+        "assigned_to": null,
+        "retry_count": 0,
+        "created_at": "2026-02-05T10:00:00Z",
+        "sent_at": null
+      }
+    ],
+    "pagination": {
+      "total": 5000,
+      "limit": 50,
+      "offset": 0,
+      "hasMore": true
+    }
+  }
+}
+```
+
+### Get Campaign Timeline
+
+```http
+GET /api/campaigns/:id/timeline?days=7
+```
+
+**Description:** Get hourly aggregation of email sending statistics for the campaign.
+
+**Query Parameters:**
+- `days` (optional, default: 7) - Number of days to include in timeline
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "timeline": [
+      {
+        "hour": "2026-02-05T12:00:00Z",
+        "total_sent": 150,
+        "sent": 145,
+        "failed": 3,
+        "bounced": 2,
+        "avg_response_time": 234.5
+      },
+      {
+        "hour": "2026-02-05T11:00:00Z",
+        "total_sent": 200,
+        "sent": 195,
+        "failed": 5,
+        "bounced": 0,
+        "avg_response_time": 210.3
+      }
+    ],
+    "period_days": 7
+  }
+}
+```
+
+### Get Top Performers
+
+```http
+GET /api/campaigns/:id/top-performers
+```
+
+**Description:** Get the top 10 sender accounts with the best open rates for this campaign.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "top_performers": [
+      {
+        "id": 5,
+        "email": "sender1@company.com",
+        "name": "Sender Account 1",
+        "total_sent": 1000,
+        "total_opens": 450,
+        "total_clicks": 120,
+        "open_rate": 45.00,
+        "click_rate": 12.00
+      },
+      {
+        "id": 12,
+        "email": "sender2@company.com",
+        "name": "Sender Account 2",
+        "total_sent": 850,
+        "total_opens": 370,
+        "total_clicks": 95,
+        "open_rate": 43.53,
+        "click_rate": 11.18
+      }
+    ]
+  }
+}
+```
+
 ## Queue API
 
 ### Enqueue Emails
