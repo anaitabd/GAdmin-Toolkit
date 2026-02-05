@@ -1,14 +1,14 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Grid, Typography, Card, CardContent, Skeleton } from '@mui/material';
 import {
-  Send as SendIcon,
-  CheckCircle as CheckCircleIcon,
-  OpenInNew as OpenIcon,
-  TouchApp as ClickIcon,
-} from '@mui/icons-material';
+  Send,
+  CheckCircle,
+  MailOpen,
+  MousePointerClick,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { analyticsApi } from '@/lib/api/analytics';
 import { useAuthStore } from '@/lib/stores/authStore';
 import StatCard from '@/components/common/StatCard';
@@ -36,52 +36,50 @@ export default function DashboardPage() {
   }
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight={600} gutterBottom>
+    <div>
+      <h1 className="text-3xl font-semibold tracking-tight mb-2">
         Dashboard Overview
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+      </h1>
+      <p className="text-sm text-muted-foreground mb-8">
         Last 7 days performance metrics
-      </Typography>
+      </p>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         <StatCard
           title="Sent Today"
           value={isLoading ? '...' : formatNumber(analytics?.sent || 0)}
-          icon={<SendIcon />}
+          icon={<Send className="w-6 h-6" />}
           loading={isLoading}
         />
         <StatCard
           title="Delivery Rate"
           value={isLoading ? '...' : formatPercent(analytics?.delivery_rate || 0)}
-          icon={<CheckCircleIcon />}
+          icon={<CheckCircle className="w-6 h-6" />}
           loading={isLoading}
         />
         <StatCard
           title="Open Rate"
           value={isLoading ? '...' : formatPercent(analytics?.open_rate || 0)}
-          icon={<OpenIcon />}
+          icon={<MailOpen className="w-6 h-6" />}
           loading={isLoading}
         />
         <StatCard
           title="Click Rate"
           value={isLoading ? '...' : formatPercent(analytics?.click_rate || 0)}
-          icon={<ClickIcon />}
+          icon={<MousePointerClick className="w-6 h-6" />}
           loading={isLoading}
         />
-      </Box>
+      </div>
 
       <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Welcome to GAdmin Toolkit
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+        <CardHeader>
+          <CardTitle>Welcome to GAdmin Toolkit</CardTitle>
+          <CardDescription>
             This is a production-grade Next.js 14 dashboard for managing email campaigns, sender accounts, and G Suite users.
             Use the sidebar to navigate to different sections.
-          </Typography>
-        </CardContent>
+          </CardDescription>
+        </CardHeader>
       </Card>
-    </Box>
+    </div>
   );
 }

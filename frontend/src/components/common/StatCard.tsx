@@ -1,5 +1,7 @@
-import { Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
 import { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -14,9 +16,9 @@ export default function StatCard({ title, value, icon, trend, trendUp, loading }
   if (loading) {
     return (
       <Card>
-        <CardContent>
-          <Skeleton variant="text" width="60%" />
-          <Skeleton variant="text" width="80%" height={40} />
+        <CardContent className="p-6">
+          <Skeleton className="h-4 w-[60%] mb-4" />
+          <Skeleton className="h-8 w-[80%]" />
         </CardContent>
       </Card>
     );
@@ -24,38 +26,32 @@ export default function StatCard({ title, value, icon, trend, trendUp, loading }
 
   return (
     <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground mb-2">
               {title}
-            </Typography>
-            <Typography variant="h4" fontWeight={600}>
+            </p>
+            <h3 className="text-3xl font-semibold tracking-tight">
               {value}
-            </Typography>
+            </h3>
             {trend && (
-              <Typography
-                variant="caption"
-                color={trendUp ? 'success.main' : 'error.main'}
-                sx={{ mt: 1, display: 'block' }}
+              <p
+                className={cn(
+                  "text-xs mt-2",
+                  trendUp ? "text-green-600" : "text-red-600"
+                )}
               >
                 {trend}
-              </Typography>
+              </p>
             )}
-          </Box>
+          </div>
           {icon && (
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: 'primary.light',
-                color: 'primary.contrastText',
-              }}
-            >
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary">
               {icon}
-            </Box>
+            </div>
           )}
-        </Box>
+        </div>
       </CardContent>
     </Card>
   );
