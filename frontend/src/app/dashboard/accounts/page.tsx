@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Box, Typography, Button, CircularProgress } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Plus, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AccountsTable from '@/components/accounts/AccountsTable';
 import AddAccountDialog from '@/components/accounts/AddAccountDialog';
 import AccountDetailsDialog from '@/components/accounts/AccountDetailsDialog';
@@ -60,29 +60,24 @@ export default function AccountsPage() {
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={600} gutterBottom>
-            Sender Accounts
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Sender Accounts</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your email sender accounts and their limits
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setAddDialogOpen(true)}
-        >
+          </p>
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
           Add Account
         </Button>
-      </Box>
+      </div>
 
       {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
       ) : (
         <AccountsTable
           accounts={accounts}
@@ -128,8 +123,8 @@ export default function AccountsPage() {
           setSelectedAccount(null);
         }}
         confirmText="Delete"
-        confirmColor="error"
+        confirmColor="destructive"
       />
-    </Box>
+    </div>
   );
 }

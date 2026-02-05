@@ -2,16 +2,14 @@
 import { useState, useEffect } from 'react';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  CircularProgress,
-} from '@mui/material';
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   LineChart,
   Line,
@@ -73,7 +71,6 @@ export default function AccountDetailsDialog({
     }
   };
 
-  // Mock timeline data for the chart
   const timelineData = [
     { date: '01/05', sent: 45, opens: 12, clicks: 3 },
     { date: '01/06', sent: 52, opens: 18, clicks: 5 },
@@ -87,169 +84,141 @@ export default function AccountDetailsDialog({
   if (!account) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Account Details</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            {account.email}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <StatusBadge status={account.status} />
-            <Typography variant="body2" color="text.secondary">
-              {account.display_name}
-            </Typography>
-          </Box>
-        </Box>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Account Details</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-xl font-semibold">{account.email}</h3>
+            <div className="flex gap-3 items-center mt-2">
+              <StatusBadge status={account.status} />
+              <span className="text-sm text-muted-foreground">{account.display_name}</span>
+            </div>
+          </div>
 
-        {/* Account Info */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Account Information
-          </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Provider
-              </Typography>
-              <Typography variant="body2" textTransform="uppercase">
-                {account.auth_type}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Daily Limit
-              </Typography>
-              <Typography variant="body2">{formatNumber(account.daily_limit)}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Batch Size
-              </Typography>
-              <Typography variant="body2">{account.batch_size}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Send Delay
-              </Typography>
-              <Typography variant="body2">{account.send_delay_ms}ms</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Created
-              </Typography>
-              <Typography variant="body2">
-                {format(new Date(account.created_at), 'MMM dd, yyyy')}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Last Used
-              </Typography>
-              <Typography variant="body2">
-                {account.last_used_at
-                  ? format(new Date(account.last_used_at), 'MMM dd, yyyy')
-                  : 'Never'}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+          <div>
+            <h4 className="text-sm font-semibold mb-3">Account Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Provider</p>
+                <p className="text-sm uppercase font-medium">{account.auth_type}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Daily Limit</p>
+                <p className="text-sm font-medium">{formatNumber(account.daily_limit)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Batch Size</p>
+                <p className="text-sm font-medium">{account.batch_size}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Send Delay</p>
+                <p className="text-sm font-medium">{account.send_delay_ms}ms</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Created</p>
+                <p className="text-sm font-medium">
+                  {format(new Date(account.created_at), 'MMM dd, yyyy')}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Last Used</p>
+                <p className="text-sm font-medium">
+                  {account.last_used_at
+                    ? format(new Date(account.last_used_at), 'MMM dd, yyyy')
+                    : 'Never'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-        {/* 30-Day Stats */}
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : stats ? (
-          <>
-            <Typography variant="subtitle2" gutterBottom>
-              30-Day Performance
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Total Sent
-                  </Typography>
-                  <Typography variant="h6">{formatNumber(Number(stats.total_sent))}</Typography>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Successful
-                  </Typography>
-                  <Typography variant="h6" color="success.main">
-                    {formatNumber(Number(stats.successful))}
-                  </Typography>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Failed
-                  </Typography>
-                  <Typography variant="h6" color="error.main">
-                    {formatNumber(Number(stats.failed))}
-                  </Typography>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Opens
-                  </Typography>
-                  <Typography variant="h6">{formatNumber(Number(stats.total_opens))}</Typography>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Clicks
-                  </Typography>
-                  <Typography variant="h6">{formatNumber(Number(stats.total_clicks))}</Typography>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Avg Response Time
-                  </Typography>
-                  <Typography variant="h6">
-                    {stats.avg_response_time
-                      ? `${Math.round(Number(stats.avg_response_time))}ms`
-                      : 'N/A'}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Box>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : stats ? (
+            <>
+              <div>
+                <h4 className="text-sm font-semibold mb-3">30-Day Performance</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Total Sent</p>
+                      <p className="text-2xl font-bold">{formatNumber(Number(stats.total_sent))}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Successful</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {formatNumber(Number(stats.successful))}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Failed</p>
+                      <p className="text-2xl font-bold text-red-600">
+                        {formatNumber(Number(stats.failed))}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Opens</p>
+                      <p className="text-2xl font-bold">{formatNumber(Number(stats.total_opens))}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Clicks</p>
+                      <p className="text-2xl font-bold">{formatNumber(Number(stats.total_clicks))}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-xs text-muted-foreground">Avg Response Time</p>
+                      <p className="text-2xl font-bold">
+                        {stats.avg_response_time
+                          ? `${Math.round(Number(stats.avg_response_time))}ms`
+                          : 'N/A'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
 
-            {/* Chart */}
-            <Typography variant="subtitle2" gutterBottom>
-              Activity Timeline
-            </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="sent" stroke="#8884d8" name="Sent" />
-                <Line type="monotone" dataKey="opens" stroke="#82ca9d" name="Opens" />
-                <Line type="monotone" dataKey="clicks" stroke="#ffc658" name="Clicks" />
-              </LineChart>
-            </ResponsiveContainer>
-          </>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            No statistics available for this account.
-          </Typography>
-        )}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Activity Timeline</h4>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="sent" stroke="#8884d8" name="Sent" />
+                    <Line type="monotone" dataKey="opens" stroke="#82ca9d" name="Opens" />
+                    <Line type="monotone" dataKey="clicks" stroke="#ffc658" name="Clicks" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No statistics available for this account.
+            </p>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
     </Dialog>
   );
 }
