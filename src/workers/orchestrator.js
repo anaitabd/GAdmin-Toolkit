@@ -206,6 +206,44 @@ class Orchestrator {
     return stats;
   }
 
+  getWorkerStatus(accountId) {
+    const workerInfo = this.workers.get(accountId);
+    if (!workerInfo) {
+      return null;
+    }
+
+    return {
+      accountId,
+      pid: workerInfo.process.pid,
+      status: workerInfo.status,
+      uptime: Date.now() - workerInfo.startedAt,
+      startedAt: new Date(workerInfo.startedAt).toISOString(),
+      restarts: workerInfo.restarts.length,
+      lastRestart: workerInfo.restarts.length > 0 
+        ? new Date(workerInfo.restarts[workerInfo.restarts.length - 1]).toISOString() 
+        : null
+    };
+  }
+
+  getActiveWorkers() {
+    const workers = [];
+    for (const [accountId, workerInfo] of this.workers.entries()) {
+      workers.push({
+        accountId,
+        status: workerInfo.status,
+        uptime: Date.now() - workerInfo.startedAt
+      });
+    }
+    return workers;
+  }
+
+  async restartWorker(accountId) {
+    await this.stopWorker(accountId);
+    // Wait a bit before restarting
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await this.startWorker(accountId);
+  }
+
   async stop() {
     logger.info('Orchestrator stopping...');
     this.running = false;
@@ -234,6 +272,9 @@ class Orchestrator {
 
 if (require.main === module) {
   const orchestrator = new Orchestrator();
+  
+  // Export orchestrator instance for API routes
+  module.exports.orchestratorInstance = orchestrator;
 
   process.on('SIGINT', async () => {
     logger.info('Received SIGINT, shutting down orchestrator...');

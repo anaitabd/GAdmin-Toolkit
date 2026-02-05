@@ -14,6 +14,13 @@ const queueRoutes = require('./routes/queue');
 const analyticsRoutes = require('./routes/analytics');
 const trackingRoutes = require('./routes/tracking');
 const gsuiteRoutes = require('./routes/gsuiteManagement');
+const ec2Routes = require('./routes/ec2');
+const dnsRoutes = require('./routes/dns');
+const sslRoutes = require('./routes/ssl');
+const vpsRoutes = require('./routes/vps');
+const workersRoutes = require('./routes/workers');
+const trackingDomainsRoutes = require('./routes/trackingDomains');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,9 +53,16 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/accounts', apiLimiter, accountsRoutes);
 app.use('/api/campaigns', apiLimiter, campaignsRoutes);
+app.use('/api/campaigns', apiLimiter, ec2Routes);
+app.use('/api/campaigns', apiLimiter, dnsRoutes);
+app.use('/api/campaigns', apiLimiter, sslRoutes);
+app.use('/api/campaigns', apiLimiter, vpsRoutes);
 app.use('/api/queue', apiLimiter, queueRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
 app.use('/api/gsuite', apiLimiter, gsuiteRoutes);
+app.use('/api/workers', apiLimiter, workersRoutes);
+app.use('/api/tracking-domains', apiLimiter, trackingDomainsRoutes);
+app.use('/api/settings', apiLimiter, settingsRoutes);
 app.use('/track', trackingRoutes);
 
 app.use((req, res) => {
