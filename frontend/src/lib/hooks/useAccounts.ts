@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountsApi } from '@/lib/api/accounts';
-import { useSnackbar } from 'notistack';
+import { toast } from 'sonner';
 
 export function useAccounts() {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
 
   const accountsQuery = useQuery({
     queryKey: ['accounts'],
@@ -15,10 +14,10 @@ export function useAccounts() {
     mutationFn: accountsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      enqueueSnackbar('Account created successfully', { variant: 'success' });
+      toast.success('Account created successfully');
     },
     onError: (error: Error) => {
-      enqueueSnackbar(error.message, { variant: 'error' });
+      toast.error(error.message);
     },
   });
 
@@ -27,10 +26,10 @@ export function useAccounts() {
       accountsApi.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      enqueueSnackbar('Account updated successfully', { variant: 'success' });
+      toast.success('Account updated successfully');
     },
     onError: (error: Error) => {
-      enqueueSnackbar(error.message, { variant: 'error' });
+      toast.error(error.message);
     },
   });
 
@@ -38,10 +37,10 @@ export function useAccounts() {
     mutationFn: accountsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      enqueueSnackbar('Account deleted successfully', { variant: 'success' });
+      toast.success('Account deleted successfully');
     },
     onError: (error: Error) => {
-      enqueueSnackbar(error.message, { variant: 'error' });
+      toast.error(error.message);
     },
   });
 
