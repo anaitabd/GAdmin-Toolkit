@@ -45,18 +45,36 @@ This project is a full automation suite designed to manage users in Google Works
 
 ### 1. Install Dependencies
 
-**Node.js**
+**Backend (Node.js)**
 ```bash
 cd main/api
 npm install
 ```
 
-**Python**
+**Frontend (Node.js)**
+```bash
+cd frontend
+npm install
+```
+
+**Python Scripts (Optional)**
 ```bash
 pip install -r py/requirement.txt
 ```
 
-### 2. Google API Credentials
+### 2. Database Setup
+
+The system uses SQLite for storing configurations, credentials, and G Suite accounts.
+
+**Initialize Database:**
+```bash
+cd main/api
+node -e "require('./db').getDatabase()"
+```
+
+This will create the database at `main/api/data/gadmin.db` with the required schema.
+
+### 3. Google API Credentials
 
 #### Option A: File-based (Traditional)
 Add your Google API credentials:
@@ -64,14 +82,15 @@ Add your Google API credentials:
 - Configure `.env` with your settings
 
 #### Option B: Database-based (Recommended for multiple accounts)
-1. Initialize the database:
+1. Initialize the database (see step 2 above)
+
+2. Migrate existing credentials:
 ```bash
 cd main/api
 node db/migrate.js migrate
 ```
 
-2. Import credentials via API or migration script
-3. See [Database Documentation](docs/DATABASE.md) for complete setup guide
+3. Or add credentials via the API or web UI
 
 **Database Features:**
 - ✅ Manage multiple Google Service Account credentials
@@ -79,6 +98,62 @@ node db/migrate.js migrate
 - ✅ Dynamic configuration management
 - ✅ API endpoints for CRUD operations
 - ✅ Support for credential rotation
+- ✅ Geographic-based account selection
+
+### 4. Configure Environment
+
+Create or update `main/api/.env`:
+```bash
+# Server
+PORT=3000
+
+# Google Admin / service account (fallback if database not used)
+ADMIN_EMAIL=admin@example.com
+CRED_PATH=./cred.json
+DEFAULT_DOMAIN=example.com
+
+# API Authentication
+API_KEY=your-secure-api-key-here
+
+# Database mode (set to 'true' to use database)
+USE_DATABASE=true
+```
+
+### 5. Start the Application
+
+**Using Docker (Recommended):**
+```bash
+# Build and start all services
+./run.sh up
+
+# Or use docker-compose directly
+docker-compose up --build
+```
+
+The application will be available at:
+- Frontend: http://localhost:3000
+- API: http://localhost:3001/api
+
+**Without Docker:**
+
+Backend:
+```bash
+cd main/api
+npm start
+```
+
+Frontend (development):
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend (production build):
+```bash
+cd frontend
+npm run build
+npm run preview
+```
 
 ---
 
@@ -137,32 +212,64 @@ Please submit a pull request or open an issue for enhancements or bug fixes.
 
 ---
 
-## Docker (frontend + API)
+## Docker (Frontend + API)
 
-Le repo inclut un `docker-compose.yml` qui lance :
-- **API** (Express) sur `http://localhost:3001/api`
-- **Frontend** (Vite build + Nginx) sur `http://localhost:3000`
+The repository includes a `docker-compose.yml` that launches:
+- **API** (Express) on `http://localhost:3001/api`
+- **Frontend** (React + Vite + Nginx) on `http://localhost:3000`
 
-### Commandes
+### Commands
 
-- Build images :
-	- `./run.sh build`
-- Démarrer :
-	- `./run.sh up`
-- Stopper :
-	- `./run.sh down`
+- Build images:
+  ```bash
+  ./run.sh build
+  ```
+- Start services:
+  ```bash
+  ./run.sh up
+  ```
+- Stop services:
+  ```bash
+  ./run.sh down
+  ```
 
-### Configuration `VITE_API_BASE_URL`
+### Configuration
 
-Le frontend est compilé (Vite) **au build Docker**. Pour changer l’URL de l’API :
-- `VITE_API_BASE_URL=http://localhost:3001/api ./run.sh build`
+#### VITE_API_BASE_URL
 
-Par défaut, `docker-compose.yml` utilise `http://localhost:3001/api`.
+The frontend is compiled (Vite) at Docker build time. To change the API URL:
+```bash
+VITE_API_BASE_URL=http://localhost:3001/api ./run.sh build
+```
 
-### API Key (frontend)
+By default, `docker-compose.yml` uses `http://localhost:3001/api`.
 
-La clé API est envoyée dans le header `x-api-key`.
-- Elle se configure dans l’UI via la page **Settings** (stockage `localStorage`).
-- Le champ est masqué (`type=password`) et la clé n’est pas loggée en console.
+#### API Key (Frontend)
 
-⸻
+The API key is sent in the `x-api-key` header.
+- Configure it in the UI via the **Settings** page (stored in `localStorage`)
+- The field is masked (`type=password`) and the key is not logged to console
+
+### Frontend Features
+
+**Dashboard:**
+- System overview with statistics
+- Geographical distribution of accounts
+- Domain distribution
+
+**Credentials Management:**
+- Add, view, and manage Google Service Account credentials
+- Activate/deactivate credentials
+- Secure storage in database
+
+**G Suite Accounts:**
+- Add and manage G Suite accounts with geographical data
+- Filter accounts by country
+- Associate accounts with credentials
+- Configure quota limits and request rates per account
+
+**Settings:**
+- Configure API key
+- View system configuration
+- Health check status
+
