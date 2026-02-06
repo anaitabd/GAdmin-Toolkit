@@ -1,18 +1,52 @@
 # Quick Start Guide: Database-Based Credential Management
 
-This guide will help you quickly set up and start using the new database-based credential management system.
+This guide will help you quickly set up and start using the database-based credential management system with both the API and Web UI.
 
 ## Prerequisites
 
-- Node.js installed
+- Node.js 18+ installed
+- Docker and Docker Compose (optional, for containerized deployment)
 - Google Service Account credentials (cred.json)
 - Admin access to G Suite / Google Workspace
 
+## Step 1: Choose Your Deployment Method
+
+### Option A: Docker (Recommended)
+
+The easiest way to get started with both frontend and backend:
+
+```bash
+# Clone the repository
+git clone https://github.com/anaitabd/GAdmin-Toolkit.git
+cd GAdmin-Toolkit
+
+# Build and start all services
+./run.sh up
+```
+
+Your application will be available at:
+- **Frontend (Web UI)**: http://localhost:3000
+- **API**: http://localhost:3001/api
+
+Skip to **Step 4: Configure the Web UI** below.
+
+### Option B: Manual Setup (Development)
+
+If you prefer to run services separately for development:
+
 ## Step 1: Install Dependencies
 
+**Backend:**
 ```bash
 cd main/api
 npm install
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+cd ..
 ```
 
 ## Step 2: Enable Database Mode
@@ -45,16 +79,66 @@ Migrating .env configuration...
 Migration complete!
 ```
 
-## Step 4: Start the API Server
+## Step 4: Start the Servers
 
+**Backend (API):**
 ```bash
 cd main/api
 npm start
 ```
 
-The server will start on port 3000 (or the port specified in your config).
+The API server will start on port 3000.
 
-## Step 5: Test the API
+**Frontend (in a new terminal):**
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend will start on port 5173.
+
+Access the application:
+- **Frontend**: http://localhost:5173
+- **API**: http://localhost:3000/api
+
+## Step 5: Configure the Web UI
+
+1. Open http://localhost:5173 (or http://localhost:3000 if using Docker)
+2. Go to the **Settings** page
+3. Enter your API key (from the `.env` file's `API_KEY` variable)
+4. Click **Save API Key**
+5. You should see a green checkmark indicating successful connection
+
+## Step 6: Explore the Web UI
+
+The Web UI provides an easy interface to manage your system:
+
+### Dashboard
+- View system statistics (credentials, accounts, geographical distribution)
+- See domain distribution charts
+- Monitor active vs inactive resources
+
+### Credentials Page
+- View all Google Service Account credentials
+- Add new credentials with a simple form
+- Activate/deactivate or delete credentials
+
+### G Suite Accounts Page
+- View all G Suite accounts with their geographical information
+- Filter accounts by country
+- Add new accounts and associate them with credentials
+- Configure quota limits and request rates per account
+
+### Settings Page
+- Configure your API key
+- View system configurations
+- Check API connection status
+
+## Alternative: Test with API Only
+
+## Alternative: Test with API Only
+
+If you prefer to use the API directly without the Web UI:
 
 Test with curl (replace `your-api-key` with the API_KEY from your .env):
 
