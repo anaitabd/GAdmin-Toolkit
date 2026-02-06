@@ -29,7 +29,6 @@ const config = {
   defaultDomain: getDbConfig('default_domain', process.env.DEFAULT_DOMAIN, null),
   quotaLimit: Number(getDbConfig('quota_limit', process.env.QUOTA_LIMIT, 1200000)),
   requestsPerEmail: Number(getDbConfig('requests_per_email', process.env.REQUESTS_PER_EMAIL, 300)),
-  // New: support for database mode
   useDatabase: getDbConfig('use_database', process.env.USE_DATABASE, 'true') === 'true',
 };
 
