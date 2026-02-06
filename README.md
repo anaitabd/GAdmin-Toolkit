@@ -2,6 +2,8 @@
 
 This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python.
 
+**NEW**: Now supports database-based credential management for handling multiple G Suite accounts with geographical data. See [Database Documentation](docs/DATABASE.md) for details.
+
 ---
 
 ## Project Structure
@@ -45,19 +47,40 @@ This project is a full automation suite designed to manage users in Google Works
 
 **Node.js**
 ```bash
-cd main
+cd main/api
 npm install
+```
 
-Python
-
+**Python**
+```bash
 pip install -r py/requirement.txt
+```
 
-2. Google API Credentials
+### 2. Google API Credentials
 
+#### Option A: File-based (Traditional)
 Add your Google API credentials:
-	•	Place your cred.json file in the main/api/ directory.
+- Place your `cred.json` file in the `main/api/` directory.
+- Configure `.env` with your settings
 
-⸻
+#### Option B: Database-based (Recommended for multiple accounts)
+1. Initialize the database:
+```bash
+cd main/api
+node db/migrate.js migrate
+```
+
+2. Import credentials via API or migration script
+3. See [Database Documentation](docs/DATABASE.md) for complete setup guide
+
+**Database Features:**
+- ✅ Manage multiple Google Service Account credentials
+- ✅ Store G Suite accounts with geographical data
+- ✅ Dynamic configuration management
+- ✅ API endpoints for CRUD operations
+- ✅ Support for credential rotation
+
+---
 
 🚀 Usage
 
