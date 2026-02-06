@@ -110,6 +110,110 @@ node db/migrate.js import /path/to/cred.json credential-name
 
 All endpoints require authentication via the `x-api-key` header.
 
+### Statistics Endpoints
+
+#### GET `/api/stats`
+Get system statistics including credential counts, account counts, and geographical distribution.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "credentials": {
+      "active": 2,
+      "total": 3,
+      "inactive": 1
+    },
+    "gsuiteAccounts": {
+      "active": 5,
+      "total": 7,
+      "inactive": 2
+    },
+    "geographicalDistribution": [
+      { "country": "US", "count": 3 },
+      { "country": "FR", "count": 2 }
+    ],
+    "domainDistribution": [
+      { "domain": "example.com", "count": 3 },
+      { "domain": "test.com", "count": 2 }
+    ]
+  }
+}
+```
+
+#### GET `/api/stats/countries`
+Get all available countries with account counts.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    { "country": "US", "account_count": 3 },
+    { "country": "FR", "account_count": 2 }
+  ]
+}
+```
+
+### Account Selection Endpoints
+
+#### POST `/api/account-selection/select`
+Select the best G Suite account based on criteria.
+
+**Request body:**
+```json
+{
+  "country": "US",
+  "region": "California",
+  "domain": "example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "credential_id": 1,
+    "admin_email": "admin@example.com",
+    "domain": "example.com",
+    "country": "US",
+    "region": "California",
+    "quota_limit": 1200000,
+    "credential_name": "us-west-cred"
+  }
+}
+```
+
+#### POST `/api/account-selection/match`
+Get all G Suite accounts matching criteria.
+
+**Request body:**
+```json
+{
+  "country": "US",
+  "domain": "example.com"
+}
+```
+
+#### GET `/api/account-selection/:id/with-credentials`
+Get a G Suite account with full credential information (including private key).
+
+**Warning:** This endpoint returns sensitive credential data. Use with caution.
+
+#### POST `/api/account-selection/load-balanced`
+Get a load-balanced G Suite account for the given criteria.
+
+**Request body:**
+```json
+{
+  "country": "US",
+  "domain": "example.com"
+}
+```
+
 ### Configuration Endpoints
 
 #### GET `/api/configs`

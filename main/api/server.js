@@ -15,6 +15,8 @@ const emailsRoutes = require('./routes/emails');
 const credentialsRoutes = require('./routes/credentials');
 const configsRoutes = require('./routes/configs');
 const gsuiteAccountsRoutes = require('./routes/gsuiteAccounts');
+const statsRoutes = require('./routes/stats');
+const accountSelectionRoutes = require('./routes/accountSelection');
 const { setIo } = require('./socket');
 
 function createApp() {
@@ -46,6 +48,8 @@ function createApp() {
   app.use('/api/credentials', credentialsRoutes);
   app.use('/api/configs', configsRoutes);
   app.use('/api/gsuite-accounts', gsuiteAccountsRoutes);
+  app.use('/api/stats', statsRoutes);
+  app.use('/api/account-selection', accountSelectionRoutes);
 
   // Error handler (must be last)
   app.use(errorHandler);
