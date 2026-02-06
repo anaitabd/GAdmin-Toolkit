@@ -12,6 +12,9 @@ const { errorHandler } = require('./middleware/errorHandler');
 const usersRoutes = require('./routes/users');
 const generateRoutes = require('./routes/generate');
 const emailsRoutes = require('./routes/emails');
+const credentialsRoutes = require('./routes/credentials');
+const configsRoutes = require('./routes/configs');
+const gsuiteAccountsRoutes = require('./routes/gsuiteAccounts');
 const { setIo } = require('./socket');
 
 function createApp() {
@@ -40,6 +43,9 @@ function createApp() {
   app.use('/api/users', usersRoutes);
   app.use('/api/generate', generateRoutes);
   app.use('/api/emails', emailsRoutes);
+  app.use('/api/credentials', credentialsRoutes);
+  app.use('/api/configs', configsRoutes);
+  app.use('/api/gsuite-accounts', gsuiteAccountsRoutes);
 
   // Error handler (must be last)
   app.use(errorHandler);

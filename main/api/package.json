@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "csv-writer": "^1.6.0",
@@ -18,7 +19,8 @@
     "express-rate-limit": "^7.5.0",
     "googleapis": "^156.0.0",
     "helmet": "^8.1.0",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "jest": "^29.7.0",
