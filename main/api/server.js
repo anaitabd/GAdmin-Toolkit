@@ -17,6 +17,8 @@ const bounceLogsRouter = require('./routes/bounceLogs');
 const credentialsRouter = require('./routes/credentials');
 const jobsRouter = require('./routes/jobs');
 const settingsRouter = require('./routes/settings');
+const adminUsersRouter = require('./routes/adminUsers');
+const campaignsRouter = require('./routes/campaigns');
 
 // Use routes
 app.use('/api/users', usersRouter);
@@ -29,6 +31,8 @@ app.use('/api/bounce-logs', bounceLogsRouter);
 app.use('/api/credentials', credentialsRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/admin-users', adminUsersRouter);
+app.use('/api/campaigns', campaignsRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -49,6 +53,8 @@ app.get('/', (req, res) => {
             credentials: '/api/credentials',
             jobs: '/api/jobs',
             settings: '/api/settings',
+            adminUsers: '/api/admin-users',
+            campaigns: '/api/campaigns',
             health: '/health'
         }
     });
