@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
-// Helper function to hash passwords (simple SHA-256 for demo purposes)
-const hashPassword = (password) => {
-    return crypto.createHash('sha256').update(password).digest('hex');
+// Salt rounds for bcrypt (10 is a good balance between security and performance)
+const SALT_ROUNDS = 10;
+
+// Helper function to hash passwords using bcrypt
+const hashPassword = async (password) => {
+    return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
 // GET all admin users
@@ -75,7 +78,7 @@ router.post('/', async (req, res, next) => {
             });
         }
 
-        const passwordHash = hashPassword(password);
+        const passwordHash = await hashPassword(password);
 
         const result = await query(
             'INSERT INTO admin_users (username, email, password_hash, full_name, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, full_name, role, active, created_at, updated_at',
@@ -114,7 +117,7 @@ router.put('/:id', async (req, res, next) => {
         }
 
         // Hash password if provided
-        const passwordHash = password ? hashPassword(password) : null;
+        const passwordHash = password ? await hashPassword(password) : null;
 
         const result = await query(
             `UPDATE admin_users 

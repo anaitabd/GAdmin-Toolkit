@@ -3,6 +3,9 @@ const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const { getActiveCredential } = require('./db/queries');
 
+// Configuration constants
+const EMAIL_SEND_DELAY_MS = 100; // Delay between emails to avoid rate limiting
+
 // Get campaign ID and provider from command line arguments
 const campaignId = parseInt(process.argv[2]);
 const provider = process.argv[3] || 'gmail_api';
@@ -177,7 +180,7 @@ async function processCampaign() {
             );
 
             // Small delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, EMAIL_SEND_DELAY_MS));
         }
 
         // Update campaign status

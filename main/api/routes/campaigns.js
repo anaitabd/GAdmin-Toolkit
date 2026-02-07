@@ -160,15 +160,11 @@ router.post('/', async (req, res, next) => {
                 });
             }
 
-            // Insert campaign recipients
-            const values = recipient_ids.map((rid, idx) => 
-                `($1, $${idx + 2}, 'pending')`
-            ).join(',');
-            
+            // Insert campaign recipients using unnest for efficient bulk insert
             await query(
                 `INSERT INTO campaign_recipients (campaign_id, email_data_id, status) 
-                VALUES ${values}`,
-                [campaign.id, ...recipient_ids]
+                SELECT $1, unnest($2::int[]), 'pending'`,
+                [campaign.id, recipient_ids]
             );
 
             // Update total_recipients count
@@ -319,26 +315,16 @@ router.post('/:id/recipients', async (req, res, next) => {
         }
 
         // Insert campaign recipients (ignore duplicates)
-        const added = [];
-        const duplicates = [];
+        const insertResult = await query(
+            `INSERT INTO campaign_recipients (campaign_id, email_data_id, status) 
+            SELECT $1, unnest($2::int[]), 'pending'
+            ON CONFLICT (campaign_id, email_data_id) DO NOTHING
+            RETURNING id`,
+            [id, recipient_ids]
+        );
 
-        for (const rid of recipient_ids) {
-            try {
-                const result = await query(
-                    `INSERT INTO campaign_recipients (campaign_id, email_data_id, status) 
-                    VALUES ($1, $2, 'pending') 
-                    RETURNING id`,
-                    [id, rid]
-                );
-                added.push(result.rows[0].id);
-            } catch (error) {
-                if (error.code === '23505') { // Unique violation
-                    duplicates.push(rid);
-                } else {
-                    throw error;
-                }
-            }
-        }
+        const added = insertResult.rows.length;
+        const duplicates = recipient_ids.length - added;
 
         // Update total_recipients count
         const countResult = await query(
@@ -354,8 +340,8 @@ router.post('/:id/recipients', async (req, res, next) => {
         res.json({ 
             success: true, 
             message: 'Recipients added to campaign',
-            added: added.length,
-            duplicates_skipped: duplicates.length,
+            added: added,
+            duplicates_skipped: duplicates,
             total_recipients: parseInt(countResult.rows[0].total)
         });
     } catch (error) {
