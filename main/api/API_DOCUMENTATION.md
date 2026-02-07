@@ -61,6 +61,7 @@ Response:
     "emailInfo": "/api/email-info",
     "emailTemplates": "/api/email-templates",
     "names": "/api/names",
+    "credentials": "/api/credentials",
     "emailLogs": "/api/email-logs (read-only)",
     "bounceLogs": "/api/bounce-logs (read-only)",
     "health": "/health"
@@ -388,6 +389,129 @@ Deletes a name record by ID.
 
 ---
 
+## Credentials API
+
+Manage Google API credentials stored in the database.
+
+### Get All Credentials
+
+**GET /api/credentials**
+
+Returns all credentials in the database.
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "google-workspace-creds",
+      "cred_json": {
+        "type": "service_account",
+        "project_id": "example-project",
+        "client_email": "service@example.iam.gserviceaccount.com",
+        "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+      },
+      "active": true,
+      "created_at": "2026-02-07T18:00:00.000Z",
+      "updated_at": "2026-02-07T18:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Get Active Credential
+
+**GET /api/credentials/active**
+
+Returns the currently active credential (most recent active record).
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "google-workspace-creds",
+    "cred_json": { ... },
+    "active": true,
+    "created_at": "2026-02-07T18:00:00.000Z",
+    "updated_at": "2026-02-07T18:00:00.000Z"
+  }
+}
+```
+
+### Get Credential by ID
+
+**GET /api/credentials/:id**
+
+Returns a specific credential by ID.
+
+### Create Credential
+
+**POST /api/credentials**
+
+Creates a new credential record.
+
+Request Body:
+```json
+{
+  "name": "google-workspace-creds",
+  "cred_json": {
+    "type": "service_account",
+    "project_id": "example-project",
+    "client_email": "service@example.iam.gserviceaccount.com",
+    "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+  },
+  "active": true
+}
+```
+
+Required fields:
+- `name` (string, unique) - A unique identifier for this credential
+- `cred_json` (object or string) - The credential JSON object
+
+Optional fields:
+- `active` (boolean, default: true) - Whether this credential is active
+
+**Note:** The `cred_json` field can be provided as either a JSON object or a JSON string. It will be validated and stored as JSONB in the database.
+
+### Update Credential
+
+**PUT /api/credentials/:id**
+
+Updates an existing credential. Only provided fields will be updated.
+
+Request Body:
+```json
+{
+  "active": false
+}
+```
+
+### Delete Credential
+
+**DELETE /api/credentials/:id**
+
+Deletes a credential by ID.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Credential deleted",
+  "data": {
+    "id": 1,
+    "name": "google-workspace-creds",
+    ...
+  }
+}
+```
+
+---
+
 ## Email Logs API (Read-Only)
 
 View email sending logs and statistics.
@@ -548,6 +672,25 @@ curl -X PUT http://localhost:3000/api/users/1 \
 
 # Delete a user
 curl -X DELETE http://localhost:3000/api/users/1
+
+# Get all credentials
+curl http://localhost:3000/api/credentials
+
+# Create a new credential
+curl -X POST http://localhost:3000/api/credentials \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-creds","cred_json":{"type":"service_account","project_id":"test"},"active":true}'
+
+# Get active credential
+curl http://localhost:3000/api/credentials/active
+
+# Update a credential
+curl -X PUT http://localhost:3000/api/credentials/1 \
+  -H "Content-Type: application/json" \
+  -d '{"active":false}'
+
+# Delete a credential
+curl -X DELETE http://localhost:3000/api/credentials/1
 ```
 
 ---
@@ -584,6 +727,30 @@ async function deleteUser(id) {
   const response = await axios.delete(`${API_BASE}/api/users/${id}`);
   return response.data;
 }
+
+// Get all credentials
+async function getCredentials() {
+  const response = await axios.get(`${API_BASE}/api/credentials`);
+  return response.data;
+}
+
+// Create a credential
+async function createCredential(credData) {
+  const response = await axios.post(`${API_BASE}/api/credentials`, credData);
+  return response.data;
+}
+
+// Update a credential
+async function updateCredential(id, credData) {
+  const response = await axios.put(`${API_BASE}/api/credentials/${id}`, credData);
+  return response.data;
+}
+
+// Delete a credential
+async function deleteCredential(id) {
+  const response = await axios.delete(`${API_BASE}/api/credentials/${id}`);
+  return response.data;
+}
 ```
 
 ### Python
@@ -611,6 +778,26 @@ def update_user(user_id, user_data):
 # Delete a user
 def delete_user(user_id):
     response = requests.delete(f'{API_BASE}/api/users/{user_id}')
+    return response.json()
+
+# Get all credentials
+def get_credentials():
+    response = requests.get(f'{API_BASE}/api/credentials')
+    return response.json()
+
+# Create a credential
+def create_credential(cred_data):
+    response = requests.post(f'{API_BASE}/api/credentials', json=cred_data)
+    return response.json()
+
+# Update a credential
+def update_credential(cred_id, cred_data):
+    response = requests.put(f'{API_BASE}/api/credentials/{cred_id}', json=cred_data)
+    return response.json()
+
+# Delete a credential
+def delete_credential(cred_id):
+    response = requests.delete(f'{API_BASE}/api/credentials/{cred_id}')
     return response.json()
 ```
 
