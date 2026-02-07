@@ -1,0 +1,72 @@
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Import route modules
+const usersRouter = require('./routes/users');
+const emailDataRouter = require('./routes/emailData');
+const emailInfoRouter = require('./routes/emailInfo');
+const emailTemplatesRouter = require('./routes/emailTemplates');
+const namesRouter = require('./routes/names');
+const emailLogsRouter = require('./routes/emailLogs');
+const bounceLogsRouter = require('./routes/bounceLogs');
+
+// Use routes
+app.use('/api/users', usersRouter);
+app.use('/api/email-data', emailDataRouter);
+app.use('/api/email-info', emailInfoRouter);
+app.use('/api/email-templates', emailTemplatesRouter);
+app.use('/api/names', namesRouter);
+app.use('/api/email-logs', emailLogsRouter);
+app.use('/api/bounce-logs', bounceLogsRouter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        message: 'GAdmin-Toolkit API',
+        version: '1.0.0',
+        endpoints: {
+            users: '/api/users',
+            emailData: '/api/email-data',
+            emailInfo: '/api/email-info',
+            emailTemplates: '/api/email-templates',
+            names: '/api/names',
+            emailLogs: '/api/email-logs (read-only)',
+            bounceLogs: '/api/bounce-logs (read-only)',
+            health: '/health'
+        }
+    });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
+});
+
+// Start server
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`API server running on port ${PORT}`);
+        console.log(`Visit http://localhost:${PORT} for API documentation`);
+    });
+}
+
+module.exports = app;
