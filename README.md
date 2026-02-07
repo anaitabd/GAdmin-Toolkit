@@ -7,6 +7,8 @@ This project is a full automation suite designed to manage users in Google Works
 ## ✨ Features
 
 - **REST API** - Complete CRUD operations for all database entities
+- **Campaign Management** - Create and manage multiple bulk email campaigns
+- **Admin User Management** - Multi-user support with role-based access
 - **Google Workspace Integration** - Automated user creation and management
 - **Email Automation** - Bulk email sending with Gmail API and SMTP support
 - **Database Management** - PostgreSQL backend with comprehensive schema
@@ -18,7 +20,9 @@ This project is a full automation suite designed to manage users in Google Works
 
 - **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
 - **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
+- **[Campaign Management Guide](main/api/CAMPAIGNS_DOCUMENTATION.md)** - Bulk campaign system guide
 - **[Test Script](main/api/test-api.sh)** - Test all API endpoints
+- **[Campaign Test Script](main/api/test-campaigns.sh)** - Test campaign endpoints
 
 ---
 
@@ -166,6 +170,26 @@ The API will be available at `http://localhost:3000` (or custom PORT env var).
 - `POST /api/email-send/bulk-recipients` - Add email recipients in bulk
 - `GET /api/email-send/status` - Get email sending statistics and recent logs
 
+**Admin Users** (`/api/admin-users`)
+- `GET /api/admin-users` - Get all admin users
+- `GET /api/admin-users/active` - Get active admin users
+- `GET /api/admin-users/:id` - Get admin user by ID
+- `POST /api/admin-users` - Create new admin user
+- `PUT /api/admin-users/:id` - Update admin user
+- `DELETE /api/admin-users/:id` - Delete admin user
+
+**Campaigns** (`/api/campaigns`)
+- `GET /api/campaigns` - Get all campaigns (supports filtering: `?status=`, `?created_by=`)
+- `GET /api/campaigns/:id` - Get campaign by ID with statistics
+- `POST /api/campaigns` - Create new campaign
+- `PUT /api/campaigns/:id` - Update campaign
+- `DELETE /api/campaigns/:id` - Delete campaign
+- `POST /api/campaigns/:id/recipients` - Add recipients to campaign
+- `GET /api/campaigns/:id/recipients` - Get campaign recipients
+- `POST /api/campaigns/:id/execute` - Execute campaign (send emails)
+- `GET /api/campaigns/:id/stats` - Get campaign statistics
+- `GET /api/email-send/status` - Get email sending statistics and recent logs
+
 ### Option 2: Run All Scripts
 
 Use the automated script.sh to:
@@ -199,6 +223,70 @@ node main/api/delete.js
 ```bash
 python py/activateLessSecureApp.py
 ```
+
+---
+
+## 📧 Campaign Management
+
+The toolkit includes a comprehensive campaign management system for organizing and executing bulk email campaigns.
+
+### Key Features
+
+- **Multi-Campaign Support**: Create and manage multiple campaigns simultaneously
+- **Admin User Management**: Assign campaigns to different admin users with role-based access
+- **Flexible Configuration**: Select sender users, email info, templates, and recipients per campaign
+- **Progress Tracking**: Monitor campaign execution with detailed statistics
+- **Background Processing**: Campaigns execute in the background without blocking
+
+### Quick Start
+
+1. **Create an Admin User**
+```bash
+curl -X POST http://localhost:3000/api/admin-users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "campaignmanager",
+    "email": "manager@example.com",
+    "password": "SecurePass123",
+    "full_name": "Campaign Manager",
+    "role": "admin"
+  }'
+```
+
+2. **Create a Campaign**
+```bash
+curl -X POST http://localhost:3000/api/campaigns \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "February Newsletter",
+    "description": "Monthly newsletter",
+    "created_by": 1,
+    "user_id": 5,
+    "email_info_id": 2,
+    "email_template_id": 3
+  }'
+```
+
+3. **Add Recipients**
+```bash
+curl -X POST http://localhost:3000/api/campaigns/1/recipients \
+  -H "Content-Type: application/json" \
+  -d '{"recipient_ids": [1, 2, 3, 4, 5]}'
+```
+
+4. **Execute Campaign**
+```bash
+curl -X POST http://localhost:3000/api/campaigns/1/execute \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "gmail_api"}'
+```
+
+5. **Monitor Progress**
+```bash
+curl http://localhost:3000/api/campaigns/1/stats
+```
+
+For detailed documentation, see [Campaign Management Guide](main/api/CAMPAIGNS_DOCUMENTATION.md).
 
 ⸻
 
