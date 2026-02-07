@@ -1,6 +1,24 @@
 # Google Workspace Automation Toolkit
 
-This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python.
+This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python, plus a comprehensive REST API for database management.
+
+---
+
+## ✨ Features
+
+- **REST API** - Complete CRUD operations for all database entities
+- **Google Workspace Integration** - Automated user creation and management
+- **Email Automation** - Bulk email sending with Gmail API and SMTP support
+- **Database Management** - PostgreSQL backend with comprehensive schema
+- **Python Utilities** - Additional tools for email processing and validation
+
+---
+
+## 📚 Documentation
+
+- **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
+- **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
+- **[Test Script](main/api/test-api.sh)** - Test all API endpoints
 
 ---
 
