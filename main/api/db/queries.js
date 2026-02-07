@@ -138,6 +138,43 @@ const upsertSetting = async (key, value) => {
     );
 };
 
+// ── Admin Users ────────────────────────────────────────────────────
+const getAdminUsers = async () => {
+    const result = await query(
+        'SELECT id, username, email, full_name, role, active FROM admin_users WHERE active = true ORDER BY username'
+    );
+    return result.rows;
+};
+
+const getAdminUserById = async (id) => {
+    const result = await query(
+        'SELECT id, username, email, full_name, role, active FROM admin_users WHERE id = $1',
+        [id]
+    );
+    return result.rows[0] || null;
+};
+
+// ── Campaigns ──────────────────────────────────────────────────────
+const getCampaigns = async (status = null) => {
+    let queryText = 'SELECT * FROM campaigns';
+    const params = [];
+    
+    if (status) {
+        params.push(status);
+        queryText += ' WHERE status = $1';
+    }
+    
+    queryText += ' ORDER BY created_at DESC';
+    
+    const result = await query(queryText, params);
+    return result.rows;
+};
+
+const getCampaignById = async (id) => {
+    const result = await query('SELECT * FROM campaigns WHERE id = $1', [id]);
+    return result.rows[0] || null;
+};
+
 module.exports = {
     getUsers,
     getEmailData,
@@ -155,4 +192,8 @@ module.exports = {
     getSetting,
     getAllSettings,
     upsertSetting,
+    getAdminUsers,
+    getAdminUserById,
+    getCampaigns,
+    getCampaignById,
 };
