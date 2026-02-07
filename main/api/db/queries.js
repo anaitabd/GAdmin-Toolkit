@@ -67,6 +67,20 @@ const getNames = async () => {
     return result.rows;
 };
 
+const getActiveCredential = async () => {
+    const result = await query(
+        'SELECT id, name, cred_json FROM credentials WHERE active = true ORDER BY updated_at DESC LIMIT 1'
+    );
+    return result.rows[0] || null;
+};
+
+const getCredentials = async () => {
+    const result = await query(
+        'SELECT id, name, cred_json, active FROM credentials ORDER BY id'
+    );
+    return result.rows;
+};
+
 module.exports = {
     getUsers,
     getEmailData,
@@ -75,4 +89,6 @@ module.exports = {
     insertEmailLog,
     insertBounceLog,
     getNames,
+    getActiveCredential,
+    getCredentials,
 };

@@ -60,7 +60,18 @@ CREATE TABLE IF NOT EXISTS names (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS credentials (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    cred_json JSONB NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_email_data_to_email ON email_data(to_email);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
+CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
+CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
