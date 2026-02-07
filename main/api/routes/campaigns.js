@@ -4,6 +4,9 @@ const { query } = require('../db');
 const { fork } = require('child_process');
 const path = require('path');
 
+// In-memory tracking of running campaigns to prevent duplicate executions
+const runningCampaigns = new Set();
+
 // GET all campaigns
 router.get('/', async (req, res, next) => {
     try {
@@ -384,6 +387,14 @@ router.post('/:id/execute', async (req, res, next) => {
         const { id } = req.params;
         const { provider = 'gmail_api' } = req.body;
 
+        // Rate limiting: Check if campaign is already being executed
+        if (runningCampaigns.has(parseInt(id))) {
+            return res.status(429).json({
+                success: false,
+                error: 'Campaign execution already in progress. Please wait for it to complete.'
+            });
+        }
+
         // Validate provider
         if (!['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ 
@@ -435,6 +446,9 @@ router.post('/:id/execute', async (req, res, next) => {
             });
         }
 
+        // Add to running campaigns set for rate limiting
+        runningCampaigns.add(parseInt(id));
+
         // Update campaign status to running
         await query(
             `UPDATE campaigns 
@@ -465,8 +479,16 @@ router.post('/:id/execute', async (req, res, next) => {
             detached: true,
             stdio: 'ignore',
         });
+        
+        // Remove from running set when child process exits
+        child.on('exit', () => {
+            runningCampaigns.delete(parseInt(id));
+        });
+        
         child.unref();
     } catch (error) {
+        // Clean up on error
+        runningCampaigns.delete(parseInt(req.params.id));
         next(error);
     }
 });
