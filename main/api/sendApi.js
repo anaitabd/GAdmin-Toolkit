@@ -1,14 +1,14 @@
 const { google } = require('googleapis');
-const csv = require('csv-parser');
-const fs = require('fs');
-const privateKey = require('./cred.json');
 const axios = require('axios');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
-const logFile = 'email_logs.txt';
-
-// Redirect console output to a file
-const logStream = fs.createWriteStream(logFile, { flags: 'a' });
-const logConsole = new console.Console(logStream);
+const {
+    getUsers,
+    getEmailData,
+    getActiveEmailInfo,
+    getActiveEmailTemplate,
+    insertEmailLog,
+} = require('./db/queries');
+const { loadGoogleCreds } = require('./googleCreds');
 
 // Constants for email sending configuration
 const QUOTA_LIMIT = 1200000;
@@ -48,9 +48,13 @@ const createMimeMessage = (user, to, from, subject, htmlContent) => {
 };
 
 // Function to send email using Google APIs
-const sendEmail = async (user, to, from, subject, htmlContent) => {
+const sendEmail = async (creds, user, to, from, subject, htmlContent, messageIndex) => {
     const jwtClient = new google.auth.JWT(
-        privateKey.client_email, null, privateKey.private_key, ['https://mail.google.com/'], user
+        creds.client_email,
+        null,
+        creds.private_key,
+        ['https://mail.google.com/'],
+        user
     );
 
     const tokens = await jwtClient.authorize();
@@ -68,28 +72,28 @@ const sendEmail = async (user, to, from, subject, htmlContent) => {
     try {
         await axios.post(url, data, { headers });
         await successfulEmails++;
-        await logConsole.log(`User: ${user}, To: ${to}, Message sent: ${successfulEmails}, Date-Time: ${new Date().toLocaleString('en-US', { hour12: false })}`);
-        await console.log(successfulEmails)
+        await insertEmailLog({
+            userEmail: user,
+            toEmail: to,
+            messageIndex,
+            status: 'sent',
+            provider: 'gmail_api',
+            errorMessage: null,
+            sentAt: new Date(),
+        });
+        await console.log(successfulEmails);
     } catch (error) {
+        await insertEmailLog({
+            userEmail: user,
+            toEmail: to,
+            messageIndex,
+            status: 'failed',
+            provider: 'gmail_api',
+            errorMessage: error && error.message ? error.message : 'send failed',
+            sentAt: new Date(),
+        });
         console.error('Failed to send email:');
     }
-};
-
-// Function to read CSV file and parse its contents
-const readCsv = async (filePath) => {
-    const items = [];
-    await new Promise(resolve => {
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on('data', (row) => {
-                items.push(row);
-            })
-            .on('end', () => {
-                console.log(`${filePath} successfully processed, ${items.length} items`);
-                resolve(items);
-            });
-    });
-    return items;
 };
 
 // Function to introduce delay for rate limiting
@@ -98,12 +102,15 @@ const sleep = (ms) => {
 };
 
 const sendEmails = async () => {
-    const users = await readCsv('../../files/users.csv');
-    const data = await readCsv('../../files/data.csv');
-    const info = await readCsv('../../files/info.csv');
-    const htmlContent = fs.readFileSync('../../files/html.txt', 'utf8').trim();
-    const names = await readCsv('../../files/names.csv')
-    const { from, subject } = info[0];
+    const users = await getUsers();
+    const data = await getEmailData();
+    const info = await getActiveEmailInfo();
+    const template = await getActiveEmailTemplate();
+    if (!info || !template) {
+        throw new Error('Missing active email_info or email_templates in DB');
+    }
+    const { from_name: from, subject } = info;
+    const htmlContent = template.html_content;
 
 
     const emailsPerWorker = Math.ceil(data.length / Math.ceil(users.length / 100));
@@ -140,20 +147,27 @@ const main = async() => {
     // If running as a worker thread, execute the email sending logic
     if (!isMainThread) {
         const { users, data, htmlContent, from, subject } = workerData;
+        const creds = await loadGoogleCreds();
         // Process each user and send emails
         let index = 0;
+        let messageIndex = 0;
         for (let user of users) {
             for (let j = 0; j < REQUESTS_PER_EMAIL && index < data.length; j++) {
                 const emailData = data[index++];
-                console.log(emailData['to'])
+                console.log(emailData['to_email']);
                 
-                // Write the output to the log file
-                await sendEmail(user.email, emailData.to, from, subject, htmlContent);
+                await sendEmail(
+                    creds,
+                    user.email,
+                    emailData.to_email,
+                    from,
+                    subject,
+                    htmlContent,
+                    messageIndex++
+                );
                 await sleep(INTERVAL);
             }
         }
-        // Close the log file stream
-        logStream.end();
         parentPort.postMessage('Done');
     } else {
         sendEmails().catch(console.error);

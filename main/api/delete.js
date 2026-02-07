@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const privateKey = require('./cred.json');
+const { loadGoogleCreds } = require('./googleCreds');
 
 let usersToDelete = [];
 let deletedUsersCount = 0;
@@ -7,7 +7,8 @@ let totalUsersCount = 0;
 const adminEmail = "admin@decieodom.com";
 
 // Function to delete users in Google Admin
-const deleteUser = () => {
+const deleteUser = async () => {
+    const privateKey = await loadGoogleCreds();
     const jwtClient = new google.auth.JWT(
         privateKey.client_email,
         null,
@@ -97,4 +98,7 @@ const deleteUser = () => {
     });
 };
 
-deleteUser();
+deleteUser().catch((err) => {
+    console.error('Failed to delete users:', err);
+    process.exit(1);
+});

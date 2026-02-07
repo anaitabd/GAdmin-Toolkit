@@ -1,7 +1,6 @@
-const fs = require('fs');
-const csv = require('csv-parser');
 const { google } = require('googleapis');
-const privateKey = require('./cred.json');
+const { loadGoogleCreds } = require('./googleCreds');
+const { getUsers, insertBounceLog } = require('./db/queries');
 
 // Function to list messages matching a specific query
 function listMessages(query, jwtClient, callback) {
@@ -50,13 +49,13 @@ function getMessage(messageId, jwtClient, callback) {
 
 
 // Function to fetch messages from Mail Delivery Subsystem for a user
-function getMessagesFromMailDeliverySubsystem(user, callback) {
+function getMessagesFromMailDeliverySubsystem(creds, user, callback) {
     try {
         // Initialize Google JWT client
         const jwtClient = new google.auth.JWT(
-            privateKey.client_email,
+            creds.client_email,
             null,
-            privateKey.private_key,
+            creds.private_key,
             ['https://mail.google.com'],
             user // Specify the user's email address
         );
@@ -90,17 +89,18 @@ function getMessagesFromMailDeliverySubsystem(user, callback) {
 
 // Function to save a single bounced email to a file
 function saveBouncedEmail(email) {
-    const csvString = `${email}\n`;
-    fs.appendFileSync('bounced_emails.csv', csvString);
+    insertBounceLog({ email, reason: null }).catch((err) => {
+        console.error('Failed to insert bounce log:', err);
+    });
 }
 
 // Function to process each user
 // Function to process each user
-function processUsers(users) {
+function processUsers(creds, users) {
     for (let i = 0; i < users.length; i++) {
         const userEmail = users[i];
         console.log(`Processing user: ${userEmail}`);
-        getMessagesFromMailDeliverySubsystem(userEmail, (emails) => {
+        getMessagesFromMailDeliverySubsystem(creds, userEmail, (emails) => {
             if (emails.length > 0) {
                 console.log(`Found ${emails.length} messages for user: ${userEmail}`);
             } else {
@@ -112,18 +112,15 @@ function processUsers(users) {
 
 
 // Function to process CSV file and find bounced emails
-function processCSV(filePath) {
-    const users = [];
-    fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (row) => {
-            users.push(row.email);
-        })
-        .on('end', () => {
-            console.log(`Total ${users.length} users found.`);
-            processUsers(users);
-        });
+async function main() {
+    const creds = await loadGoogleCreds();
+    const users = await getUsers();
+    const emails = users.map((u) => u.email).filter(Boolean);
+    console.log(`Total ${emails.length} users found.`);
+    processUsers(creds, emails);
 }
 
-// Example usage: Replace 'user_list.csv' with the path to your CSV file
-processCSV('../../files/users.csv');
+main().catch((err) => {
+    console.error('Failed to process bounce logs:', err);
+    process.exit(1);
+});

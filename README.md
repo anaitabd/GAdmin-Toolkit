@@ -48,6 +48,10 @@ This project is a full automation suite designed to manage users in Google Works
 cd main
 npm install
 
+Database
+
+Create schema and import data (see one-liner below) after setting env vars.
+
 Python
 
 pip install -r py/requirement.txt
@@ -55,7 +59,23 @@ pip install -r py/requirement.txt
 2. Google API Credentials
 
 Add your Google API credentials:
-	•	Place your cred.json file in the main/api/ directory.
+	•	Store the JSON as base64 in `GOOGLE_CRED_JSON_B64`.
+	•	Optional: set `KMS_KEY_ID` to decrypt via Google KMS at runtime.
+
+⸻
+
+Database Setup (PostgreSQL)
+
+Required env vars:
+`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGSSL`
+
+Optional env vars:
+`GOOGLE_CRED_JSON_B64`, `KMS_KEY_ID`
+
+One-liner (schema + import):
+```bash
+psql "$PGDATABASE" -f main/api/db/schema.sql && node main/api/db/import.js
+```
 
 ⸻
 
