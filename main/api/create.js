@@ -1,17 +1,10 @@
-const fs = require('fs');
-const csv = require('csv-parser');
 const { google } = require('googleapis');
-const privateKey = require('./cred.json');
+const { loadGoogleCreds } = require('./googleCreds');
+const { getUsers } = require('./db/queries');
 
-const admin_user = "admin@decieodom.com";
+const admin_user = "contact@naitabdallah.dev";
 
-const jwtClient = new google.auth.JWT(
-    privateKey.client_email,
-    null,
-    privateKey.private_key,
-    ['https://www.googleapis.com/auth/admin.directory.user'],
-    admin_user
-);
+let jwtClient = null;
 
 function createUser(user, password, firstname, lastname, callback) {
     jwtClient.authorize(function (err, tokens) {
@@ -51,15 +44,17 @@ let queue = [];
 let isProcessing = false;
 let createdUsersCount = 0;
 
-fs.createReadStream('../../files/user_list.csv')
-    .pipe(csv())
-    .on('data', (row) => {
-        queue.push(row);
-    })
-    .on('end', () => {
-        console.log('CSV file successfully processed. Starting user creation...');
-        processQueue();
-    });
+const loadQueue = async () => {
+    const users = await getUsers();
+    queue = users.map((row) => ({
+        email: row.email,
+        password: row.password,
+        givenName: row.given_name,
+        familyName: row.family_name,
+    }));
+    console.log('DB users loaded. Starting user creation...');
+    processQueue();
+};
 
 function processQueue() {
     if (queue.length === 0) {
@@ -91,3 +86,20 @@ function processQueue() {
         processQueue();
     });
 }
+
+const main = async () => {
+    const privateKey = await loadGoogleCreds();
+    jwtClient = new google.auth.JWT(
+        privateKey.client_email,
+        null,
+        privateKey.private_key,
+        ['https://www.googleapis.com/auth/admin.directory.user'],
+        admin_user
+    );
+    await loadQueue();
+};
+
+main().catch((err) => {
+    console.error('Failed to start user creation:', err);
+    process.exit(1);
+});

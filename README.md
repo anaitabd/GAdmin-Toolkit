@@ -1,6 +1,24 @@
 # Google Workspace Automation Toolkit
 
-This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python.
+This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python, plus a comprehensive REST API for database management.
+
+---
+
+## ✨ Features
+
+- **REST API** - Complete CRUD operations for all database entities
+- **Google Workspace Integration** - Automated user creation and management
+- **Email Automation** - Bulk email sending with Gmail API and SMTP support
+- **Database Management** - PostgreSQL backend with comprehensive schema
+- **Python Utilities** - Additional tools for email processing and validation
+
+---
+
+## 📚 Documentation
+
+- **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
+- **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
+- **[Test Script](main/api/test-api.sh)** - Test all API endpoints
 
 ---
 
@@ -48,6 +66,10 @@ This project is a full automation suite designed to manage users in Google Works
 cd main
 npm install
 
+Database
+
+Create schema and import data (see one-liner below) after setting env vars.
+
 Python
 
 pip install -r py/requirement.txt
@@ -55,41 +77,121 @@ pip install -r py/requirement.txt
 2. Google API Credentials
 
 Add your Google API credentials:
-	•	Place your cred.json file in the main/api/ directory.
+	•	Store the JSON as base64 in `GOOGLE_CRED_JSON_B64`.
+	•	Optional: set `KMS_KEY_ID` to decrypt via Google KMS at runtime.
 
 ⸻
 
-🚀 Usage
+Database Setup (PostgreSQL)
 
-1. Run All Scripts (Recommended)
+Required env vars:
+`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGSSL`
+
+Optional env vars:
+`GOOGLE_CRED_JSON_B64`, `KMS_KEY_ID`
+
+One-liner (schema + import):
+```bash
+psql "$PGDATABASE" -f main/api/db/schema.sql && node main/api/db/import.js
+```
+
+⸻
+
+## 🚀 Usage
+
+### Option 1: REST API Server (Recommended)
+
+Start the API server to manage all database entities via REST endpoints:
+
+```bash
+cd main/api
+node server.js
+```
+
+The API will be available at `http://localhost:3000` (or custom PORT env var).
+
+#### API Endpoints
+
+**Users** (`/api/users`)
+- `GET /api/users` - Get all users
+- `GET /api/users/:id` - Get user by ID
+- `POST /api/users` - Create new user
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+
+**Email Data** (`/api/email-data`)
+- `GET /api/email-data` - Get all email data
+- `GET /api/email-data/:id` - Get email data by ID
+- `POST /api/email-data` - Create new email data
+- `PUT /api/email-data/:id` - Update email data
+- `DELETE /api/email-data/:id` - Delete email data
+
+**Email Info** (`/api/email-info`)
+- `GET /api/email-info` - Get all email info
+- `GET /api/email-info/active` - Get active email info
+- `GET /api/email-info/:id` - Get email info by ID
+- `POST /api/email-info` - Create new email info
+- `PUT /api/email-info/:id` - Update email info
+- `DELETE /api/email-info/:id` - Delete email info
+
+**Email Templates** (`/api/email-templates`)
+- `GET /api/email-templates` - Get all templates
+- `GET /api/email-templates/active` - Get active template
+- `GET /api/email-templates/:id` - Get template by ID
+- `POST /api/email-templates` - Create new template
+- `PUT /api/email-templates/:id` - Update template
+- `DELETE /api/email-templates/:id` - Delete template
+
+**Names** (`/api/names`)
+- `GET /api/names` - Get all names
+- `GET /api/names/:id` - Get name by ID
+- `POST /api/names` - Create new name
+- `PUT /api/names/:id` - Update name
+- `DELETE /api/names/:id` - Delete name
+
+**Email Logs** (`/api/email-logs`) - Read-only
+- `GET /api/email-logs` - Get all logs (supports filtering: `?user_email=`, `?status=`, `?provider=`)
+- `GET /api/email-logs/:id` - Get log by ID
+- `GET /api/email-logs/stats/summary` - Get email statistics
+
+**Bounce Logs** (`/api/bounce-logs`) - Read-only
+- `GET /api/bounce-logs` - Get all bounce logs (supports filtering: `?email=`)
+- `GET /api/bounce-logs/:id` - Get bounce log by ID
+- `GET /api/bounce-logs/stats/summary` - Get bounce statistics
+
+### Option 2: Run All Scripts
 
 Use the automated script.sh to:
-	•	Delete existing users.
-	•	Generate new user data.
-	•	Create users in Google Workspace.
-	•	Activate less secure app access.
+- Delete existing users
+- Generate new user data
+- Create users in Google Workspace
+- Activate less secure app access
 
+```bash
 bash script.sh
+```
 
-2. Run Scripts Individually
+### Option 3: Run Scripts Individually
 
-Generate User Data
-
+**Generate User Data**
+```bash
 node main/api/generate.js
+```
 
-Create Users
-
+**Create Users**
+```bash
 node main/api/create.js
+```
 
-Delete Users
-
+**Delete Users**
+```bash
 node main/api/delete.js
+```
 
-Activate Less Secure App Access
-
+**Activate Less Secure App Access**
+```bash
 python py/activateLessSecureApp.py
-
-
+```
 
 ⸻
 

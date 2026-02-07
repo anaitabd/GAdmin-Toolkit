@@ -1,4 +1,13 @@
 {
+  "name": "gadmin-toolkit",
+  "version": "1.0.0",
+  "description": "Google Workspace Automation Toolkit with REST API",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "nodemon api/server.js",
+    "test-api": "bash api/test-api.sh"
+  },
   "dependencies": {
     "@google-cloud/kms": "^4.1.0",
     "axios": "^1.6.8",
@@ -11,6 +20,7 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.13",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "pg": "^8.12.0"
   }
 }

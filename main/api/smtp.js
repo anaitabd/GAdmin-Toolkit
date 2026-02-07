@@ -1,12 +1,12 @@
-const csv = require('csv-parser');
-const fs = require('fs');
 const nodemailer = require('nodemailer');
 const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
-const logFile = 'smtp_email_logs.txt';
-
-
-const logStream = fs.createWriteStream(logFile, { flags: 'a' });
-const logConsole = new console.Console(logStream);
+const {
+    getUsers,
+    getEmailData,
+    getActiveEmailInfo,
+    getActiveEmailTemplate,
+    insertEmailLog,
+} = require('./db/queries');
 
 // Constants for email sending configuration
 const QUOTA_LIMIT = 1200000;
@@ -25,50 +25,49 @@ const generateRandomString = (length) => {
     return result;
 };
 
-// Function to read CSV file and parse its contents
-const readCsv = async (filePath) => {
-    const items = [];
-    await new Promise(resolve => {
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on('data', (row) => {
-                items.push(row);
-            })
-            .on('end', () => {
-                console.log(`${filePath} successfully processed, ${items.length} items`);
-                resolve(items);
-            });
-    });
-    return items;
-};
-
-
 // Function to send email using SMTP
-const sendEmail = async (user, to, from, subject, htmlContent) => {
+const sendEmail = async (user, to, from, subject, htmlContent, messageIndex) => {
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
-            user: user,
-            pass: 'Password123@',
+            user: user.email,
+            pass: user.password,
         },
     });
 
-    htmlContent = htmlContent.replace('[to]',generateRandomString(1000));
-    to_ = to.split('@')[0];
-    htmlContent = htmlContent.replace('[to]',to_);
+    htmlContent = htmlContent.replace('[to]', generateRandomString(1000));
+    const to_ = to.split('@')[0];
+    htmlContent = htmlContent.replace('[to]', to_);
 
     try {
         await transporter.sendMail({
-            from: `"${from}" <${user}>`,
+            from: `"${from}" <${user.email}>`,
             to:to,
             subject:subject,
             html: htmlContent,
         });
         successfulEmails++;
-        logConsole.log(`User: ${user}, To: ${to}, Message sent: ${successfulEmails}, Date-Time: ${new Date().toLocaleString('en-US', { hour12: false })}`);
+        await insertEmailLog({
+            userEmail: user.email,
+            toEmail: to,
+            messageIndex,
+            status: 'sent',
+            provider: 'smtp',
+            errorMessage: null,
+            sentAt: new Date(),
+        });
     } catch (error) {
+        await insertEmailLog({
+            userEmail: user.email,
+            toEmail: to,
+            messageIndex,
+            status: 'failed',
+            provider: 'smtp',
+            errorMessage: error && error.message ? error.message : 'send failed',
+            sentAt: new Date(),
+        });
         console.error('Failed to send email:', error);
     }
 };
@@ -80,11 +79,15 @@ const sleep = (ms) => {
 };
 
 const sendEmails = async () => {
-    const users = await readCsv('../../files/users.csv');
-    const data = await readCsv('../../files/data.csv');
-    const info = await readCsv('../../files/info.csv');
-    const htmlContent = fs.readFileSync('../../files/html.txt', 'utf8').trim();
-    const { from, subject } = info[0];
+    const users = await getUsers();
+    const data = await getEmailData();
+    const info = await getActiveEmailInfo();
+    const template = await getActiveEmailTemplate();
+    if (!info || !template) {
+        throw new Error('Missing active email_info or email_templates in DB');
+    }
+    const { from_name: from, subject } = info;
+    const htmlContent = template.html_content;
 
     const emailsPerWorker = Math.ceil(data.length / Math.ceil(users.length / 50));
 
@@ -122,11 +125,12 @@ const main = async () => {
         const { users, data, htmlContent, from, subject } = workerData;
         // Process each user and send emails
         let index = 0;
+        let messageIndex = 0;
         for (let user of users) {
             for (let j = 0; j < REQUESTS_PER_EMAIL && index < data.length; j++) {
                 const emailData = data[index++];
                 // Write the output to the log file
-                await sendEmail(user.email, emailData.to, from, subject, htmlContent);
+                await sendEmail(user, emailData.to_email, from, subject, htmlContent, messageIndex++);
                 await sleep(INTERVAL);
             }
         }

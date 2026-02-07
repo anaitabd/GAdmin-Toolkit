@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: gadmin
+      POSTGRES_USER: gadmin
+      POSTGRES_PASSWORD: gadmin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: gadmin
+      PGUSER: gadmin
+      PGPASSWORD: gadmin
+      PGSSL: "false"
+      GOOGLE_CRED_JSON_B64: ${GOOGLE_CRED_JSON_B64}
+      KMS_KEY_ID: ${KMS_KEY_ID}
+      DOMAIN: ${DOMAIN:-verifiedverse.com}
+      NUM_RECORDS: ${NUM_RECORDS:-100}
+      RUN_SEND_MODE: ${RUN_SEND_MODE:-none}
+    command: ["bash", "main/api/run_all.sh"]
+
+volumes:
+  pgdata:
