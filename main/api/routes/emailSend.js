@@ -203,7 +203,6 @@ router.post('/bulk-recipients', async (req, res, next) => {
 
         // Insert emails in bulk
         const { query } = require('../db');
-        const insertedCount = 0;
         const duplicates = [];
         const results = [];
 
