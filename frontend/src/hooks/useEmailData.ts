@@ -1,0 +1,34 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import * as emailDataApi from '../api/emailData'
+import type { EmailData } from '../api/types'
+
+export const useEmailData = () =>
+  useQuery({ queryKey: ['email-data'], queryFn: emailDataApi.getAll })
+
+export const useEmailDataItem = (id: number | undefined) =>
+  useQuery({ queryKey: ['email-data', id], queryFn: () => emailDataApi.getById(id!), enabled: !!id })
+
+export const useCreateEmailData = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Omit<EmailData, 'id' | 'created_at'>) => emailDataApi.create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
+  })
+}
+
+export const useUpdateEmailData = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Omit<EmailData, 'id' | 'created_at'>> }) =>
+      emailDataApi.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
+  })
+}
+
+export const useDeleteEmailData = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => emailDataApi.deleteById(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
+  })
+}
