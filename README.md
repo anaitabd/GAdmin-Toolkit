@@ -159,6 +159,13 @@ The API will be available at `http://localhost:3000` (or custom PORT env var).
 - `GET /api/bounce-logs/:id` - Get bounce log by ID
 - `GET /api/bounce-logs/stats/summary` - Get bounce statistics
 
+**Email Sending** (`/api/email-send`)
+- `POST /api/email-send/gmail-api` - Send bulk emails via Gmail API
+- `POST /api/email-send/smtp` - Send bulk emails via SMTP
+- `POST /api/email-send/generate-users` - Generate random users
+- `POST /api/email-send/bulk-recipients` - Add email recipients in bulk
+- `GET /api/email-send/status` - Get email sending statistics and recent logs
+
 ### Option 2: Run All Scripts
 
 Use the automated script.sh to:

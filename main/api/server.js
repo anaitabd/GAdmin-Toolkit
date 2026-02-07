@@ -15,6 +15,7 @@ const namesRouter = require('./routes/names');
 const emailLogsRouter = require('./routes/emailLogs');
 const bounceLogsRouter = require('./routes/bounceLogs');
 const credentialsRouter = require('./routes/credentials');
+const emailSendRouter = require('./routes/emailSend');
 
 // Use routes
 app.use('/api/users', usersRouter);
@@ -25,6 +26,7 @@ app.use('/api/names', namesRouter);
 app.use('/api/email-logs', emailLogsRouter);
 app.use('/api/bounce-logs', bounceLogsRouter);
 app.use('/api/credentials', credentialsRouter);
+app.use('/api/email-send', emailSendRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -45,6 +47,7 @@ app.get('/', (req, res) => {
             credentials: '/api/credentials',
             emailLogs: '/api/email-logs (read-only)',
             bounceLogs: '/api/bounce-logs (read-only)',
+            emailSend: '/api/email-send',
             health: '/health'
         }
     });

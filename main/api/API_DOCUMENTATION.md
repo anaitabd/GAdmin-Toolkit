@@ -803,6 +803,173 @@ def delete_credential(cred_id):
 
 ---
 
+## Email Sending API
+
+Send emails in bulk using Gmail API or SMTP, generate users, and manage email operations.
+
+### Send Emails via Gmail API
+
+**POST /api/email-send/gmail-api**
+
+Starts sending emails in bulk using the Gmail API. This operation runs in the background and returns immediately.
+
+**Prerequisites:**
+- Active users in the database
+- Email recipients in email_data table
+- Active email_info record
+- Active email_templates record
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Email sending started via Gmail API",
+  "details": {
+    "totalUsers": 100,
+    "totalRecipients": 5000,
+    "fromName": "Admin Team",
+    "subject": "Important Update",
+    "templateName": "Newsletter Template"
+  },
+  "note": "Email sending is running in the background. Check email_logs table for status."
+}
+```
+
+### Send Emails via SMTP
+
+**POST /api/email-send/smtp**
+
+Starts sending emails in bulk using SMTP. This operation runs in the background and returns immediately.
+
+**Prerequisites:**
+- Active users in the database
+- Email recipients in email_data table
+- Active email_info record
+- Active email_templates record
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Email sending started via SMTP",
+  "details": {
+    "totalUsers": 50,
+    "totalRecipients": 1000,
+    "fromName": "Support Team",
+    "subject": "Newsletter",
+    "templateName": "Welcome Email"
+  },
+  "note": "Email sending is running in the background. Check email_logs table for status."
+}
+```
+
+### Generate Users
+
+**POST /api/email-send/generate-users**
+
+Generates random users and inserts them into the database. This operation runs in the background.
+
+Request Body:
+```json
+{
+  "domain": "example.com",
+  "numRecords": 100
+}
+```
+
+Required fields:
+- `domain` (string) - Domain for generated email addresses
+- `numRecords` (number) - Number of users to generate (positive integer)
+
+Response:
+```json
+{
+  "success": true,
+  "message": "User generation started",
+  "details": {
+    "domain": "example.com",
+    "numRecords": 100
+  },
+  "note": "User generation is running in the background. Check users table for results."
+}
+```
+
+### Bulk Add Email Recipients
+
+**POST /api/email-send/bulk-recipients**
+
+Adds multiple email recipients to the email_data table in bulk.
+
+Request Body:
+```json
+{
+  "emails": [
+    "user1@example.com",
+    "user2@example.com",
+    "user3@example.com"
+  ]
+}
+```
+
+Required fields:
+- `emails` (array of strings) - Array of email addresses to add
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Bulk email recipients added",
+  "inserted": 3,
+  "duplicatesSkipped": 0,
+  "data": [
+    {
+      "id": 1,
+      "to_email": "user1@example.com"
+    },
+    {
+      "id": 2,
+      "to_email": "user2@example.com"
+    },
+    {
+      "id": 3,
+      "to_email": "user3@example.com"
+    }
+  ]
+}
+```
+
+### Get Email Sending Status
+
+**GET /api/email-send/status**
+
+Returns statistics about email sending operations and recent logs.
+
+Response:
+```json
+{
+  "success": true,
+  "statistics": {
+    "totalEmails": 5000,
+    "sentCount": 4850,
+    "failedCount": 150,
+    "lastSentAt": "2026-02-07T18:00:00.000Z"
+  },
+  "recentLogs": [
+    {
+      "id": 5000,
+      "user_email": "sender@example.com",
+      "to_email": "recipient@example.com",
+      "status": "sent",
+      "provider": "gmail_api",
+      "sent_at": "2026-02-07T18:00:00.000Z",
+      "error_message": null
+    }
+  ]
+}
+```
+
+---
+
 ## Notes
 
 - All timestamps are in ISO 8601 format with timezone (UTC)
@@ -810,3 +977,5 @@ def delete_credential(cred_id):
 - The `active` flag in email_info and email_templates indicates which record is currently in use
 - Email logs and bounce logs are read-only and created automatically by the email sending process
 - All responses include a `success` field indicating whether the operation succeeded
+- Email sending operations run in the background to avoid blocking the API
+- Use the `/api/email-send/status` endpoint to monitor email sending progress
