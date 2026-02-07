@@ -147,10 +147,27 @@ router.post('/generate-users', async (req, res, next) => {
             });
         }
 
+        // Validate domain format to prevent command injection
+        const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        if (!domainRegex.test(domain)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid domain format',
+            });
+        }
+
         if (!numRecords || isNaN(numRecords) || numRecords <= 0) {
             return res.status(400).json({
                 success: false,
                 error: 'numRecords must be a positive integer',
+            });
+        }
+
+        // Limit numRecords to prevent resource exhaustion
+        if (numRecords > 10000) {
+            return res.status(400).json({
+                success: false,
+                error: 'numRecords cannot exceed 10000',
             });
         }
 
@@ -186,6 +203,14 @@ router.post('/bulk-recipients', async (req, res, next) => {
             return res.status(400).json({
                 success: false,
                 error: 'emails array is required and must not be empty',
+            });
+        }
+
+        // Limit bulk insert size to prevent resource exhaustion
+        if (emails.length > 10000) {
+            return res.status(400).json({
+                success: false,
+                error: 'Cannot add more than 10000 emails at once',
             });
         }
 
