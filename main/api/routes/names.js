@@ -2,13 +2,39 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
 
-// GET all names
+// GET all names (with optional pagination & search)
 router.get('/', async (req, res, next) => {
     try {
-        const result = await query(
-            'SELECT id, given_name, family_name, created_at FROM names ORDER BY id'
-        );
-        res.json({ success: true, data: result.rows, count: result.rows.length });
+        const { search, limit, offset = 0 } = req.query;
+
+        let countText = 'SELECT COUNT(*) FROM names';
+        let dataText = 'SELECT id, given_name, family_name, created_at FROM names';
+        const params = [];
+
+        if (search) {
+            params.push(`%${search}%`);
+            const where = ` WHERE given_name ILIKE $${params.length} OR family_name ILIKE $${params.length}`;
+            countText += where;
+            dataText += where;
+        }
+
+        const countResult = await query(countText, params.slice());
+        const totalCount = parseInt(countResult.rows[0].count, 10);
+
+        dataText += ' ORDER BY id DESC';
+
+        if (limit) {
+            params.push(parseInt(limit), parseInt(offset));
+            dataText += ` LIMIT $${params.length - 1} OFFSET $${params.length}`;
+        }
+
+        const result = await query(dataText, params);
+        res.json({
+            success: true,
+            data: result.rows,
+            count: totalCount,
+            ...(limit && { limit: parseInt(limit), offset: parseInt(offset) }),
+        });
     } catch (error) {
         next(error);
     }

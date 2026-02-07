@@ -9,12 +9,22 @@ import {
   KeyIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
+  BoltIcon,
+  QueueListIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 
 const navGroups = [
   {
     label: '',
     items: [{ to: '/', icon: HomeIcon, label: 'Dashboard' }],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/actions', icon: BoltIcon, label: 'Actions' },
+      { to: '/jobs', icon: QueueListIcon, label: 'Jobs' },
+    ],
   },
   {
     label: 'Resources',
@@ -38,6 +48,10 @@ const navGroups = [
       { to: '/email-logs', icon: ClipboardDocumentListIcon, label: 'Email Logs' },
       { to: '/bounce-logs', icon: ExclamationTriangleIcon, label: 'Bounce Logs' },
     ],
+  },
+  {
+    label: '',
+    items: [{ to: '/settings', icon: Cog6ToothIcon, label: 'Settings' }],
   },
 ]
 

@@ -6,6 +6,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void
   title?: string
   message?: string
+  confirmText?: string
+  isLoading?: boolean
 }
 
 export default function ConfirmDialog({
@@ -14,6 +16,8 @@ export default function ConfirmDialog({
   onConfirm,
   title = 'Confirm Delete',
   message = 'Are you sure you want to delete this item? This action cannot be undone.',
+  confirmText = 'Delete',
+  isLoading = false,
 }: ConfirmDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
@@ -28,11 +32,11 @@ export default function ConfirmDialog({
         <button
           onClick={() => {
             onConfirm()
-            onClose()
           }}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+          disabled={isLoading}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
         >
-          Delete
+          {isLoading ? 'Processing...' : confirmText}
         </button>
       </div>
     </Modal>

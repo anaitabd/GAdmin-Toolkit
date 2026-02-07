@@ -30,6 +30,14 @@ router.get('/', async (req, res, next) => {
             queryText += ' WHERE ' + whereClauses.join(' AND ');
         }
 
+        // Count total matching rows (before LIMIT/OFFSET)
+        let countText = 'SELECT COUNT(*) FROM email_logs';
+        if (whereClauses.length > 0) {
+            countText += ' WHERE ' + whereClauses.join(' AND ');
+        }
+        const countResult = await query(countText, queryParams.slice());
+        const totalCount = parseInt(countResult.rows[0].count, 10);
+
         queryText += ' ORDER BY sent_at DESC';
         
         queryParams.push(limit, offset);
@@ -39,7 +47,7 @@ router.get('/', async (req, res, next) => {
         res.json({ 
             success: true, 
             data: result.rows, 
-            count: result.rows.length,
+            count: totalCount,
             limit: parseInt(limit),
             offset: parseInt(offset)
         });

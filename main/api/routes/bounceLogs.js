@@ -15,6 +15,15 @@ router.get('/', async (req, res, next) => {
             queryText += ` WHERE email = $${queryParams.length}`;
         }
 
+        // Count total matching rows (before LIMIT/OFFSET)
+        let countText = 'SELECT COUNT(*) FROM bounce_logs';
+        if (queryParams.length > 0 && queryText.includes('WHERE')) {
+            countText += ` WHERE email = $1`;
+        }
+        const countParams = queryParams.slice();
+        const countResult = await query(countText, countParams);
+        const totalCount = parseInt(countResult.rows[0].count, 10);
+
         queryText += ' ORDER BY detected_at DESC';
         
         queryParams.push(limit, offset);
@@ -24,7 +33,7 @@ router.get('/', async (req, res, next) => {
         res.json({ 
             success: true, 
             data: result.rows, 
-            count: result.rows.length,
+            count: totalCount,
             limit: parseInt(limit),
             offset: parseInt(offset)
         });

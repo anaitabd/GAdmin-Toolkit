@@ -47,10 +47,28 @@ CREATE TABLE IF NOT EXISTS bounce_logs (
     detected_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS email_send_jobs (
+CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
-    batch_name TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    type TEXT NOT NULL CHECK (type IN (
+        'send_email_api', 'send_email_smtp',
+        'generate_users', 'create_google_users',
+        'delete_google_users', 'detect_bounces'
+    )),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+    progress INTEGER NOT NULL DEFAULT 0,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    processed_items INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    params JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS names (
@@ -75,3 +93,12 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
+CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type);
+
+-- Default settings
+INSERT INTO settings (key, value) VALUES
+    ('admin_email', 'admin@example.com'),
+    ('default_domain', 'example.com'),
+    ('default_num_records', '100')
+ON CONFLICT (key) DO NOTHING;

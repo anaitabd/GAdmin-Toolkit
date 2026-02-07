@@ -79,7 +79,7 @@ export default function EmailTemplatesPage() {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteItem} onClose={() => setDeleteItem(null)}
-        onConfirm={() => deleteItem && deleteMutation.mutate(deleteItem.id)} />
+        onConfirm={() => { deleteItem && deleteMutation.mutate(deleteItem.id); setDeleteItem(null) }} />
     </div>
   )
 }

@@ -4,3 +4,6 @@
 .git
 .DS_Store
 main/api/cred.json
+files/cred.json
+py/
+frontend/

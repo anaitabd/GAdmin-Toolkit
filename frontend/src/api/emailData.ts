@@ -1,8 +1,8 @@
 import apiClient from './client'
-import type { EmailData, ApiResponse } from './types'
+import type { EmailData, ApiResponse, ListFilters } from './types'
 
-export const getAll = () =>
-  apiClient.get<ApiResponse<EmailData[]>>('/email-data').then(r => r.data)
+export const getAll = (params?: ListFilters) =>
+  apiClient.get<ApiResponse<EmailData[]>>('/email-data', { params }).then(r => r.data)
 
 export const getById = (id: number) =>
   apiClient.get<ApiResponse<EmailData>>(`/email-data/${id}`).then(r => r.data)

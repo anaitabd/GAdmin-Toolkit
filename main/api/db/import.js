@@ -3,7 +3,7 @@ const path = require('path');
 const csv = require('csv-parser');
 const { withClient } = require('./index');
 
-const filesDir = path.resolve(__dirname, '../../files');
+const filesDir = path.resolve(__dirname, '../../../files');
 const apiDir = path.resolve(__dirname, '..');
 
 const readCsv = async (filePath) => {

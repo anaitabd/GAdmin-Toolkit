@@ -6,10 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends postgresql-clie
 WORKDIR /app
 
 COPY main/package*.json ./main/
-RUN cd main && npm install
+RUN cd main && npm install --omit=dev
 
-COPY . .
+COPY main/ ./main/
 
 ENV NODE_ENV=production
+
+EXPOSE 3000
 
 CMD ["bash", "main/api/run_all.sh"]

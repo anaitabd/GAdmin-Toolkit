@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as usersApi from '../api/users'
-import type { User } from '../api/types'
+import type { User, ListFilters } from '../api/types'
 
-export const useUsers = () =>
-  useQuery({ queryKey: ['users'], queryFn: usersApi.getAll })
+export const useUsers = (filters?: ListFilters) =>
+  useQuery({ queryKey: ['users', filters], queryFn: () => usersApi.getAll(filters) })
 
 export const useUser = (id: number | undefined) =>
   useQuery({ queryKey: ['users', id], queryFn: () => usersApi.getById(id!), enabled: !!id })

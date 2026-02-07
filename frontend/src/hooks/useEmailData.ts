@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import * as emailDataApi from '../api/emailData'
-import type { EmailData } from '../api/types'
+import type { EmailData, ListFilters } from '../api/types'
 
-export const useEmailData = () =>
-  useQuery({ queryKey: ['email-data'], queryFn: emailDataApi.getAll })
+export const useEmailData = (filters?: ListFilters) =>
+  useQuery({ queryKey: ['email-data', filters], queryFn: () => emailDataApi.getAll(filters) })
 
 export const useEmailDataItem = (id: number | undefined) =>
   useQuery({ queryKey: ['email-data', id], queryFn: () => emailDataApi.getById(id!), enabled: !!id })

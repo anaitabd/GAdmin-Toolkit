@@ -81,6 +81,63 @@ const getCredentials = async () => {
     return result.rows;
 };
 
+// ── Jobs ───────────────────────────────────────────────────────────
+const createJob = async ({ type, params }) => {
+    const result = await query(
+        `INSERT INTO jobs (type, status, params) VALUES ($1, 'pending', $2) RETURNING *`,
+        [type, params ? JSON.stringify(params) : null]
+    );
+    return result.rows[0];
+};
+
+const getJob = async (id) => {
+    const result = await query('SELECT * FROM jobs WHERE id = $1', [id]);
+    return result.rows[0] || null;
+};
+
+const getJobs = async (limit = 50) => {
+    const result = await query(
+        'SELECT * FROM jobs ORDER BY created_at DESC LIMIT $1',
+        [limit]
+    );
+    return result.rows;
+};
+
+const updateJob = async (id, fields) => {
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    for (const [k, v] of Object.entries(fields)) {
+        sets.push(`${k} = $${i++}`);
+        vals.push(v);
+    }
+    vals.push(id);
+    const result = await query(
+        `UPDATE jobs SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+        vals
+    );
+    return result.rows[0];
+};
+
+// ── Settings ───────────────────────────────────────────────────────
+const getSetting = async (key) => {
+    const result = await query('SELECT value FROM settings WHERE key = $1', [key]);
+    return result.rows[0]?.value ?? null;
+};
+
+const getAllSettings = async () => {
+    const result = await query('SELECT key, value, updated_at FROM settings ORDER BY key');
+    return result.rows;
+};
+
+const upsertSetting = async (key, value) => {
+    await query(
+        `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+        [key, value]
+    );
+};
+
 module.exports = {
     getUsers,
     getEmailData,
@@ -91,4 +148,11 @@ module.exports = {
     getNames,
     getActiveCredential,
     getCredentials,
+    createJob,
+    getJob,
+    getJobs,
+    updateJob,
+    getSetting,
+    getAllSettings,
+    upsertSetting,
 };

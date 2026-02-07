@@ -66,7 +66,7 @@ export default function CredentialsPage() {
       </Modal>
 
       <ConfirmDialog isOpen={!!deleteItem} onClose={() => setDeleteItem(null)}
-        onConfirm={() => deleteItem && deleteMutation.mutate(deleteItem.id)} />
+        onConfirm={() => { deleteItem && deleteMutation.mutate(deleteItem.id); setDeleteItem(null) }} />
     </div>
   )
 }

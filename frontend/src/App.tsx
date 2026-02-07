@@ -9,6 +9,9 @@ import EmailTemplatesPage from './pages/EmailTemplatesPage'
 import CredentialsPage from './pages/CredentialsPage'
 import EmailLogsPage from './pages/EmailLogsPage'
 import BounceLogsPage from './pages/BounceLogsPage'
+import ActionsPage from './pages/ActionsPage'
+import JobsPage from './pages/JobsPage'
+import SettingsPage from './pages/SettingsPage'
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +27,9 @@ export const router = createBrowserRouter([
       { path: 'credentials', element: <CredentialsPage /> },
       { path: 'email-logs', element: <EmailLogsPage /> },
       { path: 'bounce-logs', element: <BounceLogsPage /> },
+      { path: 'actions', element: <ActionsPage /> },
+      { path: 'jobs', element: <JobsPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
 ])

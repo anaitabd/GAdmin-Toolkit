@@ -86,11 +86,53 @@ export interface BounceLogFilters {
 }
 
 export interface EmailLogStats {
-  total: number
-  sent: number
-  failed: number
+  total_emails: string
+  successful_emails: string
+  failed_emails: string
+  gmail_api_emails: string
+  smtp_emails: string
 }
 
 export interface BounceLogStats {
-  total: number
+  total_bounces: string
+  unique_bounced_emails: string
+}
+
+export interface ListFilters {
+  search?: string
+  limit?: number
+  offset?: number
+}
+
+// ── Jobs ───────────────────────────────────────────────────────────
+export type JobType =
+  | 'send_email_api'
+  | 'send_email_smtp'
+  | 'generate_users'
+  | 'create_google_users'
+  | 'delete_google_users'
+  | 'detect_bounces'
+
+export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+export interface Job {
+  id: number
+  type: JobType
+  status: JobStatus
+  progress: number
+  total_items: number
+  processed_items: number
+  error_message: string | null
+  params: Record<string, unknown> | null
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+}
+
+// ── Settings ───────────────────────────────────────────────────────
+export interface Settings {
+  admin_email: string
+  default_domain: string
+  default_num_records: string
+  [key: string]: string
 }

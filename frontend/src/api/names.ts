@@ -1,8 +1,8 @@
 import apiClient from './client'
-import type { Name, ApiResponse } from './types'
+import type { Name, ApiResponse, ListFilters } from './types'
 
-export const getAll = () =>
-  apiClient.get<ApiResponse<Name[]>>('/names').then(r => r.data)
+export const getAll = (params?: ListFilters) =>
+  apiClient.get<ApiResponse<Name[]>>('/names', { params }).then(r => r.data)
 
 export const getById = (id: number) =>
   apiClient.get<ApiResponse<Name>>(`/names/${id}`).then(r => r.data)

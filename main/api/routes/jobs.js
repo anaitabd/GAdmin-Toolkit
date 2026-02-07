@@ -1,0 +1,313 @@
+const express = require('express');
+const router = express.Router();
+const { fork } = require('child_process');
+const path = require('path');
+const {
+    getUsers,
+    getEmailData,
+    getActiveEmailInfo,
+    getActiveEmailTemplate,
+    getNames,
+    createJob,
+    getJob,
+    getJobs,
+    updateJob,
+    getSetting,
+} = require('../db/queries');
+const { query } = require('../db');
+
+// In-memory SSE connections per job
+const sseClients = new Map();
+
+function notifyJob(jobId, data) {
+    const clients = sseClients.get(jobId);
+    if (clients) {
+        const msg = `data: ${JSON.stringify(data)}\n\n`;
+        clients.forEach((res) => {
+            try { res.write(msg); } catch (_) { /* client gone */ }
+        });
+        if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+            clients.forEach((res) => { try { res.end(); } catch (_) {} });
+            sseClients.delete(jobId);
+        }
+    }
+}
+
+// Active child processes
+const activeProcesses = new Map();
+
+async function startJobProcess(job, scriptPath, args = []) {
+    await updateJob(job.id, { status: 'running', started_at: new Date() });
+    notifyJob(job.id, { status: 'running', progress: 0 });
+
+    const child = fork(scriptPath, ['--job', job.id.toString(), ...args], {
+        env: { ...process.env, JOB_ID: job.id.toString() },
+        stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+    });
+
+    activeProcesses.set(job.id, child);
+
+    child.on('message', async (msg) => {
+        if (msg.type === 'progress') {
+            const updated = await updateJob(job.id, {
+                progress: msg.progress,
+                processed_items: msg.processed || 0,
+                total_items: msg.total || 0,
+            });
+            notifyJob(job.id, updated);
+        }
+    });
+
+    child.on('exit', async (code) => {
+        activeProcesses.delete(job.id);
+        const current = await getJob(job.id);
+        if (current && current.status === 'running') {
+            const finalStatus = code === 0 ? 'completed' : 'failed';
+            const updated = await updateJob(job.id, {
+                status: finalStatus,
+                progress: code === 0 ? 100 : current.progress,
+                completed_at: new Date(),
+                error_message: code !== 0 ? `Process exited with code ${code}` : null,
+            });
+            notifyJob(job.id, updated);
+        }
+    });
+
+    child.on('error', async (err) => {
+        activeProcesses.delete(job.id);
+        const updated = await updateJob(job.id, {
+            status: 'failed',
+            error_message: err.message,
+            completed_at: new Date(),
+        });
+        notifyJob(job.id, updated);
+    });
+
+    return job;
+}
+
+// ── GET /api/jobs ──────────────────────────────────────────────────
+router.get('/', async (_req, res, next) => {
+    try {
+        const jobs = await getJobs();
+        res.json({ success: true, data: jobs, count: jobs.length });
+    } catch (error) { next(error); }
+});
+
+// ── GET /api/jobs/:id ──────────────────────────────────────────────
+router.get('/:id', async (req, res, next) => {
+    try {
+        const job = await getJob(req.params.id);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+        res.json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── GET /api/jobs/:id/stream  (SSE) ───────────────────────────────
+router.get('/:id/stream', async (req, res) => {
+    const jobId = parseInt(req.params.id, 10);
+    const job = await getJob(jobId);
+    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+    });
+    res.write(`data: ${JSON.stringify(job)}\n\n`);
+
+    if (!sseClients.has(jobId)) sseClients.set(jobId, []);
+    sseClients.get(jobId).push(res);
+
+    req.on('close', () => {
+        const arr = sseClients.get(jobId);
+        if (arr) {
+            const idx = arr.indexOf(res);
+            if (idx !== -1) arr.splice(idx, 1);
+            if (arr.length === 0) sseClients.delete(jobId);
+        }
+    });
+
+    if (['completed', 'failed', 'cancelled'].includes(job.status)) {
+        res.end();
+    }
+});
+
+// ── POST /api/jobs/:id/cancel ─────────────────────────────────────
+router.post('/:id/cancel', async (req, res, next) => {
+    try {
+        const job = await getJob(req.params.id);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+        if (job.status !== 'running' && job.status !== 'pending') {
+            return res.status(400).json({ success: false, error: 'Job is not running' });
+        }
+        const child = activeProcesses.get(job.id);
+        if (child) { child.kill('SIGTERM'); activeProcesses.delete(job.id); }
+        const updated = await updateJob(job.id, { status: 'cancelled', completed_at: new Date() });
+        notifyJob(job.id, updated);
+        res.json({ success: true, data: updated });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/send-emails ────────────────────────────────────
+router.post('/send-emails', async (req, res, next) => {
+    try {
+        const { provider } = req.body;
+        if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
+            return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
+        }
+
+        const [users, data, info, template] = await Promise.all([
+            getUsers(), getEmailData(), getActiveEmailInfo(), getActiveEmailTemplate(),
+        ]);
+        if (!users.length) return res.status(400).json({ success: false, error: 'No users found' });
+        if (!data.length) return res.status(400).json({ success: false, error: 'No email recipients found' });
+        if (!info) return res.status(400).json({ success: false, error: 'No active email info' });
+        if (!template) return res.status(400).json({ success: false, error: 'No active email template' });
+
+        const type = provider === 'gmail_api' ? 'send_email_api' : 'send_email_smtp';
+        const job = await createJob({ type, params: { provider, totalRecipients: data.length, totalUsers: users.length } });
+
+        const script = provider === 'gmail_api'
+            ? path.join(__dirname, '..', 'jobs', 'sendEmailApi.js')
+            : path.join(__dirname, '..', 'jobs', 'sendEmailSmtp.js');
+
+        await startJobProcess(job, script);
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/generate-users ─────────────────────────────────
+router.post('/generate-users', async (req, res, next) => {
+    try {
+        const { domain, num_records } = req.body;
+        if (!domain) return res.status(400).json({ success: false, error: 'domain is required' });
+        const n = parseInt(num_records, 10);
+        if (!n || n <= 0) return res.status(400).json({ success: false, error: 'num_records must be positive integer' });
+        if (n > 10000) return res.status(400).json({ success: false, error: 'num_records max is 10000' });
+
+        const names = await getNames();
+        if (!names.length) return res.status(400).json({ success: false, error: 'No names in DB. Add names first.' });
+
+        const job = await createJob({ type: 'generate_users', params: { domain, num_records: n } });
+        await startJobProcess(job, path.join(__dirname, '..', 'jobs', 'generateUsers.js'), [domain, n.toString()]);
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/create-google-users ────────────────────────────
+router.post('/create-google-users', async (req, res, next) => {
+    try {
+        let { admin_email } = req.body;
+        if (!admin_email) admin_email = await getSetting('admin_email');
+        if (!admin_email || admin_email === 'admin@example.com') {
+            return res.status(400).json({ success: false, error: 'admin_email is required. Set it in Settings or provide in request.' });
+        }
+
+        const users = await getUsers();
+        if (!users.length) return res.status(400).json({ success: false, error: 'No users to create' });
+
+        const job = await createJob({ type: 'create_google_users', params: { admin_email, totalUsers: users.length } });
+        await startJobProcess(job, path.join(__dirname, '..', 'jobs', 'createGoogleUsers.js'), [admin_email]);
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/delete-google-users ────────────────────────────
+router.post('/delete-google-users', async (req, res, next) => {
+    try {
+        let { admin_email } = req.body;
+        if (!admin_email) admin_email = await getSetting('admin_email');
+        if (!admin_email || admin_email === 'admin@example.com') {
+            return res.status(400).json({ success: false, error: 'admin_email is required' });
+        }
+
+        const job = await createJob({ type: 'delete_google_users', params: { admin_email } });
+        await startJobProcess(job, path.join(__dirname, '..', 'jobs', 'deleteGoogleUsers.js'), [admin_email]);
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/detect-bounces ─────────────────────────────────
+router.post('/detect-bounces', async (req, res, next) => {
+    try {
+        const users = await getUsers();
+        if (!users.length) return res.status(400).json({ success: false, error: 'No users to scan' });
+
+        const job = await createJob({ type: 'detect_bounces', params: { totalUsers: users.length } });
+        await startJobProcess(job, path.join(__dirname, '..', 'jobs', 'detectBounces.js'));
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/bulk-users  (JSON array) ───────────────────────
+router.post('/bulk-users', async (req, res, next) => {
+    try {
+        const { users } = req.body;
+        if (!users || !Array.isArray(users) || !users.length) {
+            return res.status(400).json({ success: false, error: 'users array is required' });
+        }
+        if (users.length > 10000) {
+            return res.status(400).json({ success: false, error: 'Max 10000 users at once' });
+        }
+
+        let inserted = 0;
+        let skipped = 0;
+        for (const u of users) {
+            if (!u.email) { skipped++; continue; }
+            try {
+                await query(
+                    `INSERT INTO users (email, password, given_name, family_name) VALUES ($1,$2,$3,$4)
+                     ON CONFLICT (email) DO NOTHING`,
+                    [u.email, u.password || null, u.given_name || null, u.family_name || null]
+                );
+                inserted++;
+            } catch (_) { skipped++; }
+        }
+        res.status(201).json({ success: true, inserted, skipped });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/bulk-emails  (JSON array) ──────────────────────
+router.post('/bulk-emails', async (req, res, next) => {
+    try {
+        const { emails } = req.body;
+        if (!emails || !Array.isArray(emails) || !emails.length) {
+            return res.status(400).json({ success: false, error: 'emails array is required' });
+        }
+        if (emails.length > 50000) {
+            return res.status(400).json({ success: false, error: 'Max 50000 emails at once' });
+        }
+
+        let inserted = 0;
+        for (const email of emails) {
+            if (!email || typeof email !== 'string') continue;
+            await query('INSERT INTO email_data (to_email) VALUES ($1)', [email.trim()]);
+            inserted++;
+        }
+        res.status(201).json({ success: true, inserted });
+    } catch (error) { next(error); }
+});
+
+// ── POST /api/jobs/bulk-names  (JSON array) ───────────────────────
+router.post('/bulk-names', async (req, res, next) => {
+    try {
+        const { names } = req.body;
+        if (!names || !Array.isArray(names) || !names.length) {
+            return res.status(400).json({ success: false, error: 'names array is required' });
+        }
+
+        let inserted = 0;
+        for (const n of names) {
+            if (!n.given_name || !n.family_name) continue;
+            await query(
+                'INSERT INTO names (given_name, family_name) VALUES ($1, $2)',
+                [n.given_name.trim(), n.family_name.trim()]
+            );
+            inserted++;
+        }
+        res.status(201).json({ success: true, inserted });
+    } catch (error) { next(error); }
+});
+
+module.exports = router;
