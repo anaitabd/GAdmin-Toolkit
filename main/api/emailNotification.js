@@ -32,10 +32,13 @@ async function sendAdminNotification({ subject, body }) {
         // Load Google credentials
         const creds = await loadGoogleCreds();
         
+        // Get access token
+        const accessToken = await getAccessToken(creds, adminEmail);
+        
         // Create OAuth2 client
         const oauth2Client = new google.auth.OAuth2();
         oauth2Client.setCredentials({
-            access_token: await getAccessToken(creds, adminEmail)
+            access_token: accessToken
         });
 
         // Create transporter
@@ -44,7 +47,7 @@ async function sendAdminNotification({ subject, body }) {
             auth: {
                 type: 'OAuth2',
                 user: adminEmail,
-                accessToken: await getAccessToken(creds, adminEmail)
+                accessToken: accessToken
             }
         });
 

@@ -60,7 +60,7 @@ router.post('/', async (req, res, next) => {
         }
 
         // Generate short code if not provided
-        const code = short_code || crypto.randomBytes(4).toString('hex');
+        const code = short_code || crypto.randomBytes(6).toString('hex');
 
         const link = await createTrackingLink({
             shortCode: code,

@@ -13,7 +13,7 @@ router.get('/:shortCode', async (req, res, next) => {
         }
 
         // Extract client info
-        const ipAddress = req.ip || req.connection.remoteAddress;
+        const ipAddress = req.ip || req.socket.remoteAddress;
         const userAgent = req.get('user-agent') || null;
         const referer = req.get('referer') || req.get('referrer') || null;
 

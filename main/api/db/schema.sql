@@ -92,7 +92,6 @@ CREATE TABLE IF NOT EXISTS tracking_links (
     short_code TEXT UNIQUE NOT NULL,
     offer_url TEXT NOT NULL,
     name TEXT,
-    clicks INTEGER NOT NULL DEFAULT 0,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
