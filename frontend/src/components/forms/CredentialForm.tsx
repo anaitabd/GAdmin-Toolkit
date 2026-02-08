@@ -63,7 +63,7 @@ export default function CredentialForm({ initialData, onSubmit, onCancel }: Cred
     try {
       const parsed = JSON.parse(credJson)
       setJsonError('')
-      onSubmit({ name, cred_json: parsed, active })
+      onSubmit({ name, domain: null, cred_json: parsed, active })
     } catch {
       setJsonError('Invalid JSON format')
     }

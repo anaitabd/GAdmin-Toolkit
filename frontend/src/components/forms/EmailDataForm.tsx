@@ -12,7 +12,7 @@ export default function EmailDataForm({ initialData, onSubmit, onCancel }: Email
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    onSubmit({ to_email: toEmail })
+    onSubmit({ to_email: toEmail, geo: null, list_name: null })
   }
 
   return (
