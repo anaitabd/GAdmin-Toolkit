@@ -17,8 +17,10 @@ const bounceLogsRouter = require('./routes/bounceLogs');
 const credentialsRouter = require('./routes/credentials');
 const jobsRouter = require('./routes/jobs');
 const settingsRouter = require('./routes/settings');
+const trackingRouter = require('./routes/tracking');
 
 // Use routes
+app.use('/t', trackingRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/email-data', emailDataRouter);
 app.use('/api/email-info', emailInfoRouter);
@@ -49,6 +51,7 @@ app.get('/', (req, res) => {
             credentials: '/api/credentials',
             jobs: '/api/jobs',
             settings: '/api/settings',
+            tracking: '/t/c/:trackId',
             health: '/health'
         }
     });

@@ -50,6 +50,7 @@ const getActiveEmailTemplate = async () => {
 };
 
 const insertEmailLog = async ({
+    jobId,
     userEmail,
     toEmail,
     messageIndex,
@@ -60,9 +61,10 @@ const insertEmailLog = async ({
 }) => {
     await query(
         `INSERT INTO email_logs
-        (user_email, to_email, message_index, status, provider, error_message, sent_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        (job_id, user_email, to_email, message_index, status, provider, error_message, sent_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
+            jobId || null,
             userEmail,
             toEmail,
             messageIndex,
@@ -159,6 +161,33 @@ const upsertSetting = async (key, value) => {
     );
 };
 
+// ── Click Tracking ─────────────────────────────────────────────────
+/**
+ * Insert a batch of click tracking rows and return their track_ids.
+ * @param {number} jobId
+ * @param {string} toEmail
+ * @param {string[]} urls - array of original URLs to track
+ * @returns {Promise<{original_url: string, track_id: string}[]>}
+ */
+const insertClickTrackingBatch = async (jobId, toEmail, urls) => {
+    if (!urls.length) return [];
+    // Build a multi-row INSERT
+    const params = [];
+    const rows = [];
+    for (let i = 0; i < urls.length; i++) {
+        const offset = i * 3;
+        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`);
+        params.push(jobId, toEmail, urls[i]);
+    }
+    const result = await query(
+        `INSERT INTO click_tracking (job_id, to_email, original_url)
+         VALUES ${rows.join(', ')}
+         RETURNING original_url, track_id`,
+        params
+    );
+    return result.rows;
+};
+
 module.exports = {
     getUsers,
     getEmailData,
@@ -166,6 +195,7 @@ module.exports = {
     getActiveEmailTemplate,
     insertEmailLog,
     insertBounceLog,
+    insertClickTrackingBatch,
     getNames,
     getActiveCredential,
     getCredentials,

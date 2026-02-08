@@ -143,3 +143,23 @@ export interface Settings {
   default_num_records: string
   [key: string]: string
 }
+
+// ── Campaign Tracking Stats ────────────────────────────────────────
+export interface CampaignTrackingStats {
+  job_id: number
+  sent: number
+  failed: number
+  total_clicks: number
+  unique_clickers: number
+  ctr: number
+}
+
+// ── Campaign Stats ─────────────────────────────────────────────────
+export interface CampaignTrackingStats {
+  job_id: number
+  sent: number
+  failed: number
+  total_clicks: number
+  unique_clickers: number
+  ctr: number
+}

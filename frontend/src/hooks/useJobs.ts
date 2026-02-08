@@ -17,6 +17,14 @@ export const useDeleteJob = () => {
   })
 }
 
+export const useCampaignStats = (jobId: number | undefined) =>
+  useQuery({
+    queryKey: ['campaign-stats', jobId],
+    queryFn: () => jobsApi.getCampaignStats(jobId!),
+    enabled: !!jobId,
+    refetchInterval: 5000,
+  })
+
 export const useCancelJob = () => {
   const qc = useQueryClient()
   return useMutation({

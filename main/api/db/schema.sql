@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
 CREATE TABLE IF NOT EXISTS email_logs (
     id SERIAL PRIMARY KEY,
+    job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
     user_email TEXT NOT NULL,
     to_email TEXT NOT NULL,
     message_index INTEGER,
@@ -40,6 +41,17 @@ CREATE TABLE IF NOT EXISTS email_logs (
     provider TEXT NOT NULL CHECK (provider IN ('gmail_api', 'smtp')),
     error_message TEXT,
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS click_tracking (
+    id SERIAL PRIMARY KEY,
+    track_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    to_email TEXT NOT NULL,
+    original_url TEXT NOT NULL,
+    clicked BOOLEAN NOT NULL DEFAULT FALSE,
+    clicked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS bounce_logs (
@@ -97,6 +109,9 @@ CREATE INDEX IF NOT EXISTS idx_email_data_geo ON email_data(geo);
 CREATE INDEX IF NOT EXISTS idx_email_data_list_name ON email_data(list_name);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
+CREATE INDEX IF NOT EXISTS idx_email_logs_job_id ON email_logs(job_id);
+CREATE INDEX IF NOT EXISTS idx_click_tracking_track_id ON click_tracking(track_id);
+CREATE INDEX IF NOT EXISTS idx_click_tracking_job_id ON click_tracking(job_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);

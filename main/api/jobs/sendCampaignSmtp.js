@@ -8,9 +8,11 @@ const {
     getUsers,
     getEmailData,
     insertEmailLog,
+    insertClickTrackingBatch,
     updateJob,
     getJob,
 } = require('../db/queries');
+const { extractUrls, rewriteLinks } = require('./utils/linkRewriter');
 
 const INTERVAL = 50;
 
@@ -29,8 +31,18 @@ async function run() {
             throw new Error('Missing campaign params: from_name, subject, or html_content');
         }
 
+        // Apply recipient filters from campaign params
+        const effOffset = params.recipient_offset ? Math.max(0, Number(params.recipient_offset) - 1) : null;
+        const effLimit = (params.recipient_limit && effOffset != null)
+            ? Math.max(1, Number(params.recipient_limit) - effOffset)
+            : (params.recipient_limit ? Number(params.recipient_limit) : null);
+
         const allUsers = await getUsers();
-        const data = await getEmailData();
+        const data = await getEmailData(params.geo || null, effLimit, effOffset, params.list_name || null);
+
+        // Extract URLs from html_content for click tracking
+        const baseUrl = process.env.BASE_URL || 'http://localhost';
+        const originalUrls = extractUrls(html_content);
 
         // Filter users by IDs if specified
         const userIds = params.user_ids;
@@ -57,7 +69,16 @@ async function run() {
             for (let j = 0; j < batchSize && dataIndex < total; j++) {
                 const emailData = data[dataIndex++];
                 const to_ = emailData.to_email.split('@')[0];
-                const htmlBody = html_content.replace(/\[to\]/g, to_);
+                let htmlBody = html_content.replace(/\[to\]/g, to_);
+
+                // Insert click tracking rows and rewrite links for this recipient
+                if (originalUrls.length > 0) {
+                    try {
+                        const trackRows = await insertClickTrackingBatch(jobId, emailData.to_email, originalUrls);
+                        const urlToTrackId = new Map(trackRows.map(r => [r.original_url, r.track_id]));
+                        htmlBody = rewriteLinks(htmlBody, urlToTrackId, baseUrl);
+                    } catch (_) { /* tracking insert failed, send with original links */ }
+                }
 
                 try {
                     await transporter.sendMail({
@@ -67,13 +88,13 @@ async function run() {
                         html: htmlBody,
                     });
                     await insertEmailLog({
-                        userEmail: user.email, toEmail: emailData.to_email,
+                        jobId, userEmail: user.email, toEmail: emailData.to_email,
                         messageIndex: dataIndex, status: 'sent', provider: 'smtp',
                         errorMessage: null, sentAt: new Date(),
                     });
                 } catch (error) {
                     await insertEmailLog({
-                        userEmail: user.email, toEmail: emailData.to_email,
+                        jobId, userEmail: user.email, toEmail: emailData.to_email,
                         messageIndex: dataIndex, status: 'failed', provider: 'smtp',
                         errorMessage: error?.message || 'send failed', sentAt: new Date(),
                     });

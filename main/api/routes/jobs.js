@@ -457,6 +457,58 @@ router.post('/bulk-emails', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+// ── GET /api/jobs/:id/stats ─────────────────────────────────────────
+router.get('/:id/stats', async (req, res, next) => {
+    try {
+        const jobId = parseInt(req.params.id, 10);
+        const job = await getJob(jobId);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+        // Email log counts for this job
+        const logResult = await query(
+            `SELECT
+                COUNT(*) FILTER (WHERE status = 'sent') AS sent,
+                COUNT(*) FILTER (WHERE status = 'failed') AS failed,
+                COUNT(*) AS total
+             FROM email_logs
+             WHERE job_id = $1`,
+            [jobId]
+        );
+
+        // Click tracking counts for this job
+        const clickResult = await query(
+            `SELECT
+                COUNT(*) AS total_links,
+                COUNT(*) FILTER (WHERE clicked = TRUE) AS total_clicks,
+                COUNT(DISTINCT to_email) FILTER (WHERE clicked = TRUE) AS unique_clickers
+             FROM click_tracking
+             WHERE job_id = $1`,
+            [jobId]
+        );
+
+        const logStats = logResult.rows[0] || { sent: '0', failed: '0', total: '0' };
+        const clickStats = clickResult.rows[0] || { total_links: '0', total_clicks: '0', unique_clickers: '0' };
+
+        const sent = parseInt(logStats.sent, 10);
+        const failed = parseInt(logStats.failed, 10);
+        const totalClicks = parseInt(clickStats.total_clicks, 10);
+        const uniqueClickers = parseInt(clickStats.unique_clickers, 10);
+        const ctr = sent > 0 ? Math.round((uniqueClickers / sent) * 10000) / 100 : 0;
+
+        res.json({
+            success: true,
+            data: {
+                job_id: jobId,
+                sent,
+                failed,
+                total_clicks: totalClicks,
+                unique_clickers: uniqueClickers,
+                ctr,
+            },
+        });
+    } catch (error) { next(error); }
+});
+
 // ── POST /api/jobs/bulk-names  (JSON array) ───────────────────────
 router.post('/bulk-names', async (req, res, next) => {
     try {
