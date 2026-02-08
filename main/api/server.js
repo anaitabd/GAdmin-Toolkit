@@ -18,11 +18,13 @@ const credentialsRouter = require('./routes/credentials');
 const jobsRouter = require('./routes/jobs');
 const settingsRouter = require('./routes/settings');
 const trackingRouter = require('./routes/tracking');
+const trackingLinksRouter = require('./routes/trackingLinks');
 const campaignsRouter = require('./routes/campaigns');
 const campaignTemplatesRouter = require('./routes/campaignTemplates');
 
 // Use routes
 app.use('/t', trackingRouter);
+app.use('/api/tracking-links', trackingLinksRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/email-data', emailDataRouter);
 app.use('/api/email-info', emailInfoRouter);
@@ -57,6 +59,7 @@ app.get('/', (req, res) => {
             campaigns: '/api/campaigns',
             campaignTemplates: '/api/campaign-templates',
             settings: '/api/settings',
+            trackingLinks: '/api/tracking-links',
             tracking: '/t/c/:trackId',
             health: '/health'
         }

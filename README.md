@@ -7,12 +7,16 @@ This project is a full automation suite designed to manage users in Google Works
 ## ✨ Features
 
 - **REST API** - Complete CRUD operations for all database entities
-- **Google Workspace Integration** - Automated user creation and management
+- **Google Workspace Integration** - Automated user creation, deletion, and management
+- **Bounce Detection** - Automatically scan for and log bounced emails
+- **Credential Management** - Store and manage multiple Google service account credentials
+- **Tracking Links** - Generate custom tracking links for any URL with click analytics
 - **Email Automation** - Bulk email sending with Gmail API and SMTP support
 - **Campaign Management** - Create, track, and manage email campaigns with pause/resume/kill controls
 - **Click Tracking** - Track email link clicks with unique tracking IDs
 - **Campaign Analytics** - Real-time campaign statistics (sent, failed, clicks, CTR)
 - **Campaign Templates** - Save and reuse campaign configurations
+- **Job-Based Operations** - All heavy operations run as background jobs with real-time progress
 - **Database Management** - PostgreSQL backend with comprehensive schema
 - **Python Utilities** - Additional tools for email processing and validation
 
@@ -22,6 +26,7 @@ This project is a full automation suite designed to manage users in Google Works
 
 - **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
 - **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
+- **[Google Workspace Guide](docs/GOOGLE_WORKSPACE_GUIDE.md)** - Manage Google Workspace users, detect bounces, and more
 - **[Email Platforms Guide](docs/EMAIL_PLATFORMS.md)** - Best email sending platforms and recommendations
 - **[Scaling Guide](docs/SCALING_GUIDE.md)** - How to scale your application
 - **[Test Script](main/api/test-api.sh)** - Test all API endpoints
