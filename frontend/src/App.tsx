@@ -12,6 +12,7 @@ import BounceLogsPage from './pages/BounceLogsPage'
 import ActionsPage from './pages/ActionsPage'
 import JobsPage from './pages/JobsPage'
 import SettingsPage from './pages/SettingsPage'
+import TrackingLinksPage from './pages/TrackingLinksPage'
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: 'credentials', element: <CredentialsPage /> },
       { path: 'email-logs', element: <EmailLogsPage /> },
       { path: 'bounce-logs', element: <BounceLogsPage /> },
+      { path: 'tracking-links', element: <TrackingLinksPage /> },
       { path: 'actions', element: <ActionsPage /> },
       { path: 'jobs', element: <JobsPage /> },
       { path: 'settings', element: <SettingsPage /> },

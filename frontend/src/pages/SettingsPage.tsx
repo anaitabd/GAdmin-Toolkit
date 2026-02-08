@@ -7,7 +7,13 @@ export default function SettingsPage() {
   const { data, isLoading, error } = useSettings()
   const updateMutation = useUpdateSettings()
 
-  const [form, setForm] = useState({ admin_email: '', default_domain: '', default_num_records: '100' })
+  const [form, setForm] = useState({ 
+    admin_email: '', 
+    default_domain: '', 
+    default_num_records: '100',
+    notification_enabled: 'false',
+    notification_email: ''
+  })
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
@@ -16,6 +22,8 @@ export default function SettingsPage() {
         admin_email: data.data.admin_email || '',
         default_domain: data.data.default_domain || '',
         default_num_records: data.data.default_num_records || '100',
+        notification_enabled: data.data.notification_enabled || 'false',
+        notification_email: data.data.notification_email || '',
       })
     }
   }, [data])
@@ -69,6 +77,35 @@ export default function SettingsPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
           <p className="text-xs text-gray-500 mt-1">Default number of users to generate.</p>
+        </div>
+
+        <div className="pt-4 border-t border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h3>
+          
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.notification_enabled === 'true'}
+                onChange={(e) => setForm({ ...form, notification_enabled: e.target.checked ? 'true' : 'false' })}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Enable email notifications for job completions</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notification Email</label>
+            <input
+              type="email"
+              value={form.notification_email}
+              onChange={(e) => setForm({ ...form, notification_email: e.target.value })}
+              placeholder="notifications@yourdomain.com"
+              disabled={form.notification_enabled !== 'true'}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 mt-1">Email address to receive job completion notifications.</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 pt-2">

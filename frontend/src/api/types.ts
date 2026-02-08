@@ -134,5 +134,28 @@ export interface Settings {
   admin_email: string
   default_domain: string
   default_num_records: string
+  notification_enabled: string
+  notification_email: string
   [key: string]: string
+}
+
+// ── Tracking Links ─────────────────────────────────────────────────
+export interface TrackingLink {
+  id: number
+  short_code: string
+  offer_url: string
+  name: string | null
+  clicks: number
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TrackingClick {
+  id: number
+  tracking_link_id: number
+  ip_address: string | null
+  user_agent: string | null
+  referer: string | null
+  clicked_at: string
 }
