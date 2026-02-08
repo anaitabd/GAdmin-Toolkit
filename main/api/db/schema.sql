@@ -46,9 +46,12 @@ CREATE TABLE IF NOT EXISTS email_logs (
 CREATE TABLE IF NOT EXISTS click_tracking (
     id SERIAL PRIMARY KEY,
     track_id UUID NOT NULL DEFAULT gen_random_uuid(),
-    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    to_email TEXT NOT NULL,
+    job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE,
+    to_email TEXT,
     original_url TEXT NOT NULL,
+    name TEXT,
+    description TEXT,
+    tags TEXT[],
     clicked BOOLEAN NOT NULL DEFAULT FALSE,
     clicked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -154,6 +157,8 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_email_logs_job_id ON email_logs(job_id);
 CREATE INDEX IF NOT EXISTS idx_click_tracking_track_id ON click_tracking(track_id);
 CREATE INDEX IF NOT EXISTS idx_click_tracking_job_id ON click_tracking(job_id);
+CREATE INDEX IF NOT EXISTS idx_click_tracking_name ON click_tracking(name) WHERE name IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_click_tracking_tags ON click_tracking USING GIN(tags) WHERE tags IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);

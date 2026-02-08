@@ -27,8 +27,19 @@ Adds campaign management features:
 
 **Safe to rerun**: Yes, uses `CREATE TABLE IF NOT EXISTS`
 
+### make_tracking_links_standalone.sql
+Enables standalone tracking links (not tied to campaigns):
+- Makes `job_id` and `to_email` nullable in `click_tracking` table
+- Adds `name`, `description`, and `tags` columns
+- Adds indexes for searching by name and tags
+
+**When to run**: If you have an existing database and want to use standalone tracking links via `/api/tracking-links`.
+
+**Safe to rerun**: Yes, uses `IF NOT EXISTS` and `ALTER COLUMN` safely
+
 ## Migration Order
-1. add_campaigns.sql (current)
+1. add_campaigns.sql
+2. make_tracking_links_standalone.sql (current)
 
 ## Verifying Migrations
 
@@ -37,4 +48,9 @@ After running migrations, verify with:
 psql "$PGDATABASE" -c "\dt"
 ```
 
-You should see the new tables: campaigns, campaign_templates, unsubscribes
+For tracking links migration specifically:
+```bash
+psql "$PGDATABASE" -c "\d click_tracking"
+```
+
+You should see the updated click_tracking table with nullable job_id and to_email columns, plus name, description, and tags columns.
