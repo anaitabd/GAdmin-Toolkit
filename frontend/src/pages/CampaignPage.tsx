@@ -984,7 +984,7 @@ export default function CampaignPage() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
                   <option value="">All lists</option>
-                  {listNames.map((n: string) => (
+                  {listNames.map((n) => (
                     <option key={n} value={n}>{n}</option>
                   ))}
                 </select>
@@ -998,7 +998,7 @@ export default function CampaignPage() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
                   <option value="">All regions ({allRecipients.length})</option>
-                  {geos.map((g: string) => {
+                  {geos.map((g) => {
                     const count = allRecipients.filter((r) => r.geo === g).length
                     return (
                       <option key={g} value={g}>{g} ({count})</option>

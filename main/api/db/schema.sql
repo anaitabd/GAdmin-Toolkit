@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS email_data (
     id SERIAL PRIMARY KEY,
     to_email TEXT NOT NULL,
+    geo TEXT,
+    list_name TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -81,6 +83,7 @@ CREATE TABLE IF NOT EXISTS names (
 CREATE TABLE IF NOT EXISTS credentials (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
+    domain TEXT,
     cred_json JSONB NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
