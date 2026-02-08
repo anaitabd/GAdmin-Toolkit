@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Job, ApiResponse } from './types'
+import type { Job, ApiResponse, CampaignTrackingStats } from './types'
 
 export const getAll = () =>
   apiClient.get<ApiResponse<Job[]>>('/jobs').then(r => r.data)
@@ -68,3 +68,6 @@ export const bulkNames = (names: Array<{ given_name: string; family_name: string
 
 export const streamUrl = (id: number) =>
   `${apiClient.defaults.baseURL}/jobs/${id}/stream`
+
+export const getCampaignStats = (id: number) =>
+  apiClient.get<ApiResponse<CampaignTrackingStats>>(`/jobs/${id}/stats`).then(r => r.data)

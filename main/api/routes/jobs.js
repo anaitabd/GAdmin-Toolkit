@@ -267,7 +267,7 @@ router.post('/:id/resume', async (req, res, next) => {
 // ── POST /api/jobs/send-campaign ───────────────────────────────────
 router.post('/send-campaign', async (req, res, next) => {
     try {
-        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids } = req.body;
+        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description } = req.body;
         if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
         }
@@ -303,6 +303,33 @@ router.post('/send-campaign', async (req, res, next) => {
             type,
             params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length },
         });
+
+        // If campaign_id provided, link it; otherwise create a new campaign record
+        if (campaign_id) {
+            await query('UPDATE campaigns SET job_id = $1, updated_at = NOW() WHERE id = $2', [job.id, campaign_id]);
+        } else if (campaign_name) {
+            await query(
+                `INSERT INTO campaigns (
+                    name, description, job_id, from_name, subject, html_content,
+                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                [
+                    campaign_name,
+                    campaign_description || null,
+                    job.id,
+                    from_name,
+                    subject,
+                    html_content,
+                    provider,
+                    batchNum,
+                    geo || null,
+                    list_name || null,
+                    recipient_offset || null,
+                    recipient_limit || null,
+                    users.map(u => u.id)
+                ]
+            );
+        }
 
         const script = provider === 'gmail_api'
             ? path.join(__dirname, '..', 'jobs', 'sendCampaignApi.js')
@@ -454,6 +481,58 @@ router.post('/bulk-emails', async (req, res, next) => {
             inserted++;
         }
         res.status(201).json({ success: true, inserted });
+    } catch (error) { next(error); }
+});
+
+// ── GET /api/jobs/:id/stats ─────────────────────────────────────────
+router.get('/:id/stats', async (req, res, next) => {
+    try {
+        const jobId = parseInt(req.params.id, 10);
+        const job = await getJob(jobId);
+        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+        // Email log counts for this job
+        const logResult = await query(
+            `SELECT
+                COUNT(*) FILTER (WHERE status = 'sent') AS sent,
+                COUNT(*) FILTER (WHERE status = 'failed') AS failed,
+                COUNT(*) AS total
+             FROM email_logs
+             WHERE job_id = $1`,
+            [jobId]
+        );
+
+        // Click tracking counts for this job
+        const clickResult = await query(
+            `SELECT
+                COUNT(*) AS total_links,
+                COUNT(*) FILTER (WHERE clicked = TRUE) AS total_clicks,
+                COUNT(DISTINCT to_email) FILTER (WHERE clicked = TRUE) AS unique_clickers
+             FROM click_tracking
+             WHERE job_id = $1`,
+            [jobId]
+        );
+
+        const logStats = logResult.rows[0] || { sent: '0', failed: '0', total: '0' };
+        const clickStats = clickResult.rows[0] || { total_links: '0', total_clicks: '0', unique_clickers: '0' };
+
+        const sent = parseInt(logStats.sent, 10);
+        const failed = parseInt(logStats.failed, 10);
+        const totalClicks = parseInt(clickStats.total_clicks, 10);
+        const uniqueClickers = parseInt(clickStats.unique_clickers, 10);
+        const ctr = sent > 0 ? Math.round((uniqueClickers / sent) * 10000) / 100 : 0;
+
+        res.json({
+            success: true,
+            data: {
+                job_id: jobId,
+                sent,
+                failed,
+                total_clicks: totalClicks,
+                unique_clickers: uniqueClickers,
+                ctr,
+            },
+        });
     } catch (error) { next(error); }
 });
 

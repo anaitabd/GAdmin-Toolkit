@@ -17,8 +17,12 @@ const bounceLogsRouter = require('./routes/bounceLogs');
 const credentialsRouter = require('./routes/credentials');
 const jobsRouter = require('./routes/jobs');
 const settingsRouter = require('./routes/settings');
+const trackingRouter = require('./routes/tracking');
+const campaignsRouter = require('./routes/campaigns');
+const campaignTemplatesRouter = require('./routes/campaignTemplates');
 
 // Use routes
+app.use('/t', trackingRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/email-data', emailDataRouter);
 app.use('/api/email-info', emailInfoRouter);
@@ -29,6 +33,8 @@ app.use('/api/bounce-logs', bounceLogsRouter);
 app.use('/api/credentials', credentialsRouter);
 app.use('/api/jobs', jobsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/campaigns', campaignsRouter);
+app.use('/api/campaign-templates', campaignTemplatesRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -48,7 +54,10 @@ app.get('/', (req, res) => {
             names: '/api/names',
             credentials: '/api/credentials',
             jobs: '/api/jobs',
+            campaigns: '/api/campaigns',
+            campaignTemplates: '/api/campaign-templates',
             settings: '/api/settings',
+            tracking: '/t/c/:trackId',
             health: '/health'
         }
     });
