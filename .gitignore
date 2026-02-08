@@ -1,5 +1,8 @@
 main/api/cred.json
 .env
 .env.*
-main/api/node_modules/
-main/node_modules
+node_modules/
+**/node_modules/
+.tmp/
+**/.tmp/
+*.tsbuildinfo
