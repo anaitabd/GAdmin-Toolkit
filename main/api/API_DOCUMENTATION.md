@@ -979,3 +979,201 @@ Response:
 - All responses include a `success` field indicating whether the operation succeeded
 - Email sending operations run in the background to avoid blocking the API
 - Use the `/api/email-send/status` endpoint to monitor email sending progress
+
+---
+
+## Tracking Links
+
+### Get All Tracking Links
+
+**GET /api/tracking-links**
+
+Returns all tracking links with click counts.
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "short_code": "abc123",
+      "offer_url": "https://example.com/offer",
+      "name": "Campaign 1",
+      "clicks": 42,
+      "active": true,
+      "created_at": "2026-02-08T18:00:00.000Z",
+      "updated_at": "2026-02-08T18:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Get Tracking Link by ID
+
+**GET /api/tracking-links/:id**
+
+Returns a specific tracking link.
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "short_code": "abc123",
+    "offer_url": "https://example.com/offer",
+    "name": "Campaign 1",
+    "clicks": 42,
+    "active": true,
+    "created_at": "2026-02-08T18:00:00.000Z",
+    "updated_at": "2026-02-08T18:00:00.000Z"
+  }
+}
+```
+
+### Get Tracking Link Clicks
+
+**GET /api/tracking-links/:id/clicks**
+
+Returns all clicks for a specific tracking link.
+
+Response:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "tracking_link_id": 1,
+      "ip_address": "192.168.1.1",
+      "user_agent": "Mozilla/5.0...",
+      "referer": "https://google.com",
+      "clicked_at": "2026-02-08T18:00:00.000Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Create Tracking Link
+
+**POST /api/tracking-links**
+
+Creates a new tracking link.
+
+Request Body:
+```json
+{
+  "offer_url": "https://example.com/offer",
+  "name": "Campaign 1",
+  "short_code": "abc123"
+}
+```
+
+- `offer_url` (required): The destination URL
+- `name` (optional): A friendly name for the link
+- `short_code` (optional): Custom short code (auto-generated if not provided)
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "short_code": "abc123",
+    "offer_url": "https://example.com/offer",
+    "name": "Campaign 1",
+    "clicks": 0,
+    "active": true,
+    "created_at": "2026-02-08T18:00:00.000Z",
+    "updated_at": "2026-02-08T18:00:00.000Z"
+  }
+}
+```
+
+### Update Tracking Link
+
+**PUT /api/tracking-links/:id**
+
+Updates a tracking link.
+
+Request Body:
+```json
+{
+  "offer_url": "https://example.com/new-offer",
+  "name": "Updated Campaign",
+  "active": false
+}
+```
+
+All fields are optional.
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "short_code": "abc123",
+    "offer_url": "https://example.com/new-offer",
+    "name": "Updated Campaign",
+    "clicks": 42,
+    "active": false,
+    "created_at": "2026-02-08T18:00:00.000Z",
+    "updated_at": "2026-02-08T18:00:00.000Z"
+  }
+}
+```
+
+### Delete Tracking Link
+
+**DELETE /api/tracking-links/:id**
+
+Deletes a tracking link and all associated click records.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Tracking link deleted"
+}
+```
+
+### Redirect Endpoint
+
+**GET /t/:shortCode**
+
+Redirects to the offer URL and records the click. This is the public-facing endpoint users will visit.
+
+Example: `https://yourdomain.com/t/abc123` redirects to the configured offer URL.
+
+---
+
+## Settings
+
+The following settings can be configured via the Settings API:
+
+- `admin_email` - Google Workspace admin email for user operations
+- `default_domain` - Default domain for generating user emails
+- `default_num_records` - Default number of users to generate
+- `notification_enabled` - Enable/disable email notifications ("true"/"false")
+- `notification_email` - Email address to receive job completion notifications
+
+---
+
+## Email Notifications
+
+When enabled via settings, the system sends email notifications when jobs complete. Notifications include:
+
+- Job type and status (completed/failed)
+- Number of items processed
+- Error messages (if failed)
+- Timestamps
+
+To enable notifications:
+1. Set `notification_enabled` to "true" in settings
+2. Configure `notification_email` with the recipient address
+3. Ensure `admin_email` is configured (used as the sender)
+

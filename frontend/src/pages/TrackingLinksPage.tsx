@@ -212,7 +212,7 @@ export default function TrackingLinksPage() {
 
       {/* Create Modal */}
       <Modal
-        open={createModalOpen}
+        isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         title="Create Tracking Link"
       >
@@ -277,7 +277,7 @@ export default function TrackingLinksPage() {
 
       {/* Edit Modal */}
       <Modal
-        open={editModalOpen}
+        isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         title="Edit Tracking Link"
       >
@@ -337,13 +337,13 @@ export default function TrackingLinksPage() {
 
       {/* Delete Confirmation */}
       <ConfirmDialog
-        open={deleteModalOpen}
+        isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDelete}
         title="Delete Tracking Link"
         message={`Are you sure you want to delete this tracking link? This action cannot be undone.`}
         confirmText="Delete"
-        isPending={deleteMutation.isPending}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   )
