@@ -103,6 +103,48 @@ CREATE TABLE IF NOT EXISTS credentials (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS campaigns (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+    from_name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    html_content TEXT NOT NULL,
+    provider TEXT NOT NULL CHECK (provider IN ('gmail_api', 'smtp')),
+    batch_size INTEGER NOT NULL DEFAULT 300,
+    geo TEXT,
+    list_name TEXT,
+    recipient_offset INTEGER,
+    recipient_limit INTEGER,
+    user_ids INTEGER[],
+    scheduled_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS campaign_templates (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    from_name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    html_content TEXT NOT NULL,
+    provider TEXT NOT NULL CHECK (provider IN ('gmail_api', 'smtp')),
+    batch_size INTEGER NOT NULL DEFAULT 300,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS unsubscribes (
+    id SERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    reason TEXT,
+    campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_email_data_to_email ON email_data(to_email);
 CREATE INDEX IF NOT EXISTS idx_email_data_geo ON email_data(geo);
@@ -116,6 +158,10 @@ CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type);
+CREATE INDEX IF NOT EXISTS idx_campaigns_job_id ON campaigns(job_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_scheduled_at ON campaigns(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_campaign_templates_active ON campaign_templates(active);
+CREATE INDEX IF NOT EXISTS idx_unsubscribes_email ON unsubscribes(email);
 
 -- Default settings
 INSERT INTO settings (key, value) VALUES

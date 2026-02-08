@@ -267,7 +267,7 @@ router.post('/:id/resume', async (req, res, next) => {
 // ── POST /api/jobs/send-campaign ───────────────────────────────────
 router.post('/send-campaign', async (req, res, next) => {
     try {
-        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids } = req.body;
+        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description } = req.body;
         if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
         }
@@ -303,6 +303,33 @@ router.post('/send-campaign', async (req, res, next) => {
             type,
             params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length },
         });
+
+        // If campaign_id provided, link it; otherwise create a new campaign record
+        if (campaign_id) {
+            await query('UPDATE campaigns SET job_id = $1, updated_at = NOW() WHERE id = $2', [job.id, campaign_id]);
+        } else if (campaign_name) {
+            await query(
+                `INSERT INTO campaigns (
+                    name, description, job_id, from_name, subject, html_content,
+                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                [
+                    campaign_name,
+                    campaign_description || null,
+                    job.id,
+                    from_name,
+                    subject,
+                    html_content,
+                    provider,
+                    batchNum,
+                    geo || null,
+                    list_name || null,
+                    recipient_offset || null,
+                    recipient_limit || null,
+                    users.map(u => u.id)
+                ]
+            );
+        }
 
         const script = provider === 'gmail_api'
             ? path.join(__dirname, '..', 'jobs', 'sendCampaignApi.js')
