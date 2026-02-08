@@ -80,8 +80,8 @@ echo
 # Test 8: List clicked links
 echo "Test 8: List clicked links"
 echo "-------------------------------------"
-curl -s "${API_BASE}/api/tracking-links?clicked=true" | jq '.data | length'
-echo " clicked links found"
+CLICKED_COUNT=$(curl -s "${API_BASE}/api/tracking-links?clicked=true" | jq '.data | length')
+echo "$CLICKED_COUNT clicked links found"
 echo
 
 # Test 9: Delete a tracking link

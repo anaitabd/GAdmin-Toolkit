@@ -37,7 +37,7 @@ router.post('/', async (req, res, next) => {
         );
 
         const trackingData = result.rows[0];
-        const baseUrl = process.env.BASE_URL || req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
         const trackingUrl = `${baseUrl}/t/c/${trackingData.track_id}`;
 
         res.status(201).json({
@@ -77,7 +77,7 @@ router.post('/bulk', async (req, res, next) => {
         }
 
         const results = [];
-        const baseUrl = process.env.BASE_URL || req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
 
         for (const link of links) {
             const { original_url, to_email } = typeof link === 'string' ? { original_url: link, to_email: null } : link;
@@ -142,7 +142,7 @@ router.get('/:trackId', async (req, res, next) => {
         }
 
         const trackingData = result.rows[0];
-        const baseUrl = process.env.BASE_URL || req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
 
         res.json({
             success: true,
@@ -194,7 +194,7 @@ router.get('/', async (req, res, next) => {
         sql += ` OFFSET $${params.length}`;
 
         const result = await query(sql, params);
-        const baseUrl = process.env.BASE_URL || req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000';
+        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
 
         const data = result.rows.map(row => ({
             ...row,
