@@ -23,7 +23,8 @@ This project is a full automation suite designed to manage users in Google Works
 
 - **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
 - **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
-- **[Tracking Links Guide](docs/TRACKING_LINKS.md)** - Create and manage tracking links
+- **[Tracking Links Quickstart](docs/TRACKING_LINKS_QUICKSTART.md)** - Get started with tracking links in 5 minutes
+- **[Tracking Links Guide](docs/TRACKING_LINKS.md)** - Complete tracking links API reference
 - **[Email Platforms Guide](docs/EMAIL_PLATFORMS.md)** - Best email sending platforms and recommendations
 - **[Scaling Guide](docs/SCALING_GUIDE.md)** - How to scale your application
 - **[Test Script](main/api/test-api.sh)** - Test all API endpoints
