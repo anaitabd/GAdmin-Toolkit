@@ -12,7 +12,7 @@ import {
   BoltIcon,
   QueueListIcon,
   Cog6ToothIcon,
-  MegaphoneIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline'
 
 const navGroups = [
@@ -24,7 +24,6 @@ const navGroups = [
     label: 'Operations',
     items: [
       { to: '/actions', icon: BoltIcon, label: 'Actions' },
-      { to: '/campaign', icon: MegaphoneIcon, label: 'Campaign' },
       { to: '/jobs', icon: QueueListIcon, label: 'Jobs' },
     ],
   },
@@ -42,6 +41,12 @@ const navGroups = [
       { to: '/email-info', icon: InformationCircleIcon, label: 'Email Info' },
       { to: '/email-templates', icon: DocumentTextIcon, label: 'Templates' },
       { to: '/credentials', icon: KeyIcon, label: 'Credentials' },
+    ],
+  },
+  {
+    label: 'Tracking',
+    items: [
+      { to: '/tracking-links', icon: LinkIcon, label: 'Tracking Links' },
     ],
   },
   {

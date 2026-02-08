@@ -8,12 +8,6 @@ export const useEmailData = (filters?: ListFilters) =>
 export const useEmailDataItem = (id: number | undefined) =>
   useQuery({ queryKey: ['email-data', id], queryFn: () => emailDataApi.getById(id!), enabled: !!id })
 
-export const useEmailDataGeos = () =>
-  useQuery({ queryKey: ['email-data', 'geos'], queryFn: () => emailDataApi.getGeos() })
-
-export const useEmailDataListNames = () =>
-  useQuery({ queryKey: ['email-data', 'list-names'], queryFn: () => emailDataApi.getListNames() })
-
 export const useCreateEmailData = () => {
   const qc = useQueryClient()
   return useMutation({
@@ -35,22 +29,6 @@ export const useDeleteEmailData = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => emailDataApi.deleteById(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
-  })
-}
-
-export const useBulkDeleteEmailData = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (ids: number[]) => emailDataApi.bulkDelete(ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
-  })
-}
-
-export const useDeleteAllEmailData = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => emailDataApi.deleteAll(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['email-data'] }),
   })
 }

@@ -15,6 +15,7 @@ const {
     getSetting,
 } = require('../db/queries');
 const { query } = require('../db');
+const { sendAdminNotification, formatJobNotification } = require('../emailNotification');
 
 // In-memory SSE connections per job
 const sseClients = new Map();
@@ -29,6 +30,18 @@ function notifyJob(jobId, data) {
         if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
             clients.forEach((res) => { try { res.end(); } catch (_) {} });
             sseClients.delete(jobId);
+        }
+    }
+}
+
+// Send email notification for job completion
+async function notifyJobCompletion(job) {
+    if (job.status === 'completed' || job.status === 'failed') {
+        try {
+            const notification = formatJobNotification(job);
+            await sendAdminNotification(notification);
+        } catch (error) {
+            console.error('Failed to send job completion notification:', error);
         }
     }
 }
@@ -70,6 +83,7 @@ async function startJobProcess(job, scriptPath, args = []) {
                 error_message: code !== 0 ? `Process exited with code ${code}` : null,
             });
             notifyJob(job.id, updated);
+            await notifyJobCompletion(updated);
         }
     });
 
@@ -81,80 +95,11 @@ async function startJobProcess(job, scriptPath, args = []) {
             completed_at: new Date(),
         });
         notifyJob(job.id, updated);
+        await notifyJobCompletion(updated);
     });
 
     return job;
 }
-
-// ── POST /api/jobs/send-test-email ─────────────────────────────────
-router.post('/send-test-email', async (req, res, next) => {
-    try {
-        const { provider, from_name, subject, html_content, test_email } = req.body;
-        if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
-            return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
-        }
-        if (!from_name?.trim()) return res.status(400).json({ success: false, error: 'from_name is required' });
-        if (!subject?.trim()) return res.status(400).json({ success: false, error: 'subject is required' });
-        if (!html_content?.trim()) return res.status(400).json({ success: false, error: 'html_content is required' });
-        if (!test_email?.trim() || !test_email.includes('@')) {
-            return res.status(400).json({ success: false, error: 'A valid test_email is required' });
-        }
-
-        const users = await getUsers();
-        if (!users.length) return res.status(400).json({ success: false, error: 'No sender users found' });
-
-        const sender = users[0]; // Use first user as sender
-
-        if (provider === 'gmail_api') {
-            const { google } = require('googleapis');
-            const axios = require('axios');
-            const { loadGoogleCreds } = require('../googleCreds');
-            const creds = await loadGoogleCreds();
-
-            const jwtClient = new google.auth.JWT(
-                creds.client_email, null, creds.private_key,
-                ['https://mail.google.com/'], sender.email
-            );
-            const tokens = await jwtClient.authorize();
-            const raw = Buffer.from(
-                `Content-Type: text/html; charset="UTF-8"\n` +
-                `From: "${from_name}" <${sender.email}>\n` +
-                `To: ${test_email.trim()}\n` +
-                `Subject: ${subject}\n\n` +
-                html_content
-            ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
-
-            await axios.post(
-                'https://www.googleapis.com/gmail/v1/users/me/messages/send',
-                { raw },
-                { headers: { Authorization: `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json' } }
-            );
-        } else {
-            const nodemailer = require('nodemailer');
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com', port: 587, secure: false,
-                auth: { user: sender.email, pass: sender.password },
-            });
-            await transporter.sendMail({
-                from: `"${from_name}" <${sender.email}>`,
-                to: test_email.trim(),
-                subject,
-                html: html_content,
-            });
-        }
-
-        // Log the test email
-        await query(
-            `INSERT INTO email_logs (user_email, to_email, message_index, status, provider, error_message, sent_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [sender.email, test_email.trim(), 0, 'sent', provider, null, new Date()]
-        );
-
-        res.json({ success: true, message: `Test email sent to ${test_email.trim()} via ${provider}` });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message || 'Failed to send test email' });
-    }
-});
 
 // ── GET /api/jobs ──────────────────────────────────────────────────
 router.get('/', async (_req, res, next) => {
@@ -203,140 +148,19 @@ router.get('/:id/stream', async (req, res) => {
     }
 });
 
-// ── DELETE /api/jobs/:id ────────────────────────────────────────────
-router.delete('/:id', async (req, res, next) => {
-    try {
-        const job = await getJob(req.params.id);
-        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-        if (['running', 'paused', 'pending'].includes(job.status)) {
-            return res.status(400).json({ success: false, error: 'Cannot delete an active job. Cancel it first.' });
-        }
-        await query('DELETE FROM jobs WHERE id = $1', [job.id]);
-        res.json({ success: true, message: 'Job deleted' });
-    } catch (error) { next(error); }
-});
-
 // ── POST /api/jobs/:id/cancel ─────────────────────────────────────
 router.post('/:id/cancel', async (req, res, next) => {
     try {
         const job = await getJob(req.params.id);
         if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-        if (job.status !== 'running' && job.status !== 'pending' && job.status !== 'paused') {
-            return res.status(400).json({ success: false, error: 'Job is not running or paused' });
+        if (job.status !== 'running' && job.status !== 'pending') {
+            return res.status(400).json({ success: false, error: 'Job is not running' });
         }
         const child = activeProcesses.get(job.id);
         if (child) { child.kill('SIGTERM'); activeProcesses.delete(job.id); }
         const updated = await updateJob(job.id, { status: 'cancelled', completed_at: new Date() });
         notifyJob(job.id, updated);
         res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-// ── POST /api/jobs/:id/pause ──────────────────────────────────────
-router.post('/:id/pause', async (req, res, next) => {
-    try {
-        const job = await getJob(req.params.id);
-        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-        if (job.status !== 'running') {
-            return res.status(400).json({ success: false, error: 'Only running jobs can be paused' });
-        }
-        const child = activeProcesses.get(job.id);
-        if (child) { child.kill('SIGSTOP'); }
-        const updated = await updateJob(job.id, { status: 'paused' });
-        notifyJob(job.id, updated);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-// ── POST /api/jobs/:id/resume ─────────────────────────────────────
-router.post('/:id/resume', async (req, res, next) => {
-    try {
-        const job = await getJob(req.params.id);
-        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-        if (job.status !== 'paused') {
-            return res.status(400).json({ success: false, error: 'Only paused jobs can be resumed' });
-        }
-        const child = activeProcesses.get(job.id);
-        if (child) { child.kill('SIGCONT'); }
-        const updated = await updateJob(job.id, { status: 'running' });
-        notifyJob(job.id, updated);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-// ── POST /api/jobs/send-campaign ───────────────────────────────────
-router.post('/send-campaign', async (req, res, next) => {
-    try {
-        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description } = req.body;
-        if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
-            return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
-        }
-        if (!from_name || !from_name.trim()) {
-            return res.status(400).json({ success: false, error: 'from_name is required' });
-        }
-        if (!subject || !subject.trim()) {
-            return res.status(400).json({ success: false, error: 'subject is required' });
-        }
-        if (!html_content || !html_content.trim()) {
-            return res.status(400).json({ success: false, error: 'html_content is required' });
-        }
-
-        // Calculate LIMIT/OFFSET from "from index" / "to index" range
-        const effOffset = recipient_offset ? Math.max(0, Number(recipient_offset) - 1) : null;
-        const effLimit = (recipient_limit && effOffset != null)
-            ? Math.max(1, Number(recipient_limit) - (effOffset)) 
-            : (recipient_limit ? Number(recipient_limit) : null);
-
-        const [allUsers, data] = await Promise.all([getUsers(), getEmailData(geo || null, effLimit, effOffset, list_name || null)]);
-        if (!allUsers.length) return res.status(400).json({ success: false, error: 'No users found' });
-        if (!data.length) return res.status(400).json({ success: false, error: 'No email recipients found' });
-
-        // Filter users by IDs if specified, otherwise use all
-        const users = (Array.isArray(user_ids) && user_ids.length > 0)
-            ? allUsers.filter((u) => user_ids.includes(u.id))
-            : allUsers;
-        if (!users.length) return res.status(400).json({ success: false, error: 'No matching users found for selected IDs' });
-
-        const batchNum = parseInt(batch_size, 10) || (provider === 'gmail_api' ? 300 : 20);
-        const type = provider === 'gmail_api' ? 'send_campaign_api' : 'send_campaign_smtp';
-        const job = await createJob({
-            type,
-            params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length },
-        });
-
-        // If campaign_id provided, link it; otherwise create a new campaign record
-        if (campaign_id) {
-            await query('UPDATE campaigns SET job_id = $1, updated_at = NOW() WHERE id = $2', [job.id, campaign_id]);
-        } else if (campaign_name) {
-            await query(
-                `INSERT INTO campaigns (
-                    name, description, job_id, from_name, subject, html_content,
-                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-                [
-                    campaign_name,
-                    campaign_description || null,
-                    job.id,
-                    from_name,
-                    subject,
-                    html_content,
-                    provider,
-                    batchNum,
-                    geo || null,
-                    list_name || null,
-                    recipient_offset || null,
-                    recipient_limit || null,
-                    users.map(u => u.id)
-                ]
-            );
-        }
-
-        const script = provider === 'gmail_api'
-            ? path.join(__dirname, '..', 'jobs', 'sendCampaignApi.js')
-            : path.join(__dirname, '..', 'jobs', 'sendCampaignSmtp.js');
-
-        await startJobProcess(job, script);
-        res.status(201).json({ success: true, data: job });
     } catch (error) { next(error); }
 });
 
@@ -471,68 +295,12 @@ router.post('/bulk-emails', async (req, res, next) => {
         }
 
         let inserted = 0;
-        for (const item of emails) {
-            // Support both plain strings and objects { to_email, geo }
-            const email = typeof item === 'string' ? item : item?.to_email;
-            const geo = typeof item === 'object' ? (item?.geo || null) : null;
-            const listName = typeof item === 'object' ? (item?.list_name || null) : null;
+        for (const email of emails) {
             if (!email || typeof email !== 'string') continue;
-            await query('INSERT INTO email_data (to_email, geo, list_name) VALUES ($1, $2, $3)', [email.trim(), geo, listName]);
+            await query('INSERT INTO email_data (to_email) VALUES ($1)', [email.trim()]);
             inserted++;
         }
         res.status(201).json({ success: true, inserted });
-    } catch (error) { next(error); }
-});
-
-// ── GET /api/jobs/:id/stats ─────────────────────────────────────────
-router.get('/:id/stats', async (req, res, next) => {
-    try {
-        const jobId = parseInt(req.params.id, 10);
-        const job = await getJob(jobId);
-        if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
-
-        // Email log counts for this job
-        const logResult = await query(
-            `SELECT
-                COUNT(*) FILTER (WHERE status = 'sent') AS sent,
-                COUNT(*) FILTER (WHERE status = 'failed') AS failed,
-                COUNT(*) AS total
-             FROM email_logs
-             WHERE job_id = $1`,
-            [jobId]
-        );
-
-        // Click tracking counts for this job
-        const clickResult = await query(
-            `SELECT
-                COUNT(*) AS total_links,
-                COUNT(*) FILTER (WHERE clicked = TRUE) AS total_clicks,
-                COUNT(DISTINCT to_email) FILTER (WHERE clicked = TRUE) AS unique_clickers
-             FROM click_tracking
-             WHERE job_id = $1`,
-            [jobId]
-        );
-
-        const logStats = logResult.rows[0] || { sent: '0', failed: '0', total: '0' };
-        const clickStats = clickResult.rows[0] || { total_links: '0', total_clicks: '0', unique_clickers: '0' };
-
-        const sent = parseInt(logStats.sent, 10);
-        const failed = parseInt(logStats.failed, 10);
-        const totalClicks = parseInt(clickStats.total_clicks, 10);
-        const uniqueClickers = parseInt(clickStats.unique_clickers, 10);
-        const ctr = sent > 0 ? Math.round((uniqueClickers / sent) * 10000) / 100 : 0;
-
-        res.json({
-            success: true,
-            data: {
-                job_id: jobId,
-                sent,
-                failed,
-                total_clicks: totalClicks,
-                unique_clickers: uniqueClickers,
-                ctr,
-            },
-        });
     } catch (error) { next(error); }
 });
 

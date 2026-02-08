@@ -15,8 +15,6 @@ interface BulkUploadDialogProps {
   result?: { inserted?: number; skipped?: number } | null
   /** External error from mutation */
   error?: string | null
-  /** Optional extra fields rendered above the upload area */
-  renderExtra?: () => React.ReactNode
 }
 
 function parseCsv(text: string): Record<string, string>[] {
@@ -43,7 +41,6 @@ export default function BulkUploadDialog({
   isLoading,
   result,
   error: externalError,
-  renderExtra,
 }: BulkUploadDialogProps) {
   const [rows, setRows] = useState<Record<string, string>[]>([])
   const [error, setError] = useState('')
@@ -63,16 +60,7 @@ export default function BulkUploadDialog({
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      const text = reader.result as string
-      // Single column: treat each line as a value (no header expected)
-      if (columns.length === 1) {
-        const items = text.replace(/^\uFEFF/, '').trim().split(/\r?\n/).map(v => v.trim()).filter(Boolean)
-        if (!items.length) { setError('No valid rows found'); return }
-        setRows(items.map(v => ({ [columns[0]]: v })))
-        setError('')
-        return
-      }
-      const parsed = parseCsv(text)
+      const parsed = parseCsv(reader.result as string)
       if (!parsed.length) { setError('No valid rows found in CSV'); return }
       setRows(parsed)
       setError('')
@@ -106,8 +94,6 @@ export default function BulkUploadDialog({
         <p className="text-xs text-gray-400">
           Expected columns: <code className="bg-gray-100 px-1 rounded">{columns.join(', ')}</code>
         </p>
-
-        {renderExtra && renderExtra()}
 
         <div className="flex gap-2">
           <button

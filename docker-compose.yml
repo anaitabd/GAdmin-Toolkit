@@ -29,7 +29,6 @@ services:
       PGUSER: gadmin
       PGPASSWORD: gadmin
       PGSSL: "false"
-      BASE_URL: ${BASE_URL:-http://localhost}
       GOOGLE_CRED_JSON_B64: ${GOOGLE_CRED_JSON_B64:-}
       KMS_KEY_ID: ${KMS_KEY_ID:-}
     ports:

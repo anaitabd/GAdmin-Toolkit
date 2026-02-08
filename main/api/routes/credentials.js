@@ -6,7 +6,7 @@ const { query } = require('../db');
 router.get('/', async (req, res, next) => {
     try {
         const result = await query(
-            'SELECT id, name, domain, cred_json, active, created_at, updated_at FROM credentials ORDER BY id'
+            'SELECT id, name, cred_json, active, created_at, updated_at FROM credentials ORDER BY id'
         );
         res.json({ success: true, data: result.rows, count: result.rows.length });
     } catch (error) {
@@ -18,7 +18,7 @@ router.get('/', async (req, res, next) => {
 router.get('/active', async (req, res, next) => {
     try {
         const result = await query(
-            'SELECT id, name, domain, cred_json, active, created_at, updated_at FROM credentials WHERE active = true ORDER BY updated_at DESC LIMIT 1'
+            'SELECT id, name, cred_json, active, created_at, updated_at FROM credentials WHERE active = true ORDER BY updated_at DESC LIMIT 1'
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'No active credential found' });
@@ -34,7 +34,7 @@ router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
         const result = await query(
-            'SELECT id, name, domain, cred_json, active, created_at, updated_at FROM credentials WHERE id = $1',
+            'SELECT id, name, cred_json, active, created_at, updated_at FROM credentials WHERE id = $1',
             [id]
         );
         if (result.rows.length === 0) {
@@ -49,7 +49,7 @@ router.get('/:id', async (req, res, next) => {
 // POST create new credential
 router.post('/', async (req, res, next) => {
     try {
-        const { name, domain, cred_json, active } = req.body;
+        const { name, cred_json, active } = req.body;
         
         if (!name) {
             return res.status(400).json({ success: false, error: 'Name is required' });
@@ -72,8 +72,8 @@ router.post('/', async (req, res, next) => {
         }
 
         const result = await query(
-            'INSERT INTO credentials (name, domain, cred_json, active) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, domain || null, parsedJson, active !== undefined ? active : true]
+            'INSERT INTO credentials (name, cred_json, active) VALUES ($1, $2, $3) RETURNING *',
+            [name, parsedJson, active !== undefined ? active : true]
         );
         res.status(201).json({ success: true, data: result.rows[0] });
     } catch (error) {
@@ -88,7 +88,7 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, domain, cred_json, active } = req.body;
+        const { name, cred_json, active } = req.body;
 
         // Check if credential exists
         const checkResult = await query('SELECT id FROM credentials WHERE id = $1', [id]);
@@ -111,8 +111,8 @@ router.put('/:id', async (req, res, next) => {
         }
 
         const result = await query(
-            'UPDATE credentials SET name = COALESCE($1, name), domain = $2, cred_json = COALESCE($3, cred_json), active = COALESCE($4, active), updated_at = NOW() WHERE id = $5 RETURNING *',
-            [name || null, domain !== undefined ? (domain || null) : null, parsedJson, active !== undefined ? active : null, id]
+            'UPDATE credentials SET name = COALESCE($1, name), cred_json = COALESCE($2, cred_json), active = COALESCE($3, active), updated_at = NOW() WHERE id = $4 RETURNING *',
+            [name || null, parsedJson, active !== undefined ? active : null, id]
         );
         res.json({ success: true, data: result.rows[0] });
     } catch (error) {

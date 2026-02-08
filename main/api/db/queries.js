@@ -7,31 +7,10 @@ const getUsers = async () => {
     return result.rows;
 };
 
-const getEmailData = async (geo, limit, offset, listName) => {
-    let text = 'SELECT id, to_email, geo, list_name FROM email_data';
-    const params = [];
-    const conditions = [];
-    if (geo) {
-        params.push(geo);
-        conditions.push(`geo = $${params.length}`);
-    }
-    if (listName) {
-        params.push(listName);
-        conditions.push(`list_name = $${params.length}`);
-    }
-    if (conditions.length > 0) {
-        text += ` WHERE ${conditions.join(' AND ')}`;
-    }
-    text += ' ORDER BY id';
-    if (limit && Number(limit) > 0) {
-        params.push(Number(limit));
-        text += ` LIMIT $${params.length}`;
-    }
-    if (offset && Number(offset) > 0) {
-        params.push(Number(offset));
-        text += ` OFFSET $${params.length}`;
-    }
-    const result = await query(text, params);
+const getEmailData = async () => {
+    const result = await query(
+        'SELECT id, to_email FROM email_data ORDER BY id'
+    );
     return result.rows;
 };
 
@@ -50,7 +29,6 @@ const getActiveEmailTemplate = async () => {
 };
 
 const insertEmailLog = async ({
-    jobId,
     userEmail,
     toEmail,
     messageIndex,
@@ -61,10 +39,9 @@ const insertEmailLog = async ({
 }) => {
     await query(
         `INSERT INTO email_logs
-        (job_id, user_email, to_email, message_index, status, provider, error_message, sent_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        (user_email, to_email, message_index, status, provider, error_message, sent_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
-            jobId || null,
             userEmail,
             toEmail,
             messageIndex,
@@ -161,29 +138,76 @@ const upsertSetting = async (key, value) => {
     );
 };
 
-// ── Click Tracking ─────────────────────────────────────────────────
-/**
- * Insert a batch of click tracking rows and return their track_ids.
- * @param {number} jobId
- * @param {string} toEmail
- * @param {string[]} urls - array of original URLs to track
- * @returns {Promise<{original_url: string, track_id: string}[]>}
- */
-const insertClickTrackingBatch = async (jobId, toEmail, urls) => {
-    if (!urls.length) return [];
-    // Build a multi-row INSERT
-    const params = [];
-    const rows = [];
-    for (let i = 0; i < urls.length; i++) {
-        const offset = i * 3;
-        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`);
-        params.push(jobId, toEmail, urls[i]);
-    }
+// ── Tracking Links ─────────────────────────────────────────────────
+const getTrackingLinks = async () => {
     const result = await query(
-        `INSERT INTO click_tracking (job_id, to_email, original_url)
-         VALUES ${rows.join(', ')}
-         RETURNING original_url, track_id`,
-        params
+        `SELECT tl.*, 
+         (SELECT COUNT(*) FROM tracking_clicks WHERE tracking_link_id = tl.id) as clicks
+         FROM tracking_links tl ORDER BY tl.created_at DESC`
+    );
+    return result.rows;
+};
+
+const getTrackingLink = async (id) => {
+    const result = await query(
+        `SELECT tl.*, 
+         (SELECT COUNT(*) FROM tracking_clicks WHERE tracking_link_id = tl.id) as clicks
+         FROM tracking_links tl WHERE tl.id = $1`,
+        [id]
+    );
+    return result.rows[0] || null;
+};
+
+const getTrackingLinkByShortCode = async (shortCode) => {
+    const result = await query(
+        `SELECT * FROM tracking_links WHERE short_code = $1 AND active = true`,
+        [shortCode]
+    );
+    return result.rows[0] || null;
+};
+
+const createTrackingLink = async ({ shortCode, offerUrl, name }) => {
+    const result = await query(
+        `INSERT INTO tracking_links (short_code, offer_url, name, active) 
+         VALUES ($1, $2, $3, true) RETURNING *`,
+        [shortCode, offerUrl, name || null]
+    );
+    return result.rows[0];
+};
+
+const updateTrackingLink = async (id, fields) => {
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    for (const [k, v] of Object.entries(fields)) {
+        sets.push(`${k} = $${i++}`);
+        vals.push(v);
+    }
+    vals.push(id);
+    sets.push(`updated_at = NOW()`);
+    const result = await query(
+        `UPDATE tracking_links SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+        vals
+    );
+    return result.rows[0];
+};
+
+const deleteTrackingLink = async (id) => {
+    await query('DELETE FROM tracking_links WHERE id = $1', [id]);
+};
+
+const recordClick = async (trackingLinkId, ipAddress, userAgent, referer) => {
+    await query(
+        `INSERT INTO tracking_clicks (tracking_link_id, ip_address, user_agent, referer, clicked_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [trackingLinkId, ipAddress, userAgent, referer]
+    );
+};
+
+const getTrackingClicks = async (trackingLinkId) => {
+    const result = await query(
+        `SELECT * FROM tracking_clicks WHERE tracking_link_id = $1 ORDER BY clicked_at DESC`,
+        [trackingLinkId]
     );
     return result.rows;
 };
@@ -195,7 +219,6 @@ module.exports = {
     getActiveEmailTemplate,
     insertEmailLog,
     insertBounceLog,
-    insertClickTrackingBatch,
     getNames,
     getActiveCredential,
     getCredentials,
@@ -206,4 +229,12 @@ module.exports = {
     getSetting,
     getAllSettings,
     upsertSetting,
+    getTrackingLinks,
+    getTrackingLink,
+    getTrackingLinkByShortCode,
+    createTrackingLink,
+    updateTrackingLink,
+    deleteTrackingLink,
+    recordClick,
+    getTrackingClicks,
 };

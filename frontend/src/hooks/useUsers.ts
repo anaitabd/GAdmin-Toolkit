@@ -32,19 +32,3 @@ export const useDeleteUser = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   })
 }
-
-export const useBulkDeleteUsers = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (ids: number[]) => usersApi.bulkDelete(ids),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
-  })
-}
-
-export const useDeleteAllUsers = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => usersApi.deleteAll(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
-  })
-}

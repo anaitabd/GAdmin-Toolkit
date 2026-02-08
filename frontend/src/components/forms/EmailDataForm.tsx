@@ -9,31 +9,17 @@ interface EmailDataFormProps {
 
 export default function EmailDataForm({ initialData, onSubmit, onCancel }: EmailDataFormProps) {
   const [toEmail, setToEmail] = useState(initialData?.to_email ?? '')
-  const [geo, setGeo] = useState(initialData?.geo ?? '')
-  const [listName, setListName] = useState(initialData?.list_name ?? '')
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    onSubmit({ to_email: toEmail, geo: geo.trim() || null, list_name: listName.trim() || null })
+    onSubmit({ to_email: toEmail })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="email-data-to-email" className="block text-sm font-medium text-gray-700 mb-1">To Email *</label>
-        <input id="email-data-to-email" type="email" required value={toEmail} onChange={e => setToEmail(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
-      </div>
-      <div>
-        <label htmlFor="email-data-geo" className="block text-sm font-medium text-gray-700 mb-1">Geo (Region)</label>
-        <input id="email-data-geo" type="text" value={geo} onChange={e => setGeo(e.target.value)}
-          placeholder="e.g. US, EU, FR, APAC..."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
-      </div>
-      <div>
-        <label htmlFor="email-data-list-name" className="block text-sm font-medium text-gray-700 mb-1">List Name</label>
-        <input id="email-data-list-name" type="text" value={listName} onChange={e => setListName(e.target.value)}
-          placeholder="e.g. Campaign Q1, US Leads..."
+        <label className="block text-sm font-medium text-gray-700 mb-1">To Email *</label>
+        <input type="email" required value={toEmail} onChange={e => setToEmail(e.target.value)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
       </div>
       <div className="flex justify-end gap-3 pt-2">

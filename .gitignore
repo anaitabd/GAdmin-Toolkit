@@ -1,4 +1,5 @@
 main/api/cred.json
 .env
 .env.*
-node_modules/
+main/api/node_modules/
+main/node_modules
