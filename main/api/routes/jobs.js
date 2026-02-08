@@ -15,6 +15,7 @@ const {
     getSetting,
 } = require('../db/queries');
 const { query } = require('../db');
+const { sendAdminNotification, formatJobNotification } = require('../emailNotification');
 
 // In-memory SSE connections per job
 const sseClients = new Map();
@@ -29,6 +30,18 @@ function notifyJob(jobId, data) {
         if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
             clients.forEach((res) => { try { res.end(); } catch (_) {} });
             sseClients.delete(jobId);
+        }
+    }
+}
+
+// Send email notification for job completion
+async function notifyJobCompletion(job) {
+    if (job.status === 'completed' || job.status === 'failed') {
+        try {
+            const notification = formatJobNotification(job);
+            await sendAdminNotification(notification);
+        } catch (error) {
+            console.error('Failed to send job completion notification:', error);
         }
     }
 }
@@ -70,6 +83,7 @@ async function startJobProcess(job, scriptPath, args = []) {
                 error_message: code !== 0 ? `Process exited with code ${code}` : null,
             });
             notifyJob(job.id, updated);
+            await notifyJobCompletion(updated);
         }
     });
 
@@ -81,6 +95,7 @@ async function startJobProcess(job, scriptPath, args = []) {
             completed_at: new Date(),
         });
         notifyJob(job.id, updated);
+        await notifyJobCompletion(updated);
     });
 
     return job;

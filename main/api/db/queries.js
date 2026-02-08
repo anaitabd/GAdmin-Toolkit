@@ -138,6 +138,80 @@ const upsertSetting = async (key, value) => {
     );
 };
 
+// ── Tracking Links ─────────────────────────────────────────────────
+const getTrackingLinks = async () => {
+    const result = await query(
+        `SELECT tl.*, 
+         (SELECT COUNT(*) FROM tracking_clicks WHERE tracking_link_id = tl.id) as clicks
+         FROM tracking_links tl ORDER BY tl.created_at DESC`
+    );
+    return result.rows;
+};
+
+const getTrackingLink = async (id) => {
+    const result = await query(
+        `SELECT tl.*, 
+         (SELECT COUNT(*) FROM tracking_clicks WHERE tracking_link_id = tl.id) as clicks
+         FROM tracking_links tl WHERE tl.id = $1`,
+        [id]
+    );
+    return result.rows[0] || null;
+};
+
+const getTrackingLinkByShortCode = async (shortCode) => {
+    const result = await query(
+        `SELECT * FROM tracking_links WHERE short_code = $1 AND active = true`,
+        [shortCode]
+    );
+    return result.rows[0] || null;
+};
+
+const createTrackingLink = async ({ shortCode, offerUrl, name }) => {
+    const result = await query(
+        `INSERT INTO tracking_links (short_code, offer_url, name, active) 
+         VALUES ($1, $2, $3, true) RETURNING *`,
+        [shortCode, offerUrl, name || null]
+    );
+    return result.rows[0];
+};
+
+const updateTrackingLink = async (id, fields) => {
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    for (const [k, v] of Object.entries(fields)) {
+        sets.push(`${k} = $${i++}`);
+        vals.push(v);
+    }
+    vals.push(id);
+    sets.push(`updated_at = NOW()`);
+    const result = await query(
+        `UPDATE tracking_links SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+        vals
+    );
+    return result.rows[0];
+};
+
+const deleteTrackingLink = async (id) => {
+    await query('DELETE FROM tracking_links WHERE id = $1', [id]);
+};
+
+const recordClick = async (trackingLinkId, ipAddress, userAgent, referer) => {
+    await query(
+        `INSERT INTO tracking_clicks (tracking_link_id, ip_address, user_agent, referer, clicked_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [trackingLinkId, ipAddress, userAgent, referer]
+    );
+};
+
+const getTrackingClicks = async (trackingLinkId) => {
+    const result = await query(
+        `SELECT * FROM tracking_clicks WHERE tracking_link_id = $1 ORDER BY clicked_at DESC`,
+        [trackingLinkId]
+    );
+    return result.rows;
+};
+
 module.exports = {
     getUsers,
     getEmailData,
@@ -155,4 +229,12 @@ module.exports = {
     getSetting,
     getAllSettings,
     upsertSetting,
+    getTrackingLinks,
+    getTrackingLink,
+    getTrackingLinkByShortCode,
+    createTrackingLink,
+    updateTrackingLink,
+    deleteTrackingLink,
+    recordClick,
+    getTrackingClicks,
 };

@@ -87,6 +87,26 @@ CREATE TABLE IF NOT EXISTS credentials (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS tracking_links (
+    id SERIAL PRIMARY KEY,
+    short_code TEXT UNIQUE NOT NULL,
+    offer_url TEXT NOT NULL,
+    name TEXT,
+    clicks INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tracking_clicks (
+    id SERIAL PRIMARY KEY,
+    tracking_link_id INTEGER NOT NULL REFERENCES tracking_links(id) ON DELETE CASCADE,
+    ip_address TEXT,
+    user_agent TEXT,
+    referer TEXT,
+    clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_email_data_to_email ON email_data(to_email);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
@@ -95,10 +115,16 @@ CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type);
+CREATE INDEX IF NOT EXISTS idx_tracking_links_short_code ON tracking_links(short_code);
+CREATE INDEX IF NOT EXISTS idx_tracking_links_active ON tracking_links(active);
+CREATE INDEX IF NOT EXISTS idx_tracking_clicks_link_id ON tracking_clicks(tracking_link_id);
+CREATE INDEX IF NOT EXISTS idx_tracking_clicks_clicked_at ON tracking_clicks(clicked_at);
 
 -- Default settings
 INSERT INTO settings (key, value) VALUES
     ('admin_email', 'admin@example.com'),
     ('default_domain', 'example.com'),
-    ('default_num_records', '100')
+    ('default_num_records', '100'),
+    ('notification_enabled', 'false'),
+    ('notification_email', '')
 ON CONFLICT (key) DO NOTHING;
