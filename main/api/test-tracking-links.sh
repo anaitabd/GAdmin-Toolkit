@@ -21,8 +21,8 @@ RESPONSE=$(curl -s -X POST ${API_BASE}/api/tracking-links \
   }')
 
 echo "Response:"
-echo $RESPONSE | jq '.'
-TRACK_ID=$(echo $RESPONSE | jq -r '.data.track_id')
+echo "$RESPONSE" | jq '.'
+TRACK_ID=$(echo "$RESPONSE" | jq -r '.data.track_id')
 echo "Track ID: $TRACK_ID"
 echo
 

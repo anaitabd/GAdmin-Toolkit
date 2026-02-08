@@ -6,6 +6,15 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
 
+/**
+ * Helper function to construct base URL for tracking links
+ * @param {Object} req - Express request object
+ * @returns {string} Base URL
+ */
+function getBaseUrl(req) {
+    return process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
+}
+
 // POST /api/tracking-links - Generate a tracking link
 router.post('/', async (req, res, next) => {
     try {
@@ -37,7 +46,7 @@ router.post('/', async (req, res, next) => {
         );
 
         const trackingData = result.rows[0];
-        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
+        const baseUrl = getBaseUrl(req);
         const trackingUrl = `${baseUrl}/t/c/${trackingData.track_id}`;
 
         res.status(201).json({
@@ -77,13 +86,15 @@ router.post('/bulk', async (req, res, next) => {
         }
 
         const results = [];
-        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
+        const skipped = [];
+        const baseUrl = getBaseUrl(req);
 
         for (const link of links) {
             const { original_url, to_email } = typeof link === 'string' ? { original_url: link, to_email: null } : link;
 
             if (!original_url || typeof original_url !== 'string') {
-                continue; // Skip invalid entries
+                skipped.push({ original_url, reason: 'Missing or invalid URL' });
+                continue;
             }
 
             try {
@@ -107,15 +118,17 @@ router.post('/bulk', async (req, res, next) => {
                     created_at: trackingData.created_at
                 });
             } catch (err) {
-                // Skip invalid URLs
-                continue;
+                // Invalid URL format
+                skipped.push({ original_url, reason: 'Invalid URL format' });
             }
         }
 
         res.status(201).json({
             success: true,
             data: results,
-            count: results.length
+            count: results.length,
+            skipped: skipped.length,
+            skipped_details: skipped.length > 0 ? skipped : undefined
         });
     } catch (error) {
         next(error);
@@ -142,7 +155,7 @@ router.get('/:trackId', async (req, res, next) => {
         }
 
         const trackingData = result.rows[0];
-        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
+        const baseUrl = getBaseUrl(req);
 
         res.json({
             success: true,
@@ -194,7 +207,7 @@ router.get('/', async (req, res, next) => {
         sql += ` OFFSET $${params.length}`;
 
         const result = await query(sql, params);
-        const baseUrl = process.env.BASE_URL || (req.get('host') ? `${req.protocol}://${req.get('host')}` : 'http://localhost:3000');
+        const baseUrl = getBaseUrl(req);
 
         const data = result.rows.map(row => ({
             ...row,
