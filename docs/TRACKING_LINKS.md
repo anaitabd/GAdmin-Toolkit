@@ -389,6 +389,21 @@ The system will:
 
 ## Complete Usage Example
 
+### Web UI Demo
+
+A complete interactive demo is available at `docs/tracking-links-demo.html`. Open this file in your browser to:
+- Create tracking links with a user-friendly interface
+- Generate HTML snippets automatically
+- View and manage all your tracking links
+- Copy URLs and HTML code with one click
+
+To use the demo:
+1. Start the API server: `cd main/api && node server.js`
+2. Open `docs/tracking-links-demo.html` in your browser
+3. Create and manage tracking links visually
+
+### Command Line Example
+
 ### 1. Create a tracking link
 
 ```bash

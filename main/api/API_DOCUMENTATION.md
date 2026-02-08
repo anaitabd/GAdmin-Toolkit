@@ -979,3 +979,80 @@ Response:
 - All responses include a `success` field indicating whether the operation succeeded
 - Email sending operations run in the background to avoid blocking the API
 - Use the `/api/email-send/status` endpoint to monitor email sending progress
+
+
+---
+
+## Tracking Links API
+
+Complete API for creating and managing standalone tracking links. See [Tracking Links Guide](../../docs/TRACKING_LINKS.md) for full documentation.
+
+### Overview
+
+The Tracking Links API allows you to create tracking URLs that:
+- Redirect to any destination URL
+- Track click events
+- Generate HTML snippets for easy insertion
+- Support organization with names, descriptions, and tags
+
+### Quick Start Example
+
+**1. Create a tracking link:**
+```bash
+curl -X POST http://localhost:3000/api/tracking-links \
+  -H "Content-Type: application/json" \
+  -d '{
+    "original_url": "https://example.com/offer",
+    "name": "Summer Sale",
+    "tags": ["sale", "2024"]
+  }'
+```
+
+**2. Get HTML snippet:**
+```bash
+curl "http://localhost:3000/api/tracking-links/1/html?linkText=Shop%20Now"
+```
+
+**3. Use in your website:**
+```html
+<a href="http://localhost:3000/t/c/550e8400-e29b-41d4-a716-446655440000" target="_blank">Shop Now</a>
+```
+
+### Endpoints
+
+**GET /api/tracking-links** - Get all tracking links
+- Query params: `search`, `tag`, `limit`, `offset`, `includeJobLinks`
+
+**GET /api/tracking-links/:id** - Get specific tracking link
+
+**POST /api/tracking-links** - Create new tracking link
+- Body: `{ original_url, name?, description?, tags? }`
+
+**POST /api/tracking-links/batch** - Create multiple tracking links
+- Body: `{ links: [{ original_url, name?, description?, tags? }] }`
+
+**PUT /api/tracking-links/:id** - Update tracking link
+- Body: `{ name?, description?, tags?, original_url? }`
+
+**DELETE /api/tracking-links/:id** - Delete tracking link
+
+**GET /api/tracking-links/:id/html** - Get HTML snippet
+- Query params: `linkText`, `target`, `style`
+
+**GET /api/tracking-links/:id/stats** - Get click statistics
+
+**GET /t/c/:trackId** - Click tracking redirect endpoint
+
+### Testing
+
+Run the tracking links test suite:
+```bash
+cd main/api
+./test-tracking-links.sh
+```
+
+### See Also
+
+- [Tracking Links Guide](../../docs/TRACKING_LINKS.md) - Complete documentation with examples
+- [Database Migration](db/migrations/make_tracking_links_standalone.sql) - Schema updates for existing databases
+

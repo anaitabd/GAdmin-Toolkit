@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Links - Example Usage</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="url"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .result pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            border-radius: 4px;
+            color: #0c5460;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            background-color: #28a745;
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+        .tracking-link {
+            word-break: break-all;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 3px solid #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Tracking Links Generator</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Note:</strong> This example requires the GAdmin-Toolkit API to be running at 
+            <code id="api-url">http://localhost:3000</code>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create')">Create Link</button>
+            <button class="tab" onclick="switchTab('list')">My Links</button>
+        </div>
+
+        <!-- Create Tab -->
+        <div id="create-tab" class="tab-content active">
+            <h2>Create Tracking Link</h2>
+            
+            <div class="form-group">
+                <label for="original-url">Destination URL *</label>
+                <input type="url" id="original-url" placeholder="https://example.com/your-page" required>
+            </div>
+
+            <div class="form-group">
+                <label for="link-name">Link Name (optional)</label>
+                <input type="text" id="link-name" placeholder="e.g., Summer Sale 2024">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <textarea id="description" placeholder="Brief description of this link"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="tags">Tags (optional, comma-separated)</label>
+                <input type="text" id="tags" placeholder="e.g., sale, promo, 2024">
+            </div>
+
+            <button onclick="createTrackingLink()">Create Tracking Link</button>
+
+            <div id="create-result"></div>
+        </div>
+
+        <!-- List Tab -->
+        <div id="list-tab" class="tab-content">
+            <h2>My Tracking Links</h2>
+            <button onclick="loadLinks()">Refresh List</button>
+            <div id="links-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'list') {
+                loadLinks();
+            }
+        }
+
+        async function createTrackingLink() {
+            const originalUrl = document.getElementById('original-url').value;
+            const name = document.getElementById('link-name').value;
+            const description = document.getElementById('description').value;
+            const tagsInput = document.getElementById('tags').value;
+            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()) : [];
+
+            if (!originalUrl) {
+                showResult('create-result', 'error', 'Please enter a destination URL');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/tracking-links`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        original_url: originalUrl,
+                        name: name || null,
+                        description: description || null,
+                        tags: tags.length > 0 ? tags : null
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const trackingUrl = `${API_BASE}/t/c/${result.data.track_id}`;
+                    
+                    // Get HTML snippet
+                    const htmlResponse = await fetch(
+                        `${API_BASE}/api/tracking-links/${result.data.id}/html?linkText=Click%20Here`
+                    );
+                    const htmlData = await htmlResponse.json();
+
+                    showResult('create-result', 'success', `
+                        <h3>✅ Tracking Link Created!</h3>
+                        
+                        <div style="margin: 15px 0;">
+                            <strong>Tracking URL:</strong>
+                            <div class="tracking-link">${trackingUrl}</div>
+                            <button class="copy-btn" onclick="copyToClipboard('${trackingUrl}')">
+                                Copy URL
+                            </button>
+                        </div>
+
+                        <div style="margin: 15px 0;">
+                            <strong>HTML Code:</strong>
+                            <pre>${escapeHtml(htmlData.data.html)}</pre>
+                            <button class="copy-btn" onclick="copyToClipboard(\`${htmlData.data.html}\`)">
+                                Copy HTML
+                            </button>
+                        </div>
+
+                        <div style="margin: 15px 0;">
+                            <strong>Link Details:</strong>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `);
+
+                    // Clear form
+                    document.getElementById('original-url').value = '';
+                    document.getElementById('link-name').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('tags').value = '';
+                } else {
+                    showResult('create-result', 'error', `Error: ${result.error}`);
+                }
+            } catch (error) {
+                showResult('create-result', 'error', `Network error: ${error.message}`);
+            }
+        }
+
+        async function loadLinks() {
+            const listDiv = document.getElementById('links-list');
+            listDiv.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/tracking-links?limit=100`);
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.data.length === 0) {
+                        listDiv.innerHTML = '<p>No tracking links yet. Create one above!</p>';
+                        return;
+                    }
+
+                    let html = '<div style="margin-top: 20px;">';
+                    
+                    for (const link of result.data) {
+                        const trackingUrl = `${API_BASE}/t/c/${link.track_id}`;
+                        const clickStatus = link.clicked 
+                            ? `✅ Clicked (${new Date(link.clicked_at).toLocaleString()})`
+                            : '⏳ Not clicked yet';
+
+                        html += `
+                            <div class="result" style="margin-bottom: 15px;">
+                                <h4>${link.name || 'Unnamed Link'}</h4>
+                                <p><strong>Original URL:</strong> ${link.original_url}</p>
+                                <p><strong>Tracking URL:</strong> 
+                                    <a href="${trackingUrl}" target="_blank">${trackingUrl}</a>
+                                </p>
+                                <p><strong>Status:</strong> ${clickStatus}</p>
+                                ${link.description ? `<p><strong>Description:</strong> ${link.description}</p>` : ''}
+                                ${link.tags ? `<p><strong>Tags:</strong> ${link.tags.join(', ')}</p>` : ''}
+                                <p><strong>Created:</strong> ${new Date(link.created_at).toLocaleString()}</p>
+                                <button class="copy-btn" onclick="copyToClipboard('${trackingUrl}')">
+                                    Copy URL
+                                </button>
+                                <button onclick="deleteLink(${link.id})" style="background-color: #dc3545;">
+                                    Delete
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    html += '</div>';
+                    listDiv.innerHTML = html;
+                } else {
+                    listDiv.innerHTML = `<p class="error">Error: ${result.error}</p>`;
+                }
+            } catch (error) {
+                listDiv.innerHTML = `<p class="error">Network error: ${error.message}</p>`;
+            }
+        }
+
+        async function deleteLink(id) {
+            if (!confirm('Are you sure you want to delete this tracking link?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/tracking-links/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Link deleted successfully');
+                    loadLinks();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`Network error: ${error.message}`);
+            }
+        }
+
+        function showResult(elementId, type, message) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
