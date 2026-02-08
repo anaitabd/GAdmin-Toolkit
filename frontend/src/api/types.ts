@@ -154,7 +154,7 @@ export interface CampaignTrackingStats {
   ctr: number
 }
 
-// ── Campaign Stats ─────────────────────────────────────────────────
+// ── Campaign Tracking Stats ────────────────────────────────────────
 export interface CampaignTrackingStats {
   job_id: number
   sent: number
@@ -162,4 +162,55 @@ export interface CampaignTrackingStats {
   total_clicks: number
   unique_clickers: number
   ctr: number
+}
+
+// ── Campaigns ──────────────────────────────────────────────────────
+export interface Campaign {
+  id: number
+  name: string
+  description: string | null
+  job_id: number | null
+  from_name: string
+  subject: string
+  html_content: string
+  provider: 'gmail_api' | 'smtp'
+  batch_size: number
+  geo: string | null
+  list_name: string | null
+  recipient_offset: number | null
+  recipient_limit: number | null
+  user_ids: number[] | null
+  scheduled_at: string | null
+  created_at: string
+  updated_at: string
+  // Fields from JOIN with jobs
+  job_status?: JobStatus
+  progress?: number
+  processed_items?: number
+  total_items?: number
+  started_at?: string | null
+  completed_at?: string | null
+  error_message?: string | null
+}
+
+export interface CampaignTemplate {
+  id: number
+  name: string
+  description: string | null
+  from_name: string
+  subject: string
+  html_content: string
+  provider: 'gmail_api' | 'smtp'
+  batch_size: number
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Unsubscribe {
+  id: number
+  email: string
+  reason: string | null
+  campaign_id: number | null
+  created_at: string
 }
