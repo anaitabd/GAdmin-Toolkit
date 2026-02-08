@@ -12,6 +12,7 @@ import {
   BoltIcon,
   QueueListIcon,
   Cog6ToothIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/24/outline'
 
 const navGroups = [
@@ -23,6 +24,7 @@ const navGroups = [
     label: 'Operations',
     items: [
       { to: '/actions', icon: BoltIcon, label: 'Actions' },
+      { to: '/campaign', icon: MegaphoneIcon, label: 'Campaign' },
       { to: '/jobs', icon: QueueListIcon, label: 'Jobs' },
     ],
   },

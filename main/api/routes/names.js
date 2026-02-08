@@ -101,6 +101,31 @@ router.put('/:id', async (req, res, next) => {
     }
 });
 
+// DELETE bulk names
+router.delete('/bulk', async (req, res, next) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'ids array is required' });
+        }
+        const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+        const result = await query(`DELETE FROM names WHERE id IN (${placeholders}) RETURNING id`, ids);
+        res.json({ success: true, message: `${result.rows.length} names deleted`, deleted: result.rows.length });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// DELETE all names
+router.delete('/all', async (_req, res, next) => {
+    try {
+        const result = await query('DELETE FROM names RETURNING id');
+        res.json({ success: true, message: `${result.rows.length} names deleted`, deleted: result.rows.length });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // DELETE name
 router.delete('/:id', async (req, res, next) => {
     try {

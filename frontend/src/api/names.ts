@@ -15,3 +15,9 @@ export const update = (id: number, data: Partial<Omit<Name, 'id' | 'created_at'>
 
 export const deleteById = (id: number) =>
   apiClient.delete<ApiResponse<Name>>(`/names/${id}`).then(r => r.data)
+
+export const bulkDelete = (ids: number[]) =>
+  apiClient.delete<ApiResponse<{ deleted: number }>>('/names/bulk', { data: { ids } }).then(r => r.data)
+
+export const deleteAll = () =>
+  apiClient.delete<ApiResponse<{ deleted: number }>>('/names/all').then(r => r.data)
