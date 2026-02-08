@@ -108,6 +108,8 @@ export interface ListFilters {
 export type JobType =
   | 'send_email_api'
   | 'send_email_smtp'
+  | 'send_campaign_api'
+  | 'send_campaign_smtp'
   | 'generate_users'
   | 'create_google_users'
   | 'delete_google_users'

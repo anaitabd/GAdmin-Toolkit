@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
     type TEXT NOT NULL CHECK (type IN (
         'send_email_api', 'send_email_smtp',
+        'send_campaign_api', 'send_campaign_smtp',
         'generate_users', 'create_google_users',
         'delete_google_users', 'detect_bounces'
     )),

@@ -25,6 +25,20 @@ export const useSendEmails = () => {
   })
 }
 
+export const useSendCampaign = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (params: {
+      provider: 'gmail_api' | 'smtp'
+      from_name: string
+      subject: string
+      html_content: string
+      batch_size: number
+    }) => jobsApi.sendCampaign(params),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+  })
+}
+
 export const useGenerateUsers = () => {
   const qc = useQueryClient()
   return useMutation({

@@ -13,6 +13,15 @@ export const cancel = (id: number) =>
 export const sendEmails = (provider: 'gmail_api' | 'smtp') =>
   apiClient.post<ApiResponse<Job>>('/jobs/send-emails', { provider }).then(r => r.data)
 
+export const sendCampaign = (params: {
+  provider: 'gmail_api' | 'smtp'
+  from_name: string
+  subject: string
+  html_content: string
+  batch_size: number
+}) =>
+  apiClient.post<ApiResponse<Job>>('/jobs/send-campaign', params).then(r => r.data)
+
 export const generateUsers = (domain: string, num_records: number) =>
   apiClient.post<ApiResponse<Job>>('/jobs/generate-users', { domain, num_records }).then(r => r.data)
 

@@ -149,6 +149,43 @@ router.post('/:id/cancel', async (req, res, next) => {
     } catch (error) { next(error); }
 });
 
+// ── POST /api/jobs/send-campaign ───────────────────────────────────
+router.post('/send-campaign', async (req, res, next) => {
+    try {
+        const { provider, from_name, subject, html_content, batch_size } = req.body;
+        if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
+            return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
+        }
+        if (!from_name || !from_name.trim()) {
+            return res.status(400).json({ success: false, error: 'from_name is required' });
+        }
+        if (!subject || !subject.trim()) {
+            return res.status(400).json({ success: false, error: 'subject is required' });
+        }
+        if (!html_content || !html_content.trim()) {
+            return res.status(400).json({ success: false, error: 'html_content is required' });
+        }
+
+        const [users, data] = await Promise.all([getUsers(), getEmailData()]);
+        if (!users.length) return res.status(400).json({ success: false, error: 'No users found' });
+        if (!data.length) return res.status(400).json({ success: false, error: 'No email recipients found' });
+
+        const batchNum = parseInt(batch_size, 10) || (provider === 'gmail_api' ? 300 : 20);
+        const type = provider === 'gmail_api' ? 'send_campaign_api' : 'send_campaign_smtp';
+        const job = await createJob({
+            type,
+            params: { provider, from_name, subject, html_content, batch_size: batchNum, totalRecipients: data.length, totalUsers: users.length },
+        });
+
+        const script = provider === 'gmail_api'
+            ? path.join(__dirname, '..', 'jobs', 'sendCampaignApi.js')
+            : path.join(__dirname, '..', 'jobs', 'sendCampaignSmtp.js');
+
+        await startJobProcess(job, script);
+        res.status(201).json({ success: true, data: job });
+    } catch (error) { next(error); }
+});
+
 // ── POST /api/jobs/send-emails ────────────────────────────────────
 router.post('/send-emails', async (req, res, next) => {
     try {
