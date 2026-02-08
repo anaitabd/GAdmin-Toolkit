@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { User } from '../api/types'
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../hooks/useUsers'
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useBulkDeleteUsers, useDeleteAllUsers } from '../hooks/useUsers'
 import { useBulkUsers } from '../hooks/useJobs'
 import DataTable from '../components/ui/DataTable'
 import type { Column } from '../components/ui/DataTable'
@@ -10,7 +10,7 @@ import ErrorAlert from '../components/ui/ErrorAlert'
 import Pagination from '../components/ui/Pagination'
 import UserForm from '../components/forms/UserForm'
 import BulkUploadDialog from '../components/ui/BulkUploadDialog'
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 const columns: Column<User>[] = [
   { key: 'id', header: 'ID' },
@@ -29,6 +29,8 @@ export default function UsersPage() {
   const createMutation = useCreateUser()
   const updateMutation = useUpdateUser()
   const deleteMutation = useDeleteUser()
+  const bulkDeleteMutation = useBulkDeleteUsers()
+  const deleteAllMutation = useDeleteAllUsers()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<User | null>(null)
@@ -36,6 +38,11 @@ export default function UsersPage() {
   const [bulkOpen, setBulkOpen] = useState(false)
   const [mutationError, setMutationError] = useState('')
   const bulkMutation = useBulkUsers()
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false)
 
   const openCreate = () => { setEditingItem(null); setModalOpen(true) }
   const openEdit = (item: User) => { setEditingItem(item); setModalOpen(true) }
@@ -56,6 +63,34 @@ export default function UsersPage() {
     }
   }
 
+  const handleBulkDelete = () => {
+    setMutationError('')
+    bulkDeleteMutation.mutate([...selectedIds], {
+      onSuccess: () => {
+        setSelectedIds(new Set())
+        setBulkDeleteConfirm(false)
+      },
+      onError: (err) => {
+        setBulkDeleteConfirm(false)
+        setMutationError(err instanceof Error ? err.message : 'Bulk delete failed')
+      },
+    })
+  }
+
+  const handleDeleteAll = () => {
+    setMutationError('')
+    deleteAllMutation.mutate(undefined, {
+      onSuccess: () => {
+        setSelectedIds(new Set())
+        setDeleteAllConfirm(false)
+      },
+      onError: (err) => {
+        setDeleteAllConfirm(false)
+        setMutationError(err instanceof Error ? err.message : 'Delete all failed')
+      },
+    })
+  }
+
   if (error) return <ErrorAlert message={error.message} />
 
   return (
@@ -70,6 +105,11 @@ export default function UsersPage() {
           )}
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setDeleteAllConfirm(true)}
+            disabled={!data?.count}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-red-600 border border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            Delete All
+          </button>
           <button onClick={() => setBulkOpen(true)}
             className="rounded-lg px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-600 hover:bg-indigo-50">
             Import CSV
@@ -80,6 +120,26 @@ export default function UsersPage() {
           </button>
         </div>
       </div>
+
+      {/* Selection action bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-2">
+          <span className="text-sm font-medium text-indigo-700">{selectedIds.size} selected</span>
+          <button
+            onClick={() => setBulkDeleteConfirm(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-300 hover:bg-red-50"
+          >
+            <TrashIcon className="h-4 w-4" />
+            Delete Selected
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
 
       <div className="mb-4 relative">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -92,7 +152,8 @@ export default function UsersPage() {
       {mutationError && <div className="mb-4"><ErrorAlert message={mutationError} /></div>}
 
       <DataTable columns={columns} data={data?.data ?? []} isLoading={isLoading}
-        onEdit={openEdit} onDelete={setDeleteItem} />
+        onEdit={openEdit} onDelete={setDeleteItem}
+        selectedIds={selectedIds} onSelectionChange={setSelectedIds} />
 
       {data?.count != null && (
         <Pagination offset={offset} limit={limit} total={data.count} onChange={setOffset} />
@@ -102,6 +163,7 @@ export default function UsersPage() {
         <UserForm initialData={editingItem} onSubmit={handleSubmit} onCancel={closeModal} />
       </Modal>
 
+      {/* Single delete confirm */}
       <ConfirmDialog isOpen={!!deleteItem} onClose={() => setDeleteItem(null)}
         onConfirm={() => {
           if (!deleteItem) return
@@ -111,6 +173,28 @@ export default function UsersPage() {
           })
         }}
         isLoading={deleteMutation.isPending}
+      />
+
+      {/* Bulk delete confirm */}
+      <ConfirmDialog
+        isOpen={bulkDeleteConfirm}
+        onClose={() => setBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Users"
+        message={`Are you sure you want to delete ${selectedIds.size} selected user${selectedIds.size === 1 ? '' : 's'}? This action cannot be undone.`}
+        confirmText={`Delete ${selectedIds.size}`}
+        isLoading={bulkDeleteMutation.isPending}
+      />
+
+      {/* Delete all confirm */}
+      <ConfirmDialog
+        isOpen={deleteAllConfirm}
+        onClose={() => setDeleteAllConfirm(false)}
+        onConfirm={handleDeleteAll}
+        title="Delete All Users"
+        message={`Are you sure you want to delete ALL ${data?.count ?? 0} users? This action cannot be undone.`}
+        confirmText="Delete All"
+        isLoading={deleteAllMutation.isPending}
       />
 
       <BulkUploadDialog

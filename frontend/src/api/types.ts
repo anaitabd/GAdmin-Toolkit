@@ -10,6 +10,8 @@ export interface User {
 export interface EmailData {
   id: number
   to_email: string
+  geo: string | null
+  list_name: string | null
   created_at: string
 }
 
@@ -39,6 +41,7 @@ export interface Name {
 export interface Credential {
   id: number
   name: string
+  domain: string | null
   cred_json: Record<string, unknown>
   active: boolean
   created_at: string
@@ -100,6 +103,8 @@ export interface BounceLogStats {
 
 export interface ListFilters {
   search?: string
+  geo?: string
+  list_name?: string
   limit?: number
   offset?: number
 }
@@ -115,7 +120,7 @@ export type JobType =
   | 'delete_google_users'
   | 'detect_bounces'
 
-export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+export type JobStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'
 
 export interface Job {
   id: number

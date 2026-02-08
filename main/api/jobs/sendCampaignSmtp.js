@@ -29,8 +29,14 @@ async function run() {
             throw new Error('Missing campaign params: from_name, subject, or html_content');
         }
 
-        const users = await getUsers();
+        const allUsers = await getUsers();
         const data = await getEmailData();
+
+        // Filter users by IDs if specified
+        const userIds = params.user_ids;
+        const users = (Array.isArray(userIds) && userIds.length > 0)
+            ? allUsers.filter((u) => userIds.includes(u.id))
+            : allUsers;
 
         const total = data.length;
         let processed = 0;

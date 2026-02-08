@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS email_data (
     id SERIAL PRIMARY KEY,
     to_email TEXT NOT NULL,
+    geo TEXT,
+    list_name TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -55,7 +57,7 @@ CREATE TABLE IF NOT EXISTS jobs (
         'generate_users', 'create_google_users',
         'delete_google_users', 'detect_bounces'
     )),
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'paused', 'completed', 'failed', 'cancelled')),
     progress INTEGER NOT NULL DEFAULT 0,
     total_items INTEGER NOT NULL DEFAULT 0,
     processed_items INTEGER NOT NULL DEFAULT 0,
@@ -82,6 +84,7 @@ CREATE TABLE IF NOT EXISTS names (
 CREATE TABLE IF NOT EXISTS credentials (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
+    domain TEXT,
     cred_json JSONB NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -90,6 +93,8 @@ CREATE TABLE IF NOT EXISTS credentials (
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_email_data_to_email ON email_data(to_email);
+CREATE INDEX IF NOT EXISTS idx_email_data_geo ON email_data(geo);
+CREATE INDEX IF NOT EXISTS idx_email_data_list_name ON email_data(list_name);
 CREATE INDEX IF NOT EXISTS idx_email_logs_sent_at ON email_logs(sent_at);
 CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);

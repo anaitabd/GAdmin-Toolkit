@@ -7,10 +7,31 @@ const getUsers = async () => {
     return result.rows;
 };
 
-const getEmailData = async () => {
-    const result = await query(
-        'SELECT id, to_email FROM email_data ORDER BY id'
-    );
+const getEmailData = async (geo, limit, offset, listName) => {
+    let text = 'SELECT id, to_email, geo, list_name FROM email_data';
+    const params = [];
+    const conditions = [];
+    if (geo) {
+        params.push(geo);
+        conditions.push(`geo = $${params.length}`);
+    }
+    if (listName) {
+        params.push(listName);
+        conditions.push(`list_name = $${params.length}`);
+    }
+    if (conditions.length > 0) {
+        text += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    text += ' ORDER BY id';
+    if (limit && Number(limit) > 0) {
+        params.push(Number(limit));
+        text += ` LIMIT $${params.length}`;
+    }
+    if (offset && Number(offset) > 0) {
+        params.push(Number(offset));
+        text += ` OFFSET $${params.length}`;
+    }
+    const result = await query(text, params);
     return result.rows;
 };
 
