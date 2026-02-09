@@ -968,6 +968,70 @@ Response:
 }
 ```
 
+### Send Test Email
+
+**POST /api/email-send/test-email**
+
+Sends a test email to verify email configuration and inbox delivery. This endpoint is rate-limited to 5 requests per 10 minutes per IP.
+
+**Request Body:**
+```json
+{
+  "provider": "smtp",
+  "test_email": "test@example.com",
+  "from_name": "Test Sender",
+  "subject": "Test Email Subject",
+  "html_content": "<h1>Test Email</h1><p>This is a test.</p>"
+}
+```
+
+**Required fields:**
+- `provider` (string) - Either "gmail_api" or "smtp"
+- `test_email` (string) - Valid email address to receive the test
+
+**Optional fields (uses active email_info/template if not provided):**
+- `from_name` (string) - Sender display name
+- `subject` (string) - Email subject line
+- `html_content` (string) - HTML content of the email
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Test email sent successfully to test@example.com via smtp",
+  "details": {
+    "testId": 1707512345678,
+    "provider": "smtp",
+    "from": "Test Sender <sender@gmail.com>",
+    "to": "test@example.com",
+    "subject": "Test Email Subject",
+    "sentAt": "2024-02-09T21:45:45.678Z"
+  },
+  "inboxVerification": {
+    "note": "Please check your inbox/spam folder for the test email.",
+    "tips": [
+      "Check spam/junk folder if not in inbox",
+      "Mark as 'Not Spam' to improve future deliverability",
+      "Add sender to contacts for better inbox placement",
+      "Check email headers for authentication results (SPF, DKIM, DMARC)"
+    ],
+    "testId": 1707512345678
+  }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "details": "Additional error details"
+}
+```
+
+**Use Case:**
+Test email configuration and verify inbox placement before sending bulk campaigns. The test email includes a unique test ID for tracking and verification purposes.
+
 ---
 
 ## Notes

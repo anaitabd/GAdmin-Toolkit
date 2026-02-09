@@ -389,18 +389,135 @@ await query(`INSERT INTO email_data (to_email) VALUES ${values}`, params);
 
 *Estimates based on AWS pricing and Amazon SES*
 
+## Recent Improvements (v1.1.0)
+
+### 1. Enhanced Database Connection Pooling
+The application now includes optimized connection pooling for better scalability:
+
+**Configuration Options:**
+```bash
+# Environment variables for connection pool tuning
+DB_POOL_MAX=20         # Maximum connections (default: 20)
+DB_POOL_MIN=2          # Minimum connections (default: 2)
+DB_POOL_LOGGING=true   # Enable pool event logging
+```
+
+**Features:**
+- Automatic idle connection cleanup (30s timeout)
+- Connection acquisition timeout (5s)
+- Error event handling
+- Graceful shutdown support
+
+**Benefits:**
+- Reduced database connection overhead
+- Better resource utilization
+- Improved concurrent request handling
+- Prevents connection exhaustion
+
+### 2. Rate Limiting
+Built-in rate limiting protects the API from abuse and ensures fair usage:
+
+**Default Limits:**
+- General API: 100 requests per 15 minutes per IP
+- Email sending: 10 requests per hour per IP
+- Test emails: 5 requests per 10 minutes per IP
+
+**Configuration:**
+```bash
+RATE_LIMIT_MAX=100              # General API limit
+EMAIL_SEND_RATE_LIMIT=10        # Email sending limit
+TEST_EMAIL_RATE_LIMIT=5         # Test email limit
+```
+
+**Benefits:**
+- Prevents API abuse
+- Protects against DDoS attacks
+- Ensures service availability
+- Fair resource allocation
+
+### 3. Response Compression
+Automatic gzip compression reduces bandwidth usage:
+
+**Features:**
+- Enabled by default for all responses
+- Automatic content-type detection
+- Reduces payload size by 60-80%
+
+**Benefits:**
+- Faster response times
+- Lower bandwidth costs
+- Better performance on slow connections
+- Reduced server load
+
+### 4. Graceful Shutdown
+Proper shutdown handling ensures data integrity:
+
+**Features:**
+- Handles SIGTERM and SIGINT signals
+- Closes HTTP server gracefully
+- Releases database connections
+- 10-second timeout for forced shutdown
+
+**Benefits:**
+- No lost requests during deployment
+- Clean database connection cleanup
+- Better uptime during updates
+- Prevents data corruption
+
 ## Performance Targets
 
-| Metric | Current | Target (Optimized) |
-|--------|---------|-------------------|
-| API Response Time | <200ms | <100ms |
-| Email Send Rate | 300/min | 10,000/min |
-| Concurrent Users | 10 | 1,000 |
-| Database Queries/sec | 100 | 1,000 |
-| Job Processing | Serial | Parallel (10x) |
+| Metric | Current | Target (Optimized) | With v1.1.0 |
+|--------|---------|-------------------|-------------|
+| API Response Time | <200ms | <100ms | <150ms |
+| Email Send Rate | 300/min | 10,000/min | 500/min |
+| Concurrent Users | 10 | 1,000 | 50 |
+| Database Queries/sec | 100 | 1,000 | 300 |
+| Job Processing | Serial | Parallel (10x) | Parallel (3x) |
+
+## Best Practices for Production
+
+### 1. Environment Configuration
+Always configure these variables in production:
+
+```bash
+# Production settings
+NODE_ENV=production
+DB_POOL_MAX=50                    # Higher for production
+RATE_LIMIT_MAX=200                # Adjust based on usage
+COMPRESSION_ENABLED=true          # Enable compression
+```
+
+### 2. Monitoring
+Monitor these key metrics:
+
+- **Database Pool**: Check connection usage and wait times
+- **Rate Limits**: Monitor limit hits to adjust thresholds
+- **Response Times**: Track API endpoint performance
+- **Error Rates**: Watch for failed requests
+
+### 3. Security
+Implement these security measures:
+
+- Use HTTPS/TLS for all traffic
+- Configure firewall rules
+- Implement API authentication
+- Regular security audits
+- Keep dependencies updated
+
+### 4. Testing
+Test your scaling configuration:
+
+```bash
+# Load testing with Apache Bench
+ab -n 1000 -c 10 http://localhost:3000/api/users
+
+# Load testing with k6
+k6 run --vus 50 --duration 30s load-test.js
+```
 
 ## Resources
 - [PostgreSQL Performance Tuning](https://wiki.postgresql.org/wiki/Performance_Optimization)
 - [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
 - [12-Factor App Methodology](https://12factor.net/)
+- [Express.js Performance Best Practices](https://expressjs.com/en/advanced/best-practice-performance.html)

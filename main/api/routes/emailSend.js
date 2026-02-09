@@ -8,9 +8,10 @@ const {
     getActiveEmailInfo,
     getActiveEmailTemplate,
 } = require('../db/queries');
+const { emailSendLimiter, testEmailLimiter } = require('../middleware/rateLimiter');
 
 // POST send emails via Gmail API
-router.post('/gmail-api', async (req, res, next) => {
+router.post('/gmail-api', emailSendLimiter, async (req, res, next) => {
     try {
         // Validate prerequisites
         const users = await getUsers();
@@ -73,7 +74,7 @@ router.post('/gmail-api', async (req, res, next) => {
 });
 
 // POST send emails via SMTP
-router.post('/smtp', async (req, res, next) => {
+router.post('/smtp', emailSendLimiter, async (req, res, next) => {
     try {
         // Validate prerequisites
         const users = await getUsers();
@@ -298,6 +299,178 @@ router.get('/status', async (req, res, next) => {
         });
     } catch (error) {
         next(error);
+    }
+});
+
+// POST send test email with inbox verification
+router.post('/test-email', testEmailLimiter, async (req, res, next) => {
+    try {
+        const { provider, test_email, from_name, subject, html_content } = req.body;
+
+        // Validate inputs
+        if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
+            return res.status(400).json({
+                success: false,
+                error: 'provider must be either gmail_api or smtp',
+            });
+        }
+
+        if (!test_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(test_email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'A valid test_email is required',
+            });
+        }
+
+        // Get users for sending
+        const users = await getUsers();
+        if (!users || users.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No users found in database. Please create users first.',
+            });
+        }
+
+        const sender = users[0];
+
+        // Use provided values or get from active email info/template
+        let finalFromName = from_name;
+        let finalSubject = subject;
+        let finalHtmlContent = html_content;
+
+        if (!finalFromName || !finalSubject || !finalHtmlContent) {
+            const info = await getActiveEmailInfo();
+            const template = await getActiveEmailTemplate();
+
+            if (!info || !template) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Either provide from_name, subject, and html_content, or ensure active email_info and email_templates exist.',
+                });
+            }
+
+            finalFromName = finalFromName || info.from_name;
+            finalSubject = finalSubject || info.subject;
+            finalHtmlContent = finalHtmlContent || template.html_content;
+        }
+
+        // Send test email based on provider
+        let sendResult = { success: false };
+        const testId = Date.now();
+
+        try {
+            if (provider === 'gmail_api') {
+                const { google } = require('googleapis');
+                const axios = require('axios');
+                const { loadGoogleCreds } = require('../googleCreds');
+                const creds = await loadGoogleCreds();
+
+                const jwtClient = new google.auth.JWT(
+                    creds.client_email,
+                    null,
+                    creds.private_key,
+                    ['https://mail.google.com/'],
+                    sender.email
+                );
+
+                const tokens = await jwtClient.authorize();
+
+                // Create MIME message with test marker
+                const testMarker = `X-Test-Email-ID: ${testId}`;
+                const htmlWithMarker = `${finalHtmlContent}\n<!-- Test Email ID: ${testId} -->`;
+                
+                const raw = Buffer.from(
+                    `Content-Type: text/html; charset="UTF-8"\n` +
+                    `From: "${finalFromName}" <${sender.email}>\n` +
+                    `To: ${test_email}\n` +
+                    `Subject: ${finalSubject}\n` +
+                    `${testMarker}\n\n` +
+                    htmlWithMarker,
+                    'utf-8'
+                ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+
+                await axios.post(
+                    'https://www.googleapis.com/gmail/v1/users/me/messages/send',
+                    { raw },
+                    { headers: { Authorization: `Bearer ${tokens.access_token}`, 'Content-Type': 'application/json' } }
+                );
+
+                sendResult = { success: true, provider: 'gmail_api' };
+            } else {
+                // SMTP
+                const nodemailer = require('nodemailer');
+                const transporter = nodemailer.createTransport({
+                    host: 'smtp.gmail.com',
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: sender.email,
+                        pass: sender.password,
+                    },
+                });
+
+                const htmlWithMarker = `${finalHtmlContent}\n<!-- Test Email ID: ${testId} -->`;
+
+                await transporter.sendMail({
+                    from: `"${finalFromName}" <${sender.email}>`,
+                    to: test_email,
+                    subject: finalSubject,
+                    html: htmlWithMarker,
+                    headers: {
+                        'X-Test-Email-ID': testId.toString(),
+                    },
+                });
+
+                sendResult = { success: true, provider: 'smtp' };
+            }
+
+            // Log the test email
+            const { query } = require('../db');
+            await query(
+                `INSERT INTO email_logs (user_email, to_email, message_index, status, provider, error_message, sent_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [sender.email, test_email, 0, 'sent', provider, null, new Date()]
+            );
+
+            res.json({
+                success: true,
+                message: `Test email sent successfully to ${test_email} via ${provider}`,
+                details: {
+                    testId: testId,
+                    provider: provider,
+                    from: `${finalFromName} <${sender.email}>`,
+                    to: test_email,
+                    subject: finalSubject,
+                    sentAt: new Date().toISOString(),
+                },
+                inboxVerification: {
+                    note: 'Please check your inbox/spam folder for the test email.',
+                    tips: [
+                        'Check spam/junk folder if not in inbox',
+                        'Mark as "Not Spam" to improve future deliverability',
+                        'Add sender to contacts for better inbox placement',
+                        'Check email headers for authentication results (SPF, DKIM, DMARC)',
+                    ],
+                    testId: testId,
+                },
+            });
+        } catch (error) {
+            // Log failed test email
+            const { query } = require('../db');
+            await query(
+                `INSERT INTO email_logs (user_email, to_email, message_index, status, provider, error_message, sent_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [sender.email, test_email, 0, 'failed', provider, error.message, new Date()]
+            );
+
+            throw error;
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to send test email',
+            details: 'Please check your credentials and network connection.',
+        });
     }
 });
 
