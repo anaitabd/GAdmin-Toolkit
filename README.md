@@ -11,6 +11,7 @@ This project is a full automation suite designed to manage users in Google Works
 - **Email Automation** - Bulk email sending with Gmail API and SMTP support
 - **Campaign Management** - Create, track, and manage email campaigns with pause/resume/kill controls
 - **Click Tracking** - Track email link clicks with unique tracking IDs
+- **Standalone Tracking Links** - Create and manage tracking links for any URL with HTML snippet generation
 - **Campaign Analytics** - Real-time campaign statistics (sent, failed, clicks, CTR)
 - **Campaign Templates** - Save and reuse campaign configurations
 - **Database Management** - PostgreSQL backend with comprehensive schema
@@ -22,6 +23,8 @@ This project is a full automation suite designed to manage users in Google Works
 
 - **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
 - **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
+- **[Tracking Links Quickstart](docs/TRACKING_LINKS_QUICKSTART.md)** - Get started with tracking links in 5 minutes
+- **[Tracking Links Guide](docs/TRACKING_LINKS.md)** - Complete tracking links API reference
 - **[Email Platforms Guide](docs/EMAIL_PLATFORMS.md)** - Best email sending platforms and recommendations
 - **[Scaling Guide](docs/SCALING_GUIDE.md)** - How to scale your application
 - **[Test Script](main/api/test-api.sh)** - Test all API endpoints
@@ -171,6 +174,17 @@ The API will be available at `http://localhost:3000` (or custom PORT env var).
 - `POST /api/email-send/generate-users` - Generate random users
 - `POST /api/email-send/bulk-recipients` - Add email recipients in bulk
 - `GET /api/email-send/status` - Get email sending statistics and recent logs
+
+**Tracking Links** (`/api/tracking-links`)
+- `GET /api/tracking-links` - Get all standalone tracking links
+- `GET /api/tracking-links/:id` - Get specific tracking link
+- `POST /api/tracking-links` - Create new tracking link
+- `POST /api/tracking-links/batch` - Create multiple tracking links
+- `PUT /api/tracking-links/:id` - Update tracking link
+- `DELETE /api/tracking-links/:id` - Delete tracking link
+- `GET /api/tracking-links/:id/html` - Get HTML snippet for link
+- `GET /api/tracking-links/:id/stats` - Get tracking link statistics
+- `GET /t/c/:trackId` - Redirect endpoint (tracks click and redirects)
 
 ### Option 2: Run All Scripts
 

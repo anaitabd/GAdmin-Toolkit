@@ -33,6 +33,8 @@ export const sendCampaign = (params: {
   recipient_offset?: number | null
   recipient_limit?: number | null
   user_ids?: number[] | null
+  offer_id?: number | null
+  headers?: Record<string, string>
 }) =>
   apiClient.post<ApiResponse<Job>>('/jobs/send-campaign', params).then(r => r.data)
 
@@ -42,6 +44,7 @@ export const sendTestEmail = (params: {
   subject: string
   html_content: string
   test_email: string
+  headers?: Record<string, string>
 }) =>
   apiClient.post<{ success: boolean; message: string }>('/jobs/send-test-email', params).then(r => r.data)
 

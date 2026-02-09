@@ -146,22 +146,45 @@ export interface Settings {
 
 // ── Campaign Tracking Stats ────────────────────────────────────────
 export interface CampaignTrackingStats {
-  job_id: number
+  campaign_id: number
   sent: number
   failed: number
   total_clicks: number
   unique_clickers: number
+  total_opens: number
+  unique_openers: number
   ctr: number
+  open_rate: number
 }
 
-// ── Campaign Tracking Stats ────────────────────────────────────────
-export interface CampaignTrackingStats {
-  job_id: number
-  sent: number
-  failed: number
-  total_clicks: number
-  unique_clickers: number
-  ctr: number
+// ── Campaign Openers / Clickers / Links (ephemeral per-campaign) ───
+export interface CampaignOpener {
+  to_email: string
+  opened: boolean
+  opened_at: string | null
+  open_count: string
+  last_opened: string | null
+  devices: string[] | null
+  browsers: string[] | null
+}
+
+export interface CampaignClicker {
+  to_email: string
+  links_clicked: string
+  total_clicks: string
+  first_click: string | null
+  last_click: string | null
+  devices: string[] | null
+  browsers: string[] | null
+}
+
+export interface CampaignLink {
+  original_url: string
+  total_sent: string
+  total_clicks: string
+  unique_clickers: string
+  first_click: string | null
+  last_click: string | null
 }
 
 // ── Campaigns ──────────────────────────────────────────────────────
@@ -180,6 +203,7 @@ export interface Campaign {
   recipient_offset: number | null
   recipient_limit: number | null
   user_ids: number[] | null
+  offer_id: number | null
   scheduled_at: string | null
   created_at: string
   updated_at: string
@@ -213,4 +237,126 @@ export interface Unsubscribe {
   reason: string | null
   campaign_id: number | null
   created_at: string
+}
+
+// ── Tracking Links ─────────────────────────────────────────────────
+export interface TrackingLink {
+  id: number
+  track_id: string
+  original_url: string
+  name: string | null
+  description: string | null
+  tags: string[] | null
+  clicked: boolean
+  clicked_at: string | null
+  created_at: string
+  job_id?: number | null
+}
+
+export interface TrackingLinkHtml {
+  tracking_url: string
+  original_url: string
+  name: string | null
+  html: string
+  html_escaped: string
+}
+
+export interface TrackingLinkStats {
+  id: number
+  track_id: string
+  original_url: string
+  name: string | null
+  description: string | null
+  clicked: boolean
+  clicked_at: string | null
+  created_at: string
+  click_count: number
+  stats: {
+    total_clicks: number
+    unique_clickers: number
+    last_clicked: string | null
+    created: string
+    days_active: number
+    browsers: { name: string; count: number }[]
+    devices: { name: string; count: number }[]
+    os: { name: string; count: number }[]
+    countries: { name: string; count: number }[]
+  }
+}
+
+export interface ClickEvent {
+  id: number
+  ip_address: string | null
+  user_agent: string | null
+  referer: string | null
+  country: string | null
+  city: string | null
+  device: string | null
+  browser: string | null
+  os: string | null
+  clicked_at: string
+}
+
+export interface ClickEventsResponse {
+  success: boolean
+  data: ClickEvent[]
+  count: number
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface TrackingLinkFilters {
+  search?: string
+  tag?: string
+  includeJobLinks?: boolean
+  limit?: number
+  offset?: number
+}
+
+// ── Offers ─────────────────────────────────────────────────────────
+export interface Offer {
+  id: number
+  name: string
+  subject: string
+  from_name: string
+  html_content: string
+  click_url: string
+  unsub_url: string | null
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface OfferClicker {
+  id: number
+  offer_id: number
+  campaign_id: number | null
+  job_id: number | null
+  to_email: string
+  geo: string | null
+  ip_address: string | null
+  user_agent: string | null
+  device: string | null
+  browser: string | null
+  os: string | null
+  clicked_at: string
+}
+
+export interface OfferStats {
+  offer_id: number
+  name: string
+  click_url: string
+  total_clicks: number
+  unique_clickers: number
+  by_geo: { geo: string; clicks: number; unique_clickers: number }[]
+  by_campaign: { job_id: number; clicks: number; unique_clickers: number }[]
+  unsubscribes: number
+}
+
+export interface OfferClickerFilters {
+  geo?: string
+  campaign_id?: number
+  limit?: number
+  offset?: number
 }

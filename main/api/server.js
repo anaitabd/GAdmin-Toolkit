@@ -18,8 +18,10 @@ const credentialsRouter = require('./routes/credentials');
 const jobsRouter = require('./routes/jobs');
 const settingsRouter = require('./routes/settings');
 const trackingRouter = require('./routes/tracking');
+const trackingLinksRouter = require('./routes/trackingLinks');
 const campaignsRouter = require('./routes/campaigns');
 const campaignTemplatesRouter = require('./routes/campaignTemplates');
+const offersRouter = require('./routes/offers');
 
 // Use routes
 app.use('/t', trackingRouter);
@@ -35,6 +37,8 @@ app.use('/api/jobs', jobsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/campaign-templates', campaignTemplatesRouter);
+app.use('/api/tracking-links', trackingLinksRouter);
+app.use('/api/offers', offersRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -57,6 +61,8 @@ app.get('/', (req, res) => {
             campaigns: '/api/campaigns',
             campaignTemplates: '/api/campaign-templates',
             settings: '/api/settings',
+            trackingLinks: '/api/tracking-links',
+            offers: '/api/offers',
             tracking: '/t/c/:trackId',
             health: '/health'
         }

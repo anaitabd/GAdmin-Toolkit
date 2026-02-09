@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useSendCampaign, useJobs, useCancelJob, usePauseJob, useResumeJob, useMultiJobStream, useSendTestEmail, useDeleteJob, useCampaignStats } from '../hooks/useJobs'
+import { useCampaignOpeners, useCampaignClickers, useCampaignLinks } from '../hooks/useCampaigns'
 import { useUsers } from '../hooks/useUsers'
 import { useCredentials } from '../hooks/useCredentials'
 import { useEmailData, useEmailDataGeos, useEmailDataListNames } from '../hooks/useEmailData'
 import { useEmailInfo } from '../hooks/useEmailInfo'
 import { useEmailTemplates } from '../hooks/useEmailTemplates'
-import type { Job, User, EmailData } from '../api/types'
+import { useOffers } from '../hooks/useOffers'
+import type { Job, User, EmailData, CampaignOpener, CampaignClicker, CampaignLink } from '../api/types'
+import { TrackingLinksPanel } from './TrackingLinksPage'
 
 function extractErrorMessage(err: unknown): string {
   const axiosErr = err as { response?: { data?: { error?: string } } }
@@ -172,11 +175,13 @@ interface CampaignStatsProps {
   failed: number
   clicks: number
   ctr: number
+  opens: number
+  openRate: number
 }
 
-function CampaignStats({ sent, failed, clicks, ctr }: Readonly<CampaignStatsProps>) {
+function CampaignStats({ sent, failed, clicks, ctr, opens, openRate }: Readonly<CampaignStatsProps>) {
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
       <div className="rounded-lg border border-green-200 bg-green-50 p-2.5 text-center">
         <p className="text-lg font-bold text-green-700">{sent}</p>
         <p className="text-xs text-green-600">Sent</p>
@@ -184,6 +189,14 @@ function CampaignStats({ sent, failed, clicks, ctr }: Readonly<CampaignStatsProp
       <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-center">
         <p className="text-lg font-bold text-red-700">{failed}</p>
         <p className="text-xs text-red-600">Failed</p>
+      </div>
+      <div className="rounded-lg border border-teal-200 bg-teal-50 p-2.5 text-center">
+        <p className="text-lg font-bold text-teal-700">{opens}</p>
+        <p className="text-xs text-teal-600">Opens</p>
+      </div>
+      <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-2.5 text-center">
+        <p className="text-lg font-bold text-cyan-700">{openRate}%</p>
+        <p className="text-xs text-cyan-600">Open Rate</p>
       </div>
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-center">
         <p className="text-lg font-bold text-blue-700">{clicks}</p>
@@ -193,6 +206,158 @@ function CampaignStats({ sent, failed, clicks, ctr }: Readonly<CampaignStatsProp
         <p className="text-lg font-bold text-purple-700">{ctr}%</p>
         <p className="text-xs text-purple-600">CTR</p>
       </div>
+    </div>
+  )
+}
+
+// ── Campaign Data Tabs: Openers, Clickers, Links ──────────────────
+type DataTab = 'openers' | 'clickers' | 'links'
+
+function OpenersTable({ openers }: Readonly<{ openers: CampaignOpener[] }>) {
+  if (openers.length === 0) return <p className="text-xs text-gray-400 text-center py-4">No openers yet</p>
+  return (
+    <div className="max-h-64 overflow-y-auto">
+      <table className="w-full text-xs">
+        <thead className="bg-gray-100 sticky top-0">
+          <tr>
+            <th className="text-left px-2 py-1.5 font-medium text-gray-600">Email</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Opens</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Device</th>
+            <th className="text-right px-2 py-1.5 font-medium text-gray-600">Last Open</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {openers.map((o) => (
+            <tr key={o.to_email} className="hover:bg-gray-50">
+              <td className="px-2 py-1.5 text-gray-800 truncate max-w-[200px]">{o.to_email}</td>
+              <td className="px-2 py-1.5 text-center text-gray-600">{o.open_count}</td>
+              <td className="px-2 py-1.5 text-center">
+                {o.devices?.map(d => (
+                  <span key={d} className="inline-block bg-teal-50 text-teal-600 rounded px-1 py-0.5 mr-0.5">{d}</span>
+                ))}
+              </td>
+              <td className="px-2 py-1.5 text-right text-gray-500">
+                {o.last_opened ? new Date(o.last_opened).toLocaleString() : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function ClickersTable({ clickers }: Readonly<{ clickers: CampaignClicker[] }>) {
+  if (clickers.length === 0) return <p className="text-xs text-gray-400 text-center py-4">No clickers yet</p>
+  return (
+    <div className="max-h-64 overflow-y-auto">
+      <table className="w-full text-xs">
+        <thead className="bg-gray-100 sticky top-0">
+          <tr>
+            <th className="text-left px-2 py-1.5 font-medium text-gray-600">Email</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Links</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Clicks</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Device</th>
+            <th className="text-right px-2 py-1.5 font-medium text-gray-600">Last Click</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {clickers.map((c) => (
+            <tr key={c.to_email} className="hover:bg-gray-50">
+              <td className="px-2 py-1.5 text-gray-800 truncate max-w-[200px]">{c.to_email}</td>
+              <td className="px-2 py-1.5 text-center text-blue-600 font-medium">{c.links_clicked}</td>
+              <td className="px-2 py-1.5 text-center text-gray-600">{c.total_clicks}</td>
+              <td className="px-2 py-1.5 text-center">
+                {c.devices?.map(d => (
+                  <span key={d} className="inline-block bg-blue-50 text-blue-600 rounded px-1 py-0.5 mr-0.5">{d}</span>
+                ))}
+              </td>
+              <td className="px-2 py-1.5 text-right text-gray-500">
+                {c.last_click ? new Date(c.last_click).toLocaleString() : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function LinksTable({ links }: Readonly<{ links: CampaignLink[] }>) {
+  if (links.length === 0) return <p className="text-xs text-gray-400 text-center py-4">No tracked links</p>
+  return (
+    <div className="max-h-64 overflow-y-auto">
+      <table className="w-full text-xs">
+        <thead className="bg-gray-100 sticky top-0">
+          <tr>
+            <th className="text-left px-2 py-1.5 font-medium text-gray-600">URL</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Sent</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Clicks</th>
+            <th className="text-center px-2 py-1.5 font-medium text-gray-600">Unique</th>
+            <th className="text-right px-2 py-1.5 font-medium text-gray-600">CTR</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {links.map((l) => {
+            const sent = Number.parseInt(l.total_sent, 10) || 0
+            const clicks = Number.parseInt(l.unique_clickers, 10) || 0
+            const linkCtr = sent > 0 ? Math.round((clicks / sent) * 10000) / 100 : 0
+            return (
+              <tr key={l.original_url} className="hover:bg-gray-50">
+                <td className="px-2 py-1.5 text-gray-800 truncate max-w-[250px]" title={l.original_url}>
+                  <a href={l.original_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                    {l.original_url.length > 50 ? l.original_url.slice(0, 50) + '…' : l.original_url}
+                  </a>
+                </td>
+                <td className="px-2 py-1.5 text-center text-gray-600">{l.total_sent}</td>
+                <td className="px-2 py-1.5 text-center text-blue-600 font-medium">{l.total_clicks}</td>
+                <td className="px-2 py-1.5 text-center text-gray-600">{l.unique_clickers}</td>
+                <td className="px-2 py-1.5 text-right font-medium text-purple-600">{linkCtr}%</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function CampaignDataTabs({ jobId }: Readonly<{ jobId: number }>) {
+  const [activeTab, setActiveTab] = useState<DataTab>('openers')
+  const { data: openersRes } = useCampaignOpeners(jobId)
+  const { data: clickersRes } = useCampaignClickers(jobId)
+  const { data: linksRes } = useCampaignLinks(jobId)
+
+  const openers = openersRes?.data ?? []
+  const clickers = clickersRes?.data ?? []
+  const links = linksRes?.data ?? []
+
+  const tabs: { key: DataTab; label: string; count: number; icon: string }[] = [
+    { key: 'openers', label: 'Openers', count: openers.length, icon: '👁' },
+    { key: 'clickers', label: 'Clickers', count: clickers.length, icon: '👆' },
+    { key: 'links', label: 'Links', count: links.length, icon: '🔗' },
+  ]
+
+  return (
+    <div className="mt-3">
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5 mb-2 w-fit">
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeTab === tab.key
+                ? 'bg-white text-indigo-700 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            {tab.icon} {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+      {activeTab === 'openers' && <OpenersTable openers={openers} />}
+      {activeTab === 'clickers' && <ClickersTable clickers={clickers} />}
+      {activeTab === 'links' && <LinksTable links={links} />}
     </div>
   )
 }
@@ -317,6 +482,8 @@ function CampaignCard({ job, onPause, onResume, onCancel, onResend, isPausePendi
               failed={statsRes.data.failed}
               clicks={statsRes.data.total_clicks}
               ctr={statsRes.data.ctr}
+              opens={statsRes.data.unique_openers ?? 0}
+              openRate={statsRes.data.open_rate ?? 0}
             />
           </div>
         )}
@@ -372,6 +539,11 @@ function CampaignCard({ job, onPause, onResume, onCancel, onResend, isPausePendi
             Created: {new Date(job.created_at).toLocaleString()}
             {job.completed_at && <span> · Finished: {new Date(job.completed_at).toLocaleString()}</span>}
           </p>
+
+          {/* Openers / Clickers / Links data tabs */}
+          {job.processed_items > 0 && (
+            <CampaignDataTabs jobId={job.id} />
+          )}
         </div>
       )}
     </div>
@@ -546,6 +718,7 @@ export default function CampaignPage() {
   const { data: geosData } = useEmailDataGeos()
   const { data: listNamesData } = useEmailDataListNames()
   const { data: jobsData } = useJobs()
+  const { data: offersRes } = useOffers()
 
   const users = usersData?.data ?? []
   const credentials = credentialsData?.data ?? []
@@ -554,6 +727,7 @@ export default function CampaignPage() {
   const emailTemplates = emailTemplatesRes?.data ?? []
   const geos = geosData?.data ?? []
   const listNames = listNamesData?.data ?? []
+  const offers = offersRes?.data ?? []
 
   // Campaign jobs from the jobs list
   const campaignJobs = useMemo(() =>
@@ -605,8 +779,29 @@ export default function CampaignPage() {
   const [selectedEmailInfoId, setSelectedEmailInfoId] = useState<number | ''>('')
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | ''>('')
   const [selectedCredentialId, setSelectedCredentialId] = useState<number | ''>('')
+  const [selectedOfferId, setSelectedOfferId] = useState<number | ''>('')
   const [testEmail, setTestEmail] = useState('')
   const [testResult, setTestResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Email headers state
+  const [replyTo, setReplyTo] = useState('')
+  const [listUnsubscribe, setListUnsubscribe] = useState('')
+  const [xMailer, setXMailer] = useState('')
+  const [customHeaderKey, setCustomHeaderKey] = useState('')
+  const [customHeaderValue, setCustomHeaderValue] = useState('')
+  const [extraHeaders, setExtraHeaders] = useState<{ key: string; value: string }[]>([])
+
+  // Build headers object from state
+  const buildHeaders = (): Record<string, string> => {
+    const h: Record<string, string> = {}
+    if (replyTo.trim()) h['Reply-To'] = replyTo.trim()
+    if (listUnsubscribe.trim()) h['List-Unsubscribe'] = listUnsubscribe.trim()
+    if (xMailer.trim()) h['X-Mailer'] = xMailer.trim()
+    for (const { key, value } of extraHeaders) {
+      if (key.trim() && value.trim()) h[key.trim()] = value.trim()
+    }
+    return h
+  }
 
   // Filter recipients for preview
   const geoFilteredList = useMemo(() => {
@@ -632,6 +827,17 @@ export default function CampaignPage() {
     setSelectedTemplateId(id)
     const tpl = id === '' ? null : emailTemplates.find((t) => t.id === id)
     if (tpl) setHtmlContent(tpl.html_content)
+  }
+
+  // Auto-fill from Offer (from_name, subject, html_content)
+  const handleOfferSelect = (id: number | '') => {
+    setSelectedOfferId(id)
+    const offer = id === '' ? null : offers.find((o) => o.id === id)
+    if (offer) {
+      setFromName(offer.from_name)
+      setSubject(offer.subject)
+      setHtmlContent(offer.html_content)
+    }
   }
 
   const activeCredentials = credentials.filter((c) => c.active)
@@ -674,6 +880,8 @@ export default function CampaignPage() {
       geo: selectedGeo || null,
       list_name: selectedListName || null,
       user_ids: selectedUserIds.size > 0 ? [...selectedUserIds] : null,
+      offer_id: selectedOfferId || null,
+      headers: buildHeaders(),
       ...range,
     }, {
       onSuccess: () => setViewMode('list'),
@@ -683,7 +891,7 @@ export default function CampaignPage() {
   const handleSendTest = () => {
     setTestResult(null)
     sendTestMutation.mutate(
-      { provider, from_name: fromName, subject, html_content: htmlContent, test_email: testEmail },
+      { provider, from_name: fromName, subject, html_content: htmlContent, test_email: testEmail, headers: buildHeaders() },
       {
         onSuccess: (data) => setTestResult({ type: 'success', message: data.message }),
         onError: (err: unknown) => setTestResult({ type: 'error', message: extractErrorMessage(err) }),
@@ -713,7 +921,17 @@ export default function CampaignPage() {
     // Clear quick-fill selections
     setSelectedEmailInfoId('')
     setSelectedTemplateId('')
+    setSelectedOfferId('')
     setTestResult(null)
+    // Restore headers if available
+    const h = (p.headers || {}) as Record<string, string>
+    setReplyTo(h['Reply-To'] || '')
+    setListUnsubscribe(h['List-Unsubscribe'] || '')
+    setXMailer(h['X-Mailer'] || '')
+    const knownKeys = new Set(['Reply-To', 'List-Unsubscribe', 'X-Mailer'])
+    setExtraHeaders(Object.entries(h).filter(([k]) => !knownKeys.has(k)).map(([key, value]) => ({ key, value })))
+    setCustomHeaderKey('')
+    setCustomHeaderValue('')
     setViewMode('form')
   }
 
@@ -732,7 +950,14 @@ export default function CampaignPage() {
     setSelectedEmailInfoId('')
     setSelectedTemplateId('')
     setSelectedCredentialId('')
+    setSelectedOfferId('')
     setTestResult(null)
+    setReplyTo('')
+    setListUnsubscribe('')
+    setXMailer('')
+    setExtraHeaders([])
+    setCustomHeaderKey('')
+    setCustomHeaderValue('')
     setViewMode('form')
   }
 
@@ -796,7 +1021,28 @@ export default function CampaignPage() {
         <div className="xl:col-span-2 space-y-4">
           {/* Quick-fill from existing data */}
           <SectionCard title="Quick Fill" icon="⚡">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="campaign-offer" className="block text-sm font-medium text-gray-700 mb-1">
+                  Load from Offer
+                </label>
+                <select
+                  id="campaign-offer"
+                  value={selectedOfferId}
+                  onChange={(e) => handleOfferSelect(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="">— No offer —</option>
+                  {offers.filter(o => o.active).map((offer) => (
+                    <option key={offer.id} value={offer.id}>
+                      {offer.name} — {offer.subject}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto-fills From, Subject &amp; HTML. Links track to offer.
+                </p>
+              </div>
               <div>
                 <label htmlFor="campaign-email-info" className="block text-sm font-medium text-gray-700 mb-1">
                   Load from Email Info
@@ -870,6 +1116,108 @@ export default function CampaignPage() {
             </div>
           </SectionCard>
 
+          {/* Email Headers */}
+          <SectionCard title="Email Headers" icon="📨">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="campaign-reply-to" className="block text-sm font-medium text-gray-700 mb-1">Reply-To</label>
+                <input
+                  id="campaign-reply-to"
+                  type="email"
+                  value={replyTo}
+                  onChange={(e) => setReplyTo(e.target.value)}
+                  placeholder="reply@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="campaign-list-unsub" className="block text-sm font-medium text-gray-700 mb-1">List-Unsubscribe</label>
+                <input
+                  id="campaign-list-unsub"
+                  type="text"
+                  value={listUnsubscribe}
+                  onChange={(e) => setListUnsubscribe(e.target.value)}
+                  placeholder="<mailto:unsub@example.com>, <https://example.com/unsub>"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="campaign-x-mailer" className="block text-sm font-medium text-gray-700 mb-1">X-Mailer</label>
+                <input
+                  id="campaign-x-mailer"
+                  type="text"
+                  value={xMailer}
+                  onChange={(e) => setXMailer(e.target.value)}
+                  placeholder="e.g. MyMailer/1.0"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+            {/* Custom headers */}
+            {extraHeaders.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {extraHeaders.map((h, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={h.key}
+                      onChange={(e) => {
+                        const next = [...extraHeaders]
+                        next[i] = { ...next[i], key: e.target.value }
+                        setExtraHeaders(next)
+                      }}
+                      placeholder="Header name"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <input
+                      value={h.value}
+                      onChange={(e) => {
+                        const next = [...extraHeaders]
+                        next[i] = { ...next[i], value: e.target.value }
+                        setExtraHeaders(next)
+                      }}
+                      placeholder="Value"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExtraHeaders(extraHeaders.filter((_, j) => j !== i))}
+                      className="text-red-400 hover:text-red-600 text-sm px-1"
+                      title="Remove header"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 items-center mt-3">
+              <input
+                value={customHeaderKey}
+                onChange={(e) => setCustomHeaderKey(e.target.value)}
+                placeholder="Header name (e.g. X-Priority)"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <input
+                value={customHeaderValue}
+                onChange={(e) => setCustomHeaderValue(e.target.value)}
+                placeholder="Value"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customHeaderKey.trim() && customHeaderValue.trim()) {
+                    setExtraHeaders([...extraHeaders, { key: customHeaderKey.trim(), value: customHeaderValue.trim() }])
+                    setCustomHeaderKey('')
+                    setCustomHeaderValue('')
+                  }
+                }}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-300 hover:bg-indigo-50 whitespace-nowrap"
+              >+ Add</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Optional headers added to every email. Common: Reply-To, List-Unsubscribe, X-Mailer, X-Priority.
+            </p>
+          </SectionCard>
+
           {/* HTML Content */}
           <SectionCard
             title="HTML Content"
@@ -898,9 +1246,59 @@ export default function CampaignPage() {
               />
             )}
             <p className="text-xs text-gray-500 mt-2">
-              Use <code className="bg-gray-100 px-1 rounded">[to]</code> as a placeholder for the recipient&apos;s name.
+              Use <code className="bg-gray-100 px-1 rounded">[to]</code> for recipient name
+              {' · '}<code className="bg-indigo-50 text-indigo-700 px-1 rounded">[click]</code> for tracked click link
+              {' · '}<code className="bg-indigo-50 text-indigo-700 px-1 rounded">[unsub]</code> for tracked unsub link
             </p>
+            {selectedOfferId && (() => {
+              const offer = offers.find(o => o.id === selectedOfferId)
+              if (!offer) return null
+              const hasClickTag = /\[click\]/i.test(htmlContent)
+              const hasUnsubTag = /\[unsub\]/i.test(htmlContent) || /\[unsb\]/i.test(htmlContent)
+              const hasClickUrl = offer.click_url && htmlContent.includes(offer.click_url)
+              const hasUnsubUrl = offer.unsub_url && htmlContent.includes(offer.unsub_url)
+              const clickTracked = hasClickTag || hasClickUrl
+              const unsubTracked = hasUnsubTag || hasUnsubUrl
+              if (!offer.click_url && !offer.unsub_url) return null
+              return (
+                <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <p className="text-xs font-semibold text-indigo-800 mb-2">🔗 Offer Tracking (auto-generated at send)</p>
+                  {offer.click_url && (
+                    <div className="flex items-center gap-2 text-xs mb-1">
+                      <span className={`inline-block w-2 h-2 rounded-full ${clickTracked ? 'bg-green-500' : 'bg-amber-400'}`} />
+                      <span className="font-medium text-gray-700">Click:</span>
+                      <span className="text-gray-600 truncate max-w-[300px]">{offer.click_url}</span>
+                      {clickTracked
+                        ? <span className="text-green-700 font-medium">✓ tracked</span>
+                        : <span className="text-amber-600">not in HTML</span>
+                      }
+                    </div>
+                  )}
+                  {offer.unsub_url && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`inline-block w-2 h-2 rounded-full ${unsubTracked ? 'bg-green-500' : 'bg-amber-400'}`} />
+                      <span className="font-medium text-gray-700">Unsub:</span>
+                      <span className="text-gray-600 truncate max-w-[300px]">{offer.unsub_url}</span>
+                      {unsubTracked
+                        ? <span className="text-green-700 font-medium">✓ tracked</span>
+                        : <span className="text-amber-600">not in HTML</span>
+                      }
+                    </div>
+                  )}
+                  {(!clickTracked || !unsubTracked) && (
+                    <p className="text-xs text-amber-700 mt-2">
+                      💡 Use <code className="bg-white px-1 rounded">[click]</code> / <code className="bg-white px-1 rounded">[unsub]</code> tags or include the offer URLs as href links to enable auto-tracking.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
           </SectionCard>
+
+          {/* Tracking Links — insert into HTML */}
+          <TrackingLinksPanel
+            onInsertHtml={(snippet) => setHtmlContent(prev => prev + '\n' + snippet)}
+          />
         </div>
 
         {/* ─── Right column: Config, Data & Send ─── */}
@@ -1121,6 +1519,32 @@ export default function CampaignPage() {
                 <p className="text-gray-500">Recipients</p>
                 <p className="font-medium text-gray-800">{recipientsSummary}</p>
               </div>
+              {selectedOfferId && (() => {
+                const offer = offers.find(o => o.id === selectedOfferId)
+                if (!offer) return null
+                const hasClickTag = /\[click\]/i.test(htmlContent)
+                const hasUnsubTag = /\[unsub\]/i.test(htmlContent) || /\[unsb\]/i.test(htmlContent)
+                const clickTracked = hasClickTag || (offer.click_url && htmlContent.includes(offer.click_url))
+                const unsubTracked = hasUnsubTag || (offer.unsub_url && htmlContent.includes(offer.unsub_url))
+                return (
+                  <div className="col-span-2 bg-indigo-50 rounded-lg px-3 py-2">
+                    <p className="text-indigo-500">Offer</p>
+                    <p className="font-medium text-indigo-800 truncate">{offer.name}</p>
+                    <div className="flex gap-3 mt-1">
+                      {offer.click_url && (
+                        <span className={`text-xs ${clickTracked ? 'text-green-700' : 'text-amber-600'}`}>
+                          {clickTracked ? '✓' : '⚠'} Click
+                        </span>
+                      )}
+                      {offer.unsub_url && (
+                        <span className={`text-xs ${unsubTracked ? 'text-green-700' : 'text-amber-600'}`}>
+                          {unsubTracked ? '✓' : '⚠'} Unsub
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Validation issues */}

@@ -90,6 +90,7 @@ async function startJobProcess(job, scriptPath, args = []) {
 router.post('/send-test-email', async (req, res, next) => {
     try {
         const { provider, from_name, subject, html_content, test_email } = req.body;
+        const customHeaders = req.body.headers || {};
         if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
         }
@@ -116,13 +117,45 @@ router.post('/send-test-email', async (req, res, next) => {
                 ['https://mail.google.com/'], sender.email
             );
             const tokens = await jwtClient.authorize();
-            const raw = Buffer.from(
-                `Content-Type: text/html; charset="UTF-8"\n` +
-                `From: "${from_name}" <${sender.email}>\n` +
-                `To: ${test_email.trim()}\n` +
-                `Subject: ${subject}\n\n` +
-                html_content
-            ).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+            const encodeRfc2047 = (str) => {
+                if (!/[^\x20-\x7E]/.test(str)) return str;
+                const bytes = Buffer.from(str, 'utf-8');
+                const chunks = [];
+                const chunkSize = 45;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+                    chunks.push(`=?UTF-8?B?${chunk.toString('base64')}?=`);
+                }
+                return chunks.join('\r\n ');
+            };
+
+            const encodedSubject = encodeRfc2047(subject);
+            const encodedFrom = /[^\x20-\x7E]/.test(from_name)
+                ? `${encodeRfc2047(from_name)} <${sender.email}>`
+                : `"${from_name}" <${sender.email}>`;
+
+            const bodyBase64 = Buffer.from(html_content, 'utf-8').toString('base64');
+            const bodyLines = bodyBase64.match(/.{1,76}/g)?.join('\r\n') || '';
+
+            const headerLines = [
+                'MIME-Version: 1.0',
+                'Content-Type: text/html; charset=UTF-8',
+                'Content-Transfer-Encoding: base64',
+                `From: ${encodedFrom}`,
+                `To: ${test_email.trim()}`,
+                `Subject: ${encodedSubject}`,
+            ];
+            if (customHeaders && typeof customHeaders === 'object') {
+                for (const [key, value] of Object.entries(customHeaders)) {
+                    if (value && String(value).trim()) headerLines.push(`${key}: ${String(value).trim()}`);
+                }
+            }
+
+            const raw = Buffer.from(headerLines.join('\r\n') + '\r\n\r\n' + bodyLines, 'utf-8')
+                .toString('base64')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
 
             await axios.post(
                 'https://www.googleapis.com/gmail/v1/users/me/messages/send',
@@ -140,6 +173,7 @@ router.post('/send-test-email', async (req, res, next) => {
                 to: test_email.trim(),
                 subject,
                 html: html_content,
+                headers: customHeaders,
             });
         }
 
@@ -267,7 +301,8 @@ router.post('/:id/resume', async (req, res, next) => {
 // ── POST /api/jobs/send-campaign ───────────────────────────────────
 router.post('/send-campaign', async (req, res, next) => {
     try {
-        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description } = req.body;
+        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description, offer_id } = req.body;
+        const customHeaders = req.body.headers || {};
         if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
         }
@@ -301,7 +336,7 @@ router.post('/send-campaign', async (req, res, next) => {
         const type = provider === 'gmail_api' ? 'send_campaign_api' : 'send_campaign_smtp';
         const job = await createJob({
             type,
-            params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length },
+            params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length, offer_id: offer_id || null, headers: customHeaders },
         });
 
         // If campaign_id provided, link it; otherwise create a new campaign record
@@ -311,8 +346,8 @@ router.post('/send-campaign', async (req, res, next) => {
             await query(
                 `INSERT INTO campaigns (
                     name, description, job_id, from_name, subject, html_content,
-                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids, offer_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                 [
                     campaign_name,
                     campaign_description || null,
@@ -326,7 +361,8 @@ router.post('/send-campaign', async (req, res, next) => {
                     list_name || null,
                     recipient_offset || null,
                     recipient_limit || null,
-                    users.map(u => u.id)
+                    users.map(u => u.id),
+                    offer_id || null
                 ]
             );
         }

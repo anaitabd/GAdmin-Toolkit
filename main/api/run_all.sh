@@ -14,5 +14,12 @@ done
 echo "Applying schema..."
 psql "$DB_URL" -f main/api/db/schema.sql
 
+echo "Applying migrations..."
+for migration in main/api/db/migrations/*.sql; do
+  [ -f "$migration" ] || continue
+  echo "  -> $(basename "$migration")"
+  psql "$DB_URL" -f "$migration" 2>&1 || true
+done
+
 echo "Starting API server..."
 exec node main/api/server.js

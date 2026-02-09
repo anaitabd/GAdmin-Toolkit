@@ -46,12 +46,52 @@ CREATE TABLE IF NOT EXISTS email_logs (
 CREATE TABLE IF NOT EXISTS click_tracking (
     id SERIAL PRIMARY KEY,
     track_id UUID NOT NULL DEFAULT gen_random_uuid(),
-    job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    to_email TEXT NOT NULL,
+    job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE,
+    to_email TEXT,
     original_url TEXT NOT NULL,
+    name TEXT,
+    description TEXT,
+    tags TEXT[],
     clicked BOOLEAN NOT NULL DEFAULT FALSE,
     clicked_at TIMESTAMPTZ,
+    offer_id INTEGER REFERENCES offers(id) ON DELETE SET NULL,
+    link_type TEXT NOT NULL DEFAULT 'click' CHECK (link_type IN ('click', 'unsub')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS click_events (
+    id SERIAL PRIMARY KEY,
+    tracking_id INTEGER NOT NULL REFERENCES click_tracking(id) ON DELETE CASCADE,
+    ip_address TEXT,
+    user_agent TEXT,
+    referer TEXT,
+    country TEXT,
+    city TEXT,
+    device TEXT,
+    browser TEXT,
+    os TEXT,
+    clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS open_tracking (
+    id SERIAL PRIMARY KEY,
+    track_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE,
+    to_email TEXT NOT NULL,
+    opened BOOLEAN NOT NULL DEFAULT FALSE,
+    opened_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS open_events (
+    id SERIAL PRIMARY KEY,
+    tracking_id INTEGER NOT NULL REFERENCES open_tracking(id) ON DELETE CASCADE,
+    ip_address TEXT,
+    user_agent TEXT,
+    device TEXT,
+    browser TEXT,
+    os TEXT,
+    opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS bounce_logs (
@@ -108,6 +148,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
     name TEXT NOT NULL,
     description TEXT,
     job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+    offer_id INTEGER REFERENCES offers(id) ON DELETE SET NULL,
     from_name TEXT NOT NULL,
     subject TEXT NOT NULL,
     html_content TEXT NOT NULL,
@@ -142,7 +183,36 @@ CREATE TABLE IF NOT EXISTS unsubscribes (
     email TEXT UNIQUE NOT NULL,
     reason TEXT,
     campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL,
+    offer_id INTEGER REFERENCES offers(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS offers (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    from_name TEXT NOT NULL,
+    html_content TEXT NOT NULL,
+    click_url TEXT NOT NULL,
+    unsub_url TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS offer_clickers (
+    id SERIAL PRIMARY KEY,
+    offer_id INTEGER NOT NULL REFERENCES offers(id) ON DELETE CASCADE,
+    campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL,
+    job_id INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+    to_email TEXT NOT NULL,
+    geo TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    device TEXT,
+    browser TEXT,
+    os TEXT,
+    clicked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -154,14 +224,29 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_user_email ON email_logs(user_email);
 CREATE INDEX IF NOT EXISTS idx_email_logs_job_id ON email_logs(job_id);
 CREATE INDEX IF NOT EXISTS idx_click_tracking_track_id ON click_tracking(track_id);
 CREATE INDEX IF NOT EXISTS idx_click_tracking_job_id ON click_tracking(job_id);
+CREATE INDEX IF NOT EXISTS idx_click_tracking_name ON click_tracking(name) WHERE name IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_click_tracking_tags ON click_tracking USING GIN(tags) WHERE tags IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_credentials_name ON credentials(name);
 CREATE INDEX IF NOT EXISTS idx_credentials_active ON credentials(active);
+CREATE INDEX IF NOT EXISTS idx_open_tracking_track_id ON open_tracking(track_id);
+CREATE INDEX IF NOT EXISTS idx_open_tracking_job_id ON open_tracking(job_id);
+CREATE INDEX IF NOT EXISTS idx_open_tracking_to_email ON open_tracking(to_email);
+CREATE INDEX IF NOT EXISTS idx_open_events_tracking_id ON open_events(tracking_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type);
 CREATE INDEX IF NOT EXISTS idx_campaigns_job_id ON campaigns(job_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_scheduled_at ON campaigns(scheduled_at);
 CREATE INDEX IF NOT EXISTS idx_campaign_templates_active ON campaign_templates(active);
 CREATE INDEX IF NOT EXISTS idx_unsubscribes_email ON unsubscribes(email);
+CREATE INDEX IF NOT EXISTS idx_offers_active ON offers(active);
+CREATE INDEX IF NOT EXISTS idx_offer_clickers_offer_id ON offer_clickers(offer_id);
+CREATE INDEX IF NOT EXISTS idx_offer_clickers_campaign_id ON offer_clickers(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_offer_clickers_geo ON offer_clickers(geo);
+CREATE INDEX IF NOT EXISTS idx_offer_clickers_to_email ON offer_clickers(to_email);
+-- These indexes require columns added by migrations; they'll be created by migration files
+-- CREATE INDEX IF NOT EXISTS idx_click_tracking_offer_id ON click_tracking(offer_id);
+-- CREATE INDEX IF NOT EXISTS idx_click_tracking_link_type ON click_tracking(link_type);
+-- CREATE INDEX IF NOT EXISTS idx_campaigns_offer_id ON campaigns(offer_id);
 
 -- Default settings
 INSERT INTO settings (key, value) VALUES
