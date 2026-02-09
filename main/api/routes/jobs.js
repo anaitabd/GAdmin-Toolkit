@@ -342,14 +342,16 @@ router.post('/send-campaign', async (req, res, next) => {
         // If campaign_id provided, link it; otherwise create a new campaign record
         if (campaign_id) {
             await query('UPDATE campaigns SET job_id = $1, updated_at = NOW() WHERE id = $2', [job.id, campaign_id]);
-        } else if (campaign_name) {
+        } else {
+            // Always create a campaign record (use campaign_name if given, otherwise auto-generate)
+            const name = campaign_name || `${from_name} — ${subject.slice(0, 60)}`;
             await query(
                 `INSERT INTO campaigns (
                     name, description, job_id, from_name, subject, html_content,
                     provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids, offer_id
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                 [
-                    campaign_name,
+                    name,
                     campaign_description || null,
                     job.id,
                     from_name,

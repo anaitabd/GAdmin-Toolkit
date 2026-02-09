@@ -262,7 +262,11 @@ router.post('/:id/clone', async (req, res, next) => {
 // ── GET /api/campaigns/:id/stats ───────────────────────────────────
 router.get('/:id/stats', async (req, res, next) => {
     try {
-        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        let campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        // Fallback: look up by job_id (frontend may pass job ID instead of campaign ID)
+        if (campaign.rows.length === 0) {
+            campaign = await query('SELECT job_id FROM campaigns WHERE job_id = $1', [req.params.id]);
+        }
         
         if (campaign.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Campaign not found' });
@@ -355,7 +359,11 @@ router.get('/:id/stats', async (req, res, next) => {
 // Returns list of recipients who opened the email (ephemeral, per-campaign)
 router.get('/:id/openers', async (req, res, next) => {
     try {
-        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        let campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        // Fallback: look up by job_id (frontend may pass job ID instead of campaign ID)
+        if (campaign.rows.length === 0) {
+            campaign = await query('SELECT job_id FROM campaigns WHERE job_id = $1', [req.params.id]);
+        }
         if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
         const jobId = campaign.rows[0].job_id;
         if (!jobId) return res.json({ success: true, data: [], count: 0, total: 0 });
@@ -397,7 +405,11 @@ router.get('/:id/openers', async (req, res, next) => {
 // Returns list of recipients who clicked at least one link (ephemeral, per-campaign)
 router.get('/:id/clickers', async (req, res, next) => {
     try {
-        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        let campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        // Fallback: look up by job_id (frontend may pass job ID instead of campaign ID)
+        if (campaign.rows.length === 0) {
+            campaign = await query('SELECT job_id FROM campaigns WHERE job_id = $1', [req.params.id]);
+        }
         if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
         const jobId = campaign.rows[0].job_id;
         if (!jobId) return res.json({ success: true, data: [], count: 0, total: 0 });
@@ -441,7 +453,11 @@ router.get('/:id/clickers', async (req, res, next) => {
 // Returns aggregated link stats per unique URL in the campaign (ephemeral, per-campaign)
 router.get('/:id/links', async (req, res, next) => {
     try {
-        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        let campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        // Fallback: look up by job_id (frontend may pass job ID instead of campaign ID)
+        if (campaign.rows.length === 0) {
+            campaign = await query('SELECT job_id FROM campaigns WHERE job_id = $1', [req.params.id]);
+        }
         if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
         const jobId = campaign.rows[0].job_id;
         if (!jobId) return res.json({ success: true, data: [] });

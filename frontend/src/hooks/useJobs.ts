@@ -73,6 +73,8 @@ export const useSendCampaign = () => {
       user_ids?: number[] | null
       offer_id?: number | null
       headers?: Record<string, string>
+      campaign_name?: string
+      campaign_description?: string | null
     }) => jobsApi.sendCampaign(params),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   })

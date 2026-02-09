@@ -324,18 +324,19 @@ function LinksTable({ links }: Readonly<{ links: CampaignLink[] }>) {
 
 function CampaignDataTabs({ jobId }: Readonly<{ jobId: number }>) {
   const [activeTab, setActiveTab] = useState<DataTab>('openers')
-  const { data: openersRes } = useCampaignOpeners(jobId)
-  const { data: clickersRes } = useCampaignClickers(jobId)
-  const { data: linksRes } = useCampaignLinks(jobId)
+  // Lazy-load: only fetch data for the active tab
+  const { data: openersRes } = useCampaignOpeners(activeTab === 'openers' ? jobId : undefined)
+  const { data: clickersRes } = useCampaignClickers(activeTab === 'clickers' ? jobId : undefined)
+  const { data: linksRes } = useCampaignLinks(activeTab === 'links' ? jobId : undefined)
 
   const openers = openersRes?.data ?? []
   const clickers = clickersRes?.data ?? []
   const links = linksRes?.data ?? []
 
-  const tabs: { key: DataTab; label: string; count: number; icon: string }[] = [
-    { key: 'openers', label: 'Openers', count: openers.length, icon: '👁' },
-    { key: 'clickers', label: 'Clickers', count: clickers.length, icon: '👆' },
-    { key: 'links', label: 'Links', count: links.length, icon: '🔗' },
+  const tabs: { key: DataTab; label: string; count: number | null; icon: string }[] = [
+    { key: 'openers', label: 'Openers', count: activeTab === 'openers' ? openers.length : null, icon: '👁' },
+    { key: 'clickers', label: 'Clickers', count: activeTab === 'clickers' ? clickers.length : null, icon: '👆' },
+    { key: 'links', label: 'Links', count: activeTab === 'links' ? links.length : null, icon: '🔗' },
   ]
 
   return (
@@ -351,7 +352,7 @@ function CampaignDataTabs({ jobId }: Readonly<{ jobId: number }>) {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab.icon} {tab.label} ({tab.count})
+            {tab.icon} {tab.label}{tab.count !== null ? ` (${tab.count})` : ''}
           </button>
         ))}
       </div>
@@ -882,6 +883,7 @@ export default function CampaignPage() {
       user_ids: selectedUserIds.size > 0 ? [...selectedUserIds] : null,
       offer_id: selectedOfferId || null,
       headers: buildHeaders(),
+      campaign_name: `${fromName} — ${subject.slice(0, 60)}`,
       ...range,
     }, {
       onSuccess: () => setViewMode('list'),
