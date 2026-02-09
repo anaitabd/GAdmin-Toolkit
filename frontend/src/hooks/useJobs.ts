@@ -71,6 +71,7 @@ export const useSendCampaign = () => {
       recipient_offset?: number | null
       recipient_limit?: number | null
       user_ids?: number[] | null
+      offer_id?: number | null
     }) => jobsApi.sendCampaign(params),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   })

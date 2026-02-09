@@ -267,7 +267,7 @@ router.post('/:id/resume', async (req, res, next) => {
 // ── POST /api/jobs/send-campaign ───────────────────────────────────
 router.post('/send-campaign', async (req, res, next) => {
     try {
-        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description } = req.body;
+        const { provider, from_name, subject, html_content, batch_size, geo, list_name, recipient_limit, recipient_offset, user_ids, campaign_id, campaign_name, campaign_description, offer_id } = req.body;
         if (!provider || !['gmail_api', 'smtp'].includes(provider)) {
             return res.status(400).json({ success: false, error: 'provider must be gmail_api or smtp' });
         }
@@ -301,7 +301,7 @@ router.post('/send-campaign', async (req, res, next) => {
         const type = provider === 'gmail_api' ? 'send_campaign_api' : 'send_campaign_smtp';
         const job = await createJob({
             type,
-            params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length },
+            params: { provider, from_name, subject, html_content, batch_size: batchNum, geo: geo || null, list_name: list_name || null, recipient_offset: recipient_offset || null, recipient_limit: recipient_limit || null, user_ids: users.map((u) => u.id), totalRecipients: data.length, totalUsers: users.length, offer_id: offer_id || null },
         });
 
         // If campaign_id provided, link it; otherwise create a new campaign record
@@ -311,8 +311,8 @@ router.post('/send-campaign', async (req, res, next) => {
             await query(
                 `INSERT INTO campaigns (
                     name, description, job_id, from_name, subject, html_content,
-                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                    provider, batch_size, geo, list_name, recipient_offset, recipient_limit, user_ids, offer_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                 [
                     campaign_name,
                     campaign_description || null,
@@ -326,7 +326,8 @@ router.post('/send-campaign', async (req, res, next) => {
                     list_name || null,
                     recipient_offset || null,
                     recipient_limit || null,
-                    users.map(u => u.id)
+                    users.map(u => u.id),
+                    offer_id || null
                 ]
             );
         }

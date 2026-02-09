@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Campaign, ApiResponse, CampaignTrackingStats } from './types'
+import type { Campaign, ApiResponse, CampaignTrackingStats, CampaignOpener, CampaignClicker, CampaignLink } from './types'
 
 export const getAll = (params?: { status?: string; limit?: number; offset?: number }) =>
   apiClient.get<ApiResponse<Campaign[]>>('/campaigns', { params }).then(r => r.data)
@@ -21,6 +21,7 @@ export const create = (data: {
   recipient_limit?: number
   user_ids?: number[]
   scheduled_at?: string
+  offer_id?: number | null
 }) =>
   apiClient.post<ApiResponse<Campaign>>('/campaigns', data).then(r => r.data)
 
@@ -38,6 +39,7 @@ export const update = (id: number, data: Partial<{
   recipient_limit: number | null
   user_ids: number[] | null
   scheduled_at: string | null
+  offer_id: number | null
 }>) =>
   apiClient.put<ApiResponse<Campaign>>(`/campaigns/${id}`, data).then(r => r.data)
 
@@ -49,3 +51,12 @@ export const clone = (id: number) =>
 
 export const getStats = (id: number) =>
   apiClient.get<ApiResponse<CampaignTrackingStats>>(`/campaigns/${id}/stats`).then(r => r.data)
+
+export const getOpeners = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<CampaignOpener[]> & { total: number }>(`/campaigns/${id}/openers`, { params }).then(r => r.data)
+
+export const getClickers = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<CampaignClicker[]> & { total: number }>(`/campaigns/${id}/clickers`, { params }).then(r => r.data)
+
+export const getLinks = (id: number) =>
+  apiClient.get<ApiResponse<CampaignLink[]>>(`/campaigns/${id}/links`).then(r => r.data)

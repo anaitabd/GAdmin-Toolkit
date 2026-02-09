@@ -9,10 +9,11 @@ const {
     getEmailData,
     insertEmailLog,
     insertClickTrackingBatch,
+    insertOpenTracking,
     updateJob,
     getJob,
 } = require('../db/queries');
-const { extractUrls, rewriteLinks } = require('./utils/linkRewriter');
+const { extractUrls, rewriteLinks, injectOpenPixel } = require('./utils/linkRewriter');
 
 const INTERVAL = 50;
 
@@ -26,6 +27,7 @@ async function run() {
         const params = job.params || {};
         const { from_name, subject, html_content, batch_size } = params;
         const batchSize = parseInt(batch_size, 10) || 20;
+        const offerId = params.offer_id || null;
 
         if (!from_name || !subject || !html_content) {
             throw new Error('Missing campaign params: from_name, subject, or html_content');
@@ -74,11 +76,17 @@ async function run() {
                 // Insert click tracking rows and rewrite links for this recipient
                 if (originalUrls.length > 0) {
                     try {
-                        const trackRows = await insertClickTrackingBatch(jobId, emailData.to_email, originalUrls);
+                        const trackRows = await insertClickTrackingBatch(jobId, emailData.to_email, originalUrls, offerId);
                         const urlToTrackId = new Map(trackRows.map(r => [r.original_url, r.track_id]));
                         htmlBody = rewriteLinks(htmlBody, urlToTrackId, baseUrl);
                     } catch (_) { /* tracking insert failed, send with original links */ }
                 }
+
+                // Insert open tracking pixel for this recipient
+                try {
+                    const openTrack = await insertOpenTracking(jobId, emailData.to_email);
+                    htmlBody = injectOpenPixel(htmlBody, openTrack.track_id, baseUrl);
+                } catch (_) { /* open tracking failed, send without pixel */ }
 
                 try {
                     await transporter.sendMail({

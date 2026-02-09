@@ -21,7 +21,31 @@ export function useCampaignStats(id: number | undefined) {
     queryKey: ['campaigns', id, 'stats'],
     queryFn: () => campaignsApi.getStats(id!),
     enabled: !!id,
-    refetchInterval: 5000, // Refresh every 5 seconds for active campaigns
+    refetchInterval: 5000,
+  })
+}
+
+export function useCampaignOpeners(id: number | undefined, params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['campaigns', id, 'openers', params],
+    queryFn: () => campaignsApi.getOpeners(id!, params),
+    enabled: !!id,
+  })
+}
+
+export function useCampaignClickers(id: number | undefined, params?: { limit?: number; offset?: number }) {
+  return useQuery({
+    queryKey: ['campaigns', id, 'clickers', params],
+    queryFn: () => campaignsApi.getClickers(id!, params),
+    enabled: !!id,
+  })
+}
+
+export function useCampaignLinks(id: number | undefined) {
+  return useQuery({
+    queryKey: ['campaigns', id, 'links'],
+    queryFn: () => campaignsApi.getLinks(id!),
+    enabled: !!id,
   })
 }
 

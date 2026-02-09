@@ -167,25 +167,42 @@ const upsertSetting = async (key, value) => {
  * @param {number} jobId
  * @param {string} toEmail
  * @param {string[]} urls - array of original URLs to track
+ * @param {number|null} offerId - optional offer ID for dynamic redirect
  * @returns {Promise<{original_url: string, track_id: string}[]>}
  */
-const insertClickTrackingBatch = async (jobId, toEmail, urls) => {
+const insertClickTrackingBatch = async (jobId, toEmail, urls, offerId = null) => {
     if (!urls.length) return [];
     // Build a multi-row INSERT
     const params = [];
     const rows = [];
     for (let i = 0; i < urls.length; i++) {
-        const offset = i * 3;
-        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3})`);
-        params.push(jobId, toEmail, urls[i]);
+        const offset = i * 4;
+        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`);
+        params.push(jobId, toEmail, urls[i], offerId);
     }
     const result = await query(
-        `INSERT INTO click_tracking (job_id, to_email, original_url)
+        `INSERT INTO click_tracking (job_id, to_email, original_url, offer_id)
          VALUES ${rows.join(', ')}
          RETURNING original_url, track_id`,
         params
     );
     return result.rows;
+};
+
+/**
+ * Insert an open tracking row for a recipient.
+ * @param {number} jobId
+ * @param {string} toEmail
+ * @returns {Promise<{id: number, track_id: string}>}
+ */
+const insertOpenTracking = async (jobId, toEmail) => {
+    const result = await query(
+        `INSERT INTO open_tracking (job_id, to_email)
+         VALUES ($1, $2)
+         RETURNING id, track_id`,
+        [jobId, toEmail]
+    );
+    return result.rows[0];
 };
 
 module.exports = {
@@ -196,6 +213,7 @@ module.exports = {
     insertEmailLog,
     insertBounceLog,
     insertClickTrackingBatch,
+    insertOpenTracking,
     getNames,
     getActiveCredential,
     getCredentials,

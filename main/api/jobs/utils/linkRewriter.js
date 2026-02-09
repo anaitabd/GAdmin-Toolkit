@@ -37,4 +37,21 @@ function rewriteLinks(html, urlToTrackId, baseUrl) {
     });
 }
 
-module.exports = { extractUrls, rewriteLinks };
+/**
+ * Inject a 1x1 open tracking pixel into HTML content
+ * @param {string} html - original HTML content
+ * @param {string} trackId - open tracking UUID
+ * @param {string} baseUrl - base URL for tracking
+ * @returns {string} HTML with tracking pixel injected before </body> or appended
+ */
+function injectOpenPixel(html, trackId, baseUrl) {
+    const pixelUrl = `${baseUrl}/t/o/${trackId}`;
+    const pixel = `<img src="${pixelUrl}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />`;
+    // Insert before </body> if present, otherwise append
+    if (/<\/body>/i.test(html)) {
+        return html.replace(/<\/body>/i, `${pixel}</body>`);
+    }
+    return html + pixel;
+}
+
+module.exports = { extractUrls, rewriteLinks, injectOpenPixel };

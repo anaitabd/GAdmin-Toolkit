@@ -402,48 +402,131 @@ router.get('/:id/html', async (req, res) => {
 
 /**
  * GET /api/tracking-links/:id/stats
- * Get statistics for a tracking link
+ * Get detailed statistics for a tracking link (using click_events)
  */
 router.get('/:id/stats', async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await query(
-            `SELECT 
-                id, track_id, original_url, name, description,
-                clicked, clicked_at, created_at,
-                CASE WHEN clicked THEN 1 ELSE 0 END as click_count
-             FROM click_tracking 
-             WHERE id = $1`,
+        const linkResult = await query(
+            'SELECT id, track_id, original_url, name, description, clicked, clicked_at, created_at FROM click_tracking WHERE id = $1',
             [id]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'Tracking link not found'
-            });
+        if (linkResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Tracking link not found' });
         }
 
-        const link = result.rows[0];
+        const link = linkResult.rows[0];
+
+        // Aggregate stats from click_events
+        const statsResult = await query(
+            `SELECT
+                COUNT(*) AS total_clicks,
+                COUNT(DISTINCT ip_address) AS unique_clickers,
+                MAX(clicked_at) AS last_clicked
+             FROM click_events
+             WHERE tracking_id = $1`,
+            [id]
+        );
+
+        // Browser breakdown
+        const browserResult = await query(
+            `SELECT browser, COUNT(*) AS count
+             FROM click_events WHERE tracking_id = $1 AND browser IS NOT NULL
+             GROUP BY browser ORDER BY count DESC`,
+            [id]
+        );
+
+        // Device breakdown
+        const deviceResult = await query(
+            `SELECT device, COUNT(*) AS count
+             FROM click_events WHERE tracking_id = $1 AND device IS NOT NULL
+             GROUP BY device ORDER BY count DESC`,
+            [id]
+        );
+
+        // OS breakdown
+        const osResult = await query(
+            `SELECT os, COUNT(*) AS count
+             FROM click_events WHERE tracking_id = $1 AND os IS NOT NULL
+             GROUP BY os ORDER BY count DESC`,
+            [id]
+        );
+
+        // Country breakdown
+        const countryResult = await query(
+            `SELECT country, COUNT(*) AS count
+             FROM click_events WHERE tracking_id = $1 AND country IS NOT NULL
+             GROUP BY country ORDER BY count DESC`,
+            [id]
+        );
+
+        const s = statsResult.rows[0];
         res.json({
             success: true,
             data: {
                 ...link,
                 stats: {
-                    total_clicks: link.click_count,
-                    last_clicked: link.clicked_at,
+                    total_clicks: parseInt(s.total_clicks) || 0,
+                    unique_clickers: parseInt(s.unique_clickers) || 0,
+                    last_clicked: s.last_clicked,
                     created: link.created_at,
-                    days_active: Math.floor((new Date() - new Date(link.created_at)) / (1000 * 60 * 60 * 24))
+                    days_active: Math.floor((new Date() - new Date(link.created_at)) / (1000 * 60 * 60 * 24)),
+                    browsers: browserResult.rows.map(r => ({ name: r.browser, count: parseInt(r.count) })),
+                    devices: deviceResult.rows.map(r => ({ name: r.device, count: parseInt(r.count) })),
+                    os: osResult.rows.map(r => ({ name: r.os, count: parseInt(r.count) })),
+                    countries: countryResult.rows.map(r => ({ name: r.country, count: parseInt(r.count) })),
                 }
             }
         });
     } catch (err) {
         console.error('Error fetching tracking link stats:', err);
-        res.status(500).json({
-            success: false,
-            error: err.message
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/tracking-links/:id/clicks
+ * Get detailed click events for a tracking link
+ * Query params: limit, offset
+ */
+router.get('/:id/clicks', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { limit = 100, offset = 0 } = req.query;
+
+        // Check link exists
+        const linkCheck = await query('SELECT id FROM click_tracking WHERE id = $1', [id]);
+        if (linkCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Tracking link not found' });
+        }
+
+        const result = await query(
+            `SELECT id, ip_address, user_agent, referer, country, city, device, browser, os, clicked_at
+             FROM click_events
+             WHERE tracking_id = $1
+             ORDER BY clicked_at DESC
+             LIMIT $2 OFFSET $3`,
+            [id, parseInt(limit), parseInt(offset)]
+        );
+
+        const countResult = await query(
+            'SELECT COUNT(*) AS total FROM click_events WHERE tracking_id = $1',
+            [id]
+        );
+
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total),
+            limit: parseInt(limit),
+            offset: parseInt(offset),
         });
+    } catch (err) {
+        console.error('Error fetching click events:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

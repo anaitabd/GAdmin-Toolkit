@@ -88,7 +88,8 @@ router.post('/', async (req, res, next) => {
             recipient_offset,
             recipient_limit,
             user_ids,
-            scheduled_at
+            scheduled_at,
+            offer_id
         } = req.body;
         
         if (!name || !from_name || !subject || !html_content || !provider) {
@@ -109,8 +110,8 @@ router.post('/', async (req, res, next) => {
             `INSERT INTO campaigns (
                 name, description, from_name, subject, html_content, 
                 provider, batch_size, geo, list_name, 
-                recipient_offset, recipient_limit, user_ids, scheduled_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                recipient_offset, recipient_limit, user_ids, scheduled_at, offer_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *`,
             [
                 name,
@@ -125,7 +126,8 @@ router.post('/', async (req, res, next) => {
                 recipient_offset || null,
                 recipient_limit || null,
                 user_ids || null,
-                scheduled_at || null
+                scheduled_at || null,
+                offer_id || null
             ]
         );
         
@@ -151,7 +153,8 @@ router.put('/:id', async (req, res, next) => {
             recipient_offset,
             recipient_limit,
             user_ids,
-            scheduled_at
+            scheduled_at,
+            offer_id
         } = req.body;
         
         const result = await query(
@@ -169,8 +172,9 @@ router.put('/:id', async (req, res, next) => {
                 recipient_limit = $11,
                 user_ids = $12,
                 scheduled_at = $13,
+                offer_id = $14,
                 updated_at = NOW()
-            WHERE id = $14
+            WHERE id = $15
             RETURNING *`,
             [
                 name,
@@ -186,6 +190,7 @@ router.put('/:id', async (req, res, next) => {
                 recipient_limit,
                 user_ids,
                 scheduled_at,
+                offer_id,
                 req.params.id
             ]
         );
@@ -274,7 +279,10 @@ router.get('/:id/stats', async (req, res, next) => {
                     failed: 0,
                     total_clicks: 0,
                     unique_clickers: 0,
-                    ctr: 0
+                    total_opens: 0,
+                    unique_openers: 0,
+                    ctr: 0,
+                    open_rate: 0
                 }
             });
         }
@@ -300,15 +308,29 @@ router.get('/:id/stats', async (req, res, next) => {
              WHERE job_id = $1`,
             [jobId]
         );
+
+        // Open tracking counts
+        const openResult = await query(
+            `SELECT
+                COUNT(*) FILTER (WHERE opened = TRUE) AS total_opens,
+                COUNT(DISTINCT to_email) FILTER (WHERE opened = TRUE) AS unique_openers
+             FROM open_tracking
+             WHERE job_id = $1`,
+            [jobId]
+        );
         
         const logStats = logResult.rows[0] || { sent: '0', failed: '0', total: '0' };
         const clickStats = clickResult.rows[0] || { total_links: '0', total_clicks: '0', unique_clickers: '0' };
+        const openStats = openResult.rows[0] || { total_opens: '0', unique_openers: '0' };
         
         const sent = parseInt(logStats.sent, 10);
         const failed = parseInt(logStats.failed, 10);
         const totalClicks = parseInt(clickStats.total_clicks, 10);
         const uniqueClickers = parseInt(clickStats.unique_clickers, 10);
+        const totalOpens = parseInt(openStats.total_opens, 10);
+        const uniqueOpeners = parseInt(openStats.unique_openers, 10);
         const ctr = sent > 0 ? Math.round((uniqueClickers / sent) * 10000) / 100 : 0;
+        const openRate = sent > 0 ? Math.round((uniqueOpeners / sent) * 10000) / 100 : 0;
         
         res.json({
             success: true,
@@ -318,8 +340,129 @@ router.get('/:id/stats', async (req, res, next) => {
                 failed,
                 total_clicks: totalClicks,
                 unique_clickers: uniqueClickers,
-                ctr
+                total_opens: totalOpens,
+                unique_openers: uniqueOpeners,
+                ctr,
+                open_rate: openRate
             }
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/openers ─────────────────────────────────
+// Returns list of recipients who opened the email (ephemeral, per-campaign)
+router.get('/:id/openers', async (req, res, next) => {
+    try {
+        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
+        const jobId = campaign.rows[0].job_id;
+        if (!jobId) return res.json({ success: true, data: [], count: 0, total: 0 });
+
+        const { limit = 100, offset = 0 } = req.query;
+
+        const result = await query(
+            `SELECT ot.to_email, ot.opened, ot.opened_at,
+                    COUNT(oe.id) AS open_count,
+                    MAX(oe.opened_at) AS last_opened,
+                    ARRAY_AGG(DISTINCT oe.device) FILTER (WHERE oe.device IS NOT NULL) AS devices,
+                    ARRAY_AGG(DISTINCT oe.browser) FILTER (WHERE oe.browser IS NOT NULL) AS browsers
+             FROM open_tracking ot
+             LEFT JOIN open_events oe ON oe.tracking_id = ot.id
+             WHERE ot.job_id = $1 AND ot.opened = TRUE
+             GROUP BY ot.id, ot.to_email, ot.opened, ot.opened_at
+             ORDER BY ot.opened_at DESC
+             LIMIT $2 OFFSET $3`,
+            [jobId, parseInt(limit), parseInt(offset)]
+        );
+
+        const countResult = await query(
+            `SELECT COUNT(*) AS total FROM open_tracking WHERE job_id = $1 AND opened = TRUE`,
+            [jobId]
+        );
+
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/clickers ────────────────────────────────
+// Returns list of recipients who clicked at least one link (ephemeral, per-campaign)
+router.get('/:id/clickers', async (req, res, next) => {
+    try {
+        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
+        const jobId = campaign.rows[0].job_id;
+        if (!jobId) return res.json({ success: true, data: [], count: 0, total: 0 });
+
+        const { limit = 100, offset = 0 } = req.query;
+
+        const result = await query(
+            `SELECT ct.to_email,
+                    COUNT(DISTINCT ct.id) FILTER (WHERE ct.clicked = TRUE) AS links_clicked,
+                    COUNT(ce.id) AS total_clicks,
+                    MIN(ct.clicked_at) AS first_click,
+                    MAX(ce.clicked_at) AS last_click,
+                    ARRAY_AGG(DISTINCT ce.device) FILTER (WHERE ce.device IS NOT NULL) AS devices,
+                    ARRAY_AGG(DISTINCT ce.browser) FILTER (WHERE ce.browser IS NOT NULL) AS browsers
+             FROM click_tracking ct
+             LEFT JOIN click_events ce ON ce.tracking_id = ct.id
+             WHERE ct.job_id = $1 AND ct.clicked = TRUE
+             GROUP BY ct.to_email
+             ORDER BY total_clicks DESC
+             LIMIT $2 OFFSET $3`,
+            [jobId, parseInt(limit), parseInt(offset)]
+        );
+
+        const countResult = await query(
+            `SELECT COUNT(DISTINCT to_email) AS total FROM click_tracking WHERE job_id = $1 AND clicked = TRUE`,
+            [jobId]
+        );
+
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/links ───────────────────────────────────
+// Returns aggregated link stats per unique URL in the campaign (ephemeral, per-campaign)
+router.get('/:id/links', async (req, res, next) => {
+    try {
+        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        if (campaign.rows.length === 0) return res.status(404).json({ success: false, error: 'Campaign not found' });
+        const jobId = campaign.rows[0].job_id;
+        if (!jobId) return res.json({ success: true, data: [] });
+
+        const result = await query(
+            `SELECT ct.original_url,
+                    COUNT(*) AS total_sent,
+                    COUNT(*) FILTER (WHERE ct.clicked = TRUE) AS total_clicks,
+                    COUNT(DISTINCT ct.to_email) FILTER (WHERE ct.clicked = TRUE) AS unique_clickers,
+                    MIN(ct.clicked_at) AS first_click,
+                    MAX(ct.clicked_at) AS last_click
+             FROM click_tracking ct
+             WHERE ct.job_id = $1
+             GROUP BY ct.original_url
+             ORDER BY total_clicks DESC`,
+            [jobId]
+        );
+
+        res.json({
+            success: true,
+            data: result.rows
         });
     } catch (error) {
         next(error);
