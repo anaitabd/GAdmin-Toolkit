@@ -72,6 +72,7 @@ export const useSendCampaign = () => {
       recipient_limit?: number | null
       user_ids?: number[] | null
       offer_id?: number | null
+      headers?: Record<string, string>
     }) => jobsApi.sendCampaign(params),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   })
@@ -85,6 +86,7 @@ export const useSendTestEmail = () => {
       subject: string
       html_content: string
       test_email: string
+      headers?: Record<string, string>
     }) => jobsApi.sendTestEmail(params),
   })
 }

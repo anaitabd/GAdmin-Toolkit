@@ -783,6 +783,26 @@ export default function CampaignPage() {
   const [testEmail, setTestEmail] = useState('')
   const [testResult, setTestResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  // Email headers state
+  const [replyTo, setReplyTo] = useState('')
+  const [listUnsubscribe, setListUnsubscribe] = useState('')
+  const [xMailer, setXMailer] = useState('')
+  const [customHeaderKey, setCustomHeaderKey] = useState('')
+  const [customHeaderValue, setCustomHeaderValue] = useState('')
+  const [extraHeaders, setExtraHeaders] = useState<{ key: string; value: string }[]>([])
+
+  // Build headers object from state
+  const buildHeaders = (): Record<string, string> => {
+    const h: Record<string, string> = {}
+    if (replyTo.trim()) h['Reply-To'] = replyTo.trim()
+    if (listUnsubscribe.trim()) h['List-Unsubscribe'] = listUnsubscribe.trim()
+    if (xMailer.trim()) h['X-Mailer'] = xMailer.trim()
+    for (const { key, value } of extraHeaders) {
+      if (key.trim() && value.trim()) h[key.trim()] = value.trim()
+    }
+    return h
+  }
+
   // Filter recipients for preview
   const geoFilteredList = useMemo(() => {
     let list = allRecipients
@@ -861,6 +881,7 @@ export default function CampaignPage() {
       list_name: selectedListName || null,
       user_ids: selectedUserIds.size > 0 ? [...selectedUserIds] : null,
       offer_id: selectedOfferId || null,
+      headers: buildHeaders(),
       ...range,
     }, {
       onSuccess: () => setViewMode('list'),
@@ -870,7 +891,7 @@ export default function CampaignPage() {
   const handleSendTest = () => {
     setTestResult(null)
     sendTestMutation.mutate(
-      { provider, from_name: fromName, subject, html_content: htmlContent, test_email: testEmail },
+      { provider, from_name: fromName, subject, html_content: htmlContent, test_email: testEmail, headers: buildHeaders() },
       {
         onSuccess: (data) => setTestResult({ type: 'success', message: data.message }),
         onError: (err: unknown) => setTestResult({ type: 'error', message: extractErrorMessage(err) }),
@@ -902,6 +923,15 @@ export default function CampaignPage() {
     setSelectedTemplateId('')
     setSelectedOfferId('')
     setTestResult(null)
+    // Restore headers if available
+    const h = (p.headers || {}) as Record<string, string>
+    setReplyTo(h['Reply-To'] || '')
+    setListUnsubscribe(h['List-Unsubscribe'] || '')
+    setXMailer(h['X-Mailer'] || '')
+    const knownKeys = new Set(['Reply-To', 'List-Unsubscribe', 'X-Mailer'])
+    setExtraHeaders(Object.entries(h).filter(([k]) => !knownKeys.has(k)).map(([key, value]) => ({ key, value })))
+    setCustomHeaderKey('')
+    setCustomHeaderValue('')
     setViewMode('form')
   }
 
@@ -922,6 +952,12 @@ export default function CampaignPage() {
     setSelectedCredentialId('')
     setSelectedOfferId('')
     setTestResult(null)
+    setReplyTo('')
+    setListUnsubscribe('')
+    setXMailer('')
+    setExtraHeaders([])
+    setCustomHeaderKey('')
+    setCustomHeaderValue('')
     setViewMode('form')
   }
 
@@ -1080,6 +1116,108 @@ export default function CampaignPage() {
             </div>
           </SectionCard>
 
+          {/* Email Headers */}
+          <SectionCard title="Email Headers" icon="📨">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="campaign-reply-to" className="block text-sm font-medium text-gray-700 mb-1">Reply-To</label>
+                <input
+                  id="campaign-reply-to"
+                  type="email"
+                  value={replyTo}
+                  onChange={(e) => setReplyTo(e.target.value)}
+                  placeholder="reply@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="campaign-list-unsub" className="block text-sm font-medium text-gray-700 mb-1">List-Unsubscribe</label>
+                <input
+                  id="campaign-list-unsub"
+                  type="text"
+                  value={listUnsubscribe}
+                  onChange={(e) => setListUnsubscribe(e.target.value)}
+                  placeholder="<mailto:unsub@example.com>, <https://example.com/unsub>"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="campaign-x-mailer" className="block text-sm font-medium text-gray-700 mb-1">X-Mailer</label>
+                <input
+                  id="campaign-x-mailer"
+                  type="text"
+                  value={xMailer}
+                  onChange={(e) => setXMailer(e.target.value)}
+                  placeholder="e.g. MyMailer/1.0"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+            {/* Custom headers */}
+            {extraHeaders.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {extraHeaders.map((h, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={h.key}
+                      onChange={(e) => {
+                        const next = [...extraHeaders]
+                        next[i] = { ...next[i], key: e.target.value }
+                        setExtraHeaders(next)
+                      }}
+                      placeholder="Header name"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <input
+                      value={h.value}
+                      onChange={(e) => {
+                        const next = [...extraHeaders]
+                        next[i] = { ...next[i], value: e.target.value }
+                        setExtraHeaders(next)
+                      }}
+                      placeholder="Value"
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExtraHeaders(extraHeaders.filter((_, j) => j !== i))}
+                      className="text-red-400 hover:text-red-600 text-sm px-1"
+                      title="Remove header"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 items-center mt-3">
+              <input
+                value={customHeaderKey}
+                onChange={(e) => setCustomHeaderKey(e.target.value)}
+                placeholder="Header name (e.g. X-Priority)"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <input
+                value={customHeaderValue}
+                onChange={(e) => setCustomHeaderValue(e.target.value)}
+                placeholder="Value"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customHeaderKey.trim() && customHeaderValue.trim()) {
+                    setExtraHeaders([...extraHeaders, { key: customHeaderKey.trim(), value: customHeaderValue.trim() }])
+                    setCustomHeaderKey('')
+                    setCustomHeaderValue('')
+                  }
+                }}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-300 hover:bg-indigo-50 whitespace-nowrap"
+              >+ Add</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Optional headers added to every email. Common: Reply-To, List-Unsubscribe, X-Mailer, X-Priority.
+            </p>
+          </SectionCard>
+
           {/* HTML Content */}
           <SectionCard
             title="HTML Content"
@@ -1108,8 +1246,53 @@ export default function CampaignPage() {
               />
             )}
             <p className="text-xs text-gray-500 mt-2">
-              Use <code className="bg-gray-100 px-1 rounded">[to]</code> as a placeholder for the recipient&apos;s name.
+              Use <code className="bg-gray-100 px-1 rounded">[to]</code> for recipient name
+              {' · '}<code className="bg-indigo-50 text-indigo-700 px-1 rounded">[click]</code> for tracked click link
+              {' · '}<code className="bg-indigo-50 text-indigo-700 px-1 rounded">[unsub]</code> for tracked unsub link
             </p>
+            {selectedOfferId && (() => {
+              const offer = offers.find(o => o.id === selectedOfferId)
+              if (!offer) return null
+              const hasClickTag = /\[click\]/i.test(htmlContent)
+              const hasUnsubTag = /\[unsub\]/i.test(htmlContent) || /\[unsb\]/i.test(htmlContent)
+              const hasClickUrl = offer.click_url && htmlContent.includes(offer.click_url)
+              const hasUnsubUrl = offer.unsub_url && htmlContent.includes(offer.unsub_url)
+              const clickTracked = hasClickTag || hasClickUrl
+              const unsubTracked = hasUnsubTag || hasUnsubUrl
+              if (!offer.click_url && !offer.unsub_url) return null
+              return (
+                <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <p className="text-xs font-semibold text-indigo-800 mb-2">🔗 Offer Tracking (auto-generated at send)</p>
+                  {offer.click_url && (
+                    <div className="flex items-center gap-2 text-xs mb-1">
+                      <span className={`inline-block w-2 h-2 rounded-full ${clickTracked ? 'bg-green-500' : 'bg-amber-400'}`} />
+                      <span className="font-medium text-gray-700">Click:</span>
+                      <span className="text-gray-600 truncate max-w-[300px]">{offer.click_url}</span>
+                      {clickTracked
+                        ? <span className="text-green-700 font-medium">✓ tracked</span>
+                        : <span className="text-amber-600">not in HTML</span>
+                      }
+                    </div>
+                  )}
+                  {offer.unsub_url && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={`inline-block w-2 h-2 rounded-full ${unsubTracked ? 'bg-green-500' : 'bg-amber-400'}`} />
+                      <span className="font-medium text-gray-700">Unsub:</span>
+                      <span className="text-gray-600 truncate max-w-[300px]">{offer.unsub_url}</span>
+                      {unsubTracked
+                        ? <span className="text-green-700 font-medium">✓ tracked</span>
+                        : <span className="text-amber-600">not in HTML</span>
+                      }
+                    </div>
+                  )}
+                  {(!clickTracked || !unsubTracked) && (
+                    <p className="text-xs text-amber-700 mt-2">
+                      💡 Use <code className="bg-white px-1 rounded">[click]</code> / <code className="bg-white px-1 rounded">[unsub]</code> tags or include the offer URLs as href links to enable auto-tracking.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
           </SectionCard>
 
           {/* Tracking Links — insert into HTML */}
@@ -1336,14 +1519,32 @@ export default function CampaignPage() {
                 <p className="text-gray-500">Recipients</p>
                 <p className="font-medium text-gray-800">{recipientsSummary}</p>
               </div>
-              {selectedOfferId && (
-                <div className="col-span-2 bg-indigo-50 rounded-lg px-3 py-2">
-                  <p className="text-indigo-500">Offer</p>
-                  <p className="font-medium text-indigo-800 truncate">
-                    {offers.find(o => o.id === selectedOfferId)?.name ?? `#${selectedOfferId}`}
-                  </p>
-                </div>
-              )}
+              {selectedOfferId && (() => {
+                const offer = offers.find(o => o.id === selectedOfferId)
+                if (!offer) return null
+                const hasClickTag = /\[click\]/i.test(htmlContent)
+                const hasUnsubTag = /\[unsub\]/i.test(htmlContent) || /\[unsb\]/i.test(htmlContent)
+                const clickTracked = hasClickTag || (offer.click_url && htmlContent.includes(offer.click_url))
+                const unsubTracked = hasUnsubTag || (offer.unsub_url && htmlContent.includes(offer.unsub_url))
+                return (
+                  <div className="col-span-2 bg-indigo-50 rounded-lg px-3 py-2">
+                    <p className="text-indigo-500">Offer</p>
+                    <p className="font-medium text-indigo-800 truncate">{offer.name}</p>
+                    <div className="flex gap-3 mt-1">
+                      {offer.click_url && (
+                        <span className={`text-xs ${clickTracked ? 'text-green-700' : 'text-amber-600'}`}>
+                          {clickTracked ? '✓' : '⚠'} Click
+                        </span>
+                      )}
+                      {offer.unsub_url && (
+                        <span className={`text-xs ${unsubTracked ? 'text-green-700' : 'text-amber-600'}`}>
+                          {unsubTracked ? '✓' : '⚠'} Unsub
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Validation issues */}

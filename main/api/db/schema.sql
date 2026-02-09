@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS click_tracking (
     clicked BOOLEAN NOT NULL DEFAULT FALSE,
     clicked_at TIMESTAMPTZ,
     offer_id INTEGER REFERENCES offers(id) ON DELETE SET NULL,
+    link_type TEXT NOT NULL DEFAULT 'click' CHECK (link_type IN ('click', 'unsub')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -242,8 +243,10 @@ CREATE INDEX IF NOT EXISTS idx_offer_clickers_offer_id ON offer_clickers(offer_i
 CREATE INDEX IF NOT EXISTS idx_offer_clickers_campaign_id ON offer_clickers(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_offer_clickers_geo ON offer_clickers(geo);
 CREATE INDEX IF NOT EXISTS idx_offer_clickers_to_email ON offer_clickers(to_email);
-CREATE INDEX IF NOT EXISTS idx_click_tracking_offer_id ON click_tracking(offer_id);
-CREATE INDEX IF NOT EXISTS idx_campaigns_offer_id ON campaigns(offer_id);
+-- These indexes require columns added by migrations; they'll be created by migration files
+-- CREATE INDEX IF NOT EXISTS idx_click_tracking_offer_id ON click_tracking(offer_id);
+-- CREATE INDEX IF NOT EXISTS idx_click_tracking_link_type ON click_tracking(link_type);
+-- CREATE INDEX IF NOT EXISTS idx_campaigns_offer_id ON campaigns(offer_id);
 
 -- Default settings
 INSERT INTO settings (key, value) VALUES

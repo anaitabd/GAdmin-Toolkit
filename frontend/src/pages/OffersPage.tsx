@@ -65,7 +65,7 @@ function OfferForm({ initial, onSubmit, onCancel, isPending }: OfferFormProps) {
           <label htmlFor="offer-click-url" className="block text-sm font-medium text-gray-700 mb-1">Click URL (offer link)</label>
           <input id="offer-click-url" type="url" value={clickUrl} onChange={e => setClickUrl(e.target.value)}
             placeholder="https://example.com/offer" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-          <p className="text-xs text-gray-500 mt-1">This URL can be changed later — tracking links will always redirect to the current URL.</p>
+          <p className="text-xs text-gray-500 mt-1">Destination for <code className="bg-gray-100 px-1 rounded">[click]</code> tag. Tracking links always redirect to the <strong>current</strong> URL — you can change it even after sending.</p>
         </div>
         {/* Unsub URL */}
         <div>
@@ -91,6 +91,15 @@ function OfferForm({ initial, onSubmit, onCancel, isPending }: OfferFormProps) {
             placeholder="Paste your HTML email content here..." rows={10}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-indigo-500" />
         )}
+        <div className="mt-1.5 flex flex-wrap gap-2 text-xs text-gray-500">
+          <span>Available tags:</span>
+          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono">[click]</code>
+          <span>→ replaced with Click URL (tracked)</span>
+          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono">[unsub]</code>
+          <span>→ replaced with Unsub URL (tracked)</span>
+          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono">[to]</code>
+          <span>→ replaced with recipient name</span>
+        </div>
       </div>
 
       {/* Active toggle */}

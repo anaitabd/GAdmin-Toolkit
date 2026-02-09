@@ -168,25 +168,58 @@ const upsertSetting = async (key, value) => {
  * @param {string} toEmail
  * @param {string[]} urls - array of original URLs to track
  * @param {number|null} offerId - optional offer ID for dynamic redirect
+ * @param {string} linkType - 'click' (default) or 'unsub'
  * @returns {Promise<{original_url: string, track_id: string}[]>}
  */
-const insertClickTrackingBatch = async (jobId, toEmail, urls, offerId = null) => {
+const insertClickTrackingBatch = async (jobId, toEmail, urls, offerId = null, linkType = 'click') => {
     if (!urls.length) return [];
     // Build a multi-row INSERT
     const params = [];
     const rows = [];
     for (let i = 0; i < urls.length; i++) {
-        const offset = i * 4;
-        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`);
-        params.push(jobId, toEmail, urls[i], offerId);
+        const offset = i * 5;
+        rows.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+        params.push(jobId, toEmail, urls[i], offerId, linkType);
     }
     const result = await query(
-        `INSERT INTO click_tracking (job_id, to_email, original_url, offer_id)
+        `INSERT INTO click_tracking (job_id, to_email, original_url, offer_id, link_type)
          VALUES ${rows.join(', ')}
          RETURNING original_url, track_id`,
         params
     );
     return result.rows;
+};
+
+/**
+ * Insert a single tracking row for an offer tag ([click] or [unsub]).
+ * @param {number} jobId
+ * @param {string} toEmail
+ * @param {string} originalUrl - the offer's click_url or unsub_url
+ * @param {number} offerId - offer ID for dynamic redirect
+ * @param {string} linkType - 'click' or 'unsub'
+ * @returns {Promise<{track_id: string}>}
+ */
+const insertOfferTagTracking = async (jobId, toEmail, originalUrl, offerId, linkType) => {
+    const result = await query(
+        `INSERT INTO click_tracking (job_id, to_email, original_url, offer_id, link_type)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING track_id`,
+        [jobId, toEmail, originalUrl, offerId, linkType]
+    );
+    return result.rows[0];
+};
+
+/**
+ * Fetch an offer by ID.
+ * @param {number} id
+ * @returns {Promise<{id: number, name: string, click_url: string, unsub_url: string|null} | null>}
+ */
+const getOffer = async (id) => {
+    const result = await query(
+        'SELECT id, name, subject, from_name, html_content, click_url, unsub_url, active FROM offers WHERE id = $1',
+        [id]
+    );
+    return result.rows[0] || null;
 };
 
 /**
@@ -213,7 +246,9 @@ module.exports = {
     insertEmailLog,
     insertBounceLog,
     insertClickTrackingBatch,
+    insertOfferTagTracking,
     insertOpenTracking,
+    getOffer,
     getNames,
     getActiveCredential,
     getCredentials,

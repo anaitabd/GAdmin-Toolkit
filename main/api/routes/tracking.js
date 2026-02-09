@@ -50,6 +50,7 @@ function getClientIp(req) {
 
 // GET /t/c/:trackId — records a click with full data and redirects
 // If the click_tracking row has an offer_id, redirect to the offer's CURRENT click_url (dynamic)
+// If link_type is 'unsub', redirect to the offer's CURRENT unsub_url and record unsubscribe
 router.get('/c/:trackId', async (req, res) => {
     try {
         const { trackId } = req.params;
@@ -58,7 +59,7 @@ router.get('/c/:trackId', async (req, res) => {
             `UPDATE click_tracking
              SET clicked = TRUE, clicked_at = COALESCE(clicked_at, NOW())
              WHERE track_id = $1
-             RETURNING id, original_url, offer_id, job_id, to_email`,
+             RETURNING id, original_url, offer_id, job_id, to_email, link_type`,
             [trackId]
         );
 
@@ -66,20 +67,25 @@ router.get('/c/:trackId', async (req, res) => {
             return res.status(404).send('Link not found');
         }
 
-        const { id: trackingId, original_url, offer_id, job_id, to_email } = result.rows[0];
+        const { id: trackingId, original_url, offer_id, job_id, to_email, link_type } = result.rows[0];
 
-        // Determine redirect URL: if linked to an offer, use the offer's current click_url
+        // Determine redirect URL: if linked to an offer, use the offer's current URL
         let redirectUrl = original_url;
         let campaignId = null;
         let geo = null;
 
         if (offer_id) {
             const offerResult = await query(
-                'SELECT click_url FROM offers WHERE id = $1',
+                'SELECT click_url, unsub_url FROM offers WHERE id = $1',
                 [offer_id]
             );
             if (offerResult.rows.length > 0) {
-                redirectUrl = offerResult.rows[0].click_url;
+                // For unsub links, redirect to unsub_url; for click links, redirect to click_url
+                if (link_type === 'unsub' && offerResult.rows[0].unsub_url) {
+                    redirectUrl = offerResult.rows[0].unsub_url;
+                } else {
+                    redirectUrl = offerResult.rows[0].click_url;
+                }
             }
 
             // Look up campaign and geo for offer_clickers
@@ -123,6 +129,16 @@ router.get('/c/:trackId', async (req, res) => {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
                 [offer_id, campaignId, job_id, to_email, geo, ip, userAgent, device, browser, os]
             ).catch(err => console.error('Failed to log offer clicker:', err.message));
+        }
+
+        // Fire-and-forget: if this is an unsub link, record the unsubscribe
+        if (link_type === 'unsub' && to_email) {
+            query(
+                `INSERT INTO unsubscribes (email, reason, campaign_id, offer_id)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (email) DO NOTHING`,
+                [to_email, 'unsubscribed via tracking link', campaignId, offer_id]
+            ).catch(err => console.error('Failed to log unsubscribe:', err.message));
         }
 
         res.redirect(302, redirectUrl);
