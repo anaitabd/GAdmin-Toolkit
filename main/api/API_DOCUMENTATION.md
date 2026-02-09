@@ -1005,7 +1005,7 @@ Sends a test email to verify email configuration and inbox delivery. This endpoi
     "from": "Test Sender <sender@gmail.com>",
     "to": "test@example.com",
     "subject": "Test Email Subject",
-    "sentAt": "2024-02-09T21:45:45.678Z"
+    "sentAt": "2026-02-09T21:45:45.678Z"
   },
   "inboxVerification": {
     "note": "Please check your inbox/spam folder for the test email.",
