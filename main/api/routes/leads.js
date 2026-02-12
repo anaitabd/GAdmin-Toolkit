@@ -129,6 +129,45 @@ router.post('/', async (req, res, next) => {
     }
 });
 
+// ── PUT /api/leads/:id ─────────────────────────────────────────────
+router.put('/:id', async (req, res, next) => {
+    try {
+        const { payout, ip_address } = req.body;
+
+        const checkResult = await query('SELECT * FROM leads WHERE id = $1', [req.params.id]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Lead not found' });
+        }
+
+        const updates = [];
+        const params = [];
+        let paramCount = 1;
+
+        if (payout !== undefined) {
+            params.push(payout);
+            updates.push(`payout = $${paramCount++}`);
+        }
+        if (ip_address !== undefined) {
+            params.push(ip_address);
+            updates.push(`ip_address = $${paramCount++}`);
+        }
+
+        if (updates.length === 0) {
+            return res.json({ success: true, data: checkResult.rows[0] });
+        }
+
+        params.push(req.params.id);
+        const result = await query(
+            `UPDATE leads SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+            params
+        );
+
+        res.json({ success: true, data: result.rows[0] });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // ── DELETE /api/leads/:id ──────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
     try {
