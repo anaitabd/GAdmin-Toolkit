@@ -44,6 +44,8 @@ const suppressionEmailsRouter = require('./routes/suppressionEmails');
 const suppressionProcessesRouter = require('./routes/suppressionProcesses');
 const leadsRouter = require('./routes/leads');
 const auditLogsRouter = require('./routes/auditLogs');
+const campaignSendRouter = require('./routes/campaignSend');
+const postbackRouter = require('./routes/postback');
 
 // Use routes
 app.use('/t', trackingRouter);
@@ -77,6 +79,10 @@ app.use('/api/suppression-emails', suppressionEmailsRouter);
 app.use('/api/suppression-processes', suppressionProcessesRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
+
+// Campaign send orchestration and postback (Phase 7)
+app.use('/api/campaign-send', campaignSendRouter);
+app.use('/postback', postbackRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

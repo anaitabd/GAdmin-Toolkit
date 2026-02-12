@@ -248,4 +248,30 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_offer ON email_logs(offer_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_record ON audit_logs(record_type, record_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action_by ON audit_logs(action_by);
 
+-- ──────────────────────────────────────────────────
+-- 6. CAMPAIGN CONFIGURATION (Phase 7)
+-- ──────────────────────────────────────────────────
+
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS affiliate_network_id INTEGER REFERENCES affiliate_networks(id) ON DELETE SET NULL;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS creative_id INTEGER REFERENCES creatives(id) ON DELETE SET NULL;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS from_name_id INTEGER REFERENCES from_names(id) ON DELETE SET NULL;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS data_list_ids INTEGER[];
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS data_provider_ids INTEGER[];
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS placeholders_config JSONB DEFAULT '{}';
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS rotation_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS batch_delay_ms INTEGER DEFAULT 50;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS test_emails TEXT[];
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_sent INTEGER DEFAULT 0;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_failed INTEGER DEFAULT 0;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_opened INTEGER DEFAULT 0;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_clicked INTEGER DEFAULT 0;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_unsubs INTEGER DEFAULT 0;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS total_leads INTEGER DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_campaigns_affiliate_network ON campaigns(affiliate_network_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_creative ON campaigns(creative_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_from_name ON campaigns(from_name_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_subject ON campaigns(subject_id);
+
 COMMIT;

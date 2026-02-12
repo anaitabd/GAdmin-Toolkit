@@ -122,6 +122,14 @@ router.get('/c/:trackId', async (req, res) => {
             [trackingId, ip, userAgent, referer, device, browser, os]
         ).catch(err => console.error('Failed to log click event:', err.message));
 
+        // Fire-and-forget: update email_data to mark as clicker
+        if (to_email) {
+            query(
+                'UPDATE email_data SET is_clicker = true WHERE to_email = $1',
+                [to_email]
+            ).catch(err => console.error('Failed to update is_clicker flag:', err.message));
+        }
+
         // Fire-and-forget: insert into offer_clickers if this is an offer link
         if (offer_id) {
             query(
@@ -131,14 +139,42 @@ router.get('/c/:trackId', async (req, res) => {
             ).catch(err => console.error('Failed to log offer clicker:', err.message));
         }
 
-        // Fire-and-forget: if this is an unsub link, record the unsubscribe
+        // Fire-and-forget: if this is an unsub link, record the unsubscribe and update flags
         if (link_type === 'unsub' && to_email) {
             query(
-                `INSERT INTO unsubscribes (email, reason, campaign_id, offer_id)
-                 VALUES ($1, $2, $3, $4)
+                `INSERT INTO unsubscribes (email, reason, campaign_id, offer_id, affiliate_network_id, data_list_id, ip_address, user_agent, geo)
+                 VALUES ($1, $2, $3, $4, 
+                         (SELECT affiliate_network_id FROM campaigns WHERE id = $3),
+                         (SELECT data_list_id FROM email_data WHERE to_email = $1 LIMIT 1),
+                         $5, $6, $7)
                  ON CONFLICT (email) DO NOTHING`,
-                [to_email, 'unsubscribed via tracking link', campaignId, offer_id]
+                [to_email, 'unsubscribed via tracking link', campaignId, offer_id, ip, userAgent, geo]
             ).catch(err => console.error('Failed to log unsubscribe:', err.message));
+            
+            // Update email_data to mark as unsubbed
+            query(
+                'UPDATE email_data SET is_unsub = true WHERE to_email = $1',
+                [to_email]
+            ).catch(err => console.error('Failed to update is_unsub flag:', err.message));
+            
+            // If offer has suppression, also add to suppression_emails
+            if (offer_id) {
+                query(
+                    'INSERT INTO suppression_emails (offer_id, email) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                    [offer_id, to_email]
+                ).catch(err => console.error('Failed to add to suppression_emails:', err.message));
+            }
+        }
+        
+        // Fire-and-forget: update campaign stats
+        if (campaignId) {
+            if (link_type === 'unsub') {
+                query('UPDATE campaigns SET total_unsubs = total_unsubs + 1 WHERE id = $1', [campaignId])
+                    .catch(err => console.error('Failed to update campaign unsub stats:', err.message));
+            } else {
+                query('UPDATE campaigns SET total_clicked = total_clicked + 1 WHERE id = $1', [campaignId])
+                    .catch(err => console.error('Failed to update campaign click stats:', err.message));
+            }
         }
 
         res.redirect(302, redirectUrl);
@@ -179,6 +215,39 @@ router.get('/o/:trackId', async (req, res) => {
                  VALUES ($1, $2, $3, $4, $5, $6)`,
                 [trackingId, ip, userAgent, device, browser, os]
             ).catch(err => console.error('Failed to log open event:', err.message));
+            
+            // Get to_email from open_tracking to update email_data flags
+            query(
+                'SELECT to_email, job_id FROM open_tracking WHERE id = $1',
+                [trackingId]
+            ).then(otResult => {
+                if (otResult.rows.length > 0 && otResult.rows[0].to_email) {
+                    const to_email = otResult.rows[0].to_email;
+                    const job_id = otResult.rows[0].job_id;
+                    
+                    // Update email_data to mark as opener
+                    query(
+                        'UPDATE email_data SET is_opener = true WHERE to_email = $1',
+                        [to_email]
+                    ).catch(err => console.error('Failed to update is_opener flag:', err.message));
+                    
+                    // Update campaign stats
+                    if (job_id) {
+                        query(
+                            'SELECT id FROM campaigns WHERE job_id = $1',
+                            [job_id]
+                        ).then(campResult => {
+                            if (campResult.rows.length > 0) {
+                                const campaign_id = campResult.rows[0].id;
+                                query(
+                                    'UPDATE campaigns SET total_opened = total_opened + 1 WHERE id = $1',
+                                    [campaign_id]
+                                ).catch(err => console.error('Failed to update campaign open stats:', err.message));
+                            }
+                        }).catch(err => console.error('Failed to lookup campaign:', err.message));
+                    }
+                }
+            }).catch(err => console.error('Failed to lookup open tracking:', err.message));
         }
 
         // Always return the pixel regardless of tracking success

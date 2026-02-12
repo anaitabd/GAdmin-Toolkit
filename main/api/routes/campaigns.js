@@ -485,4 +485,301 @@ router.get('/:id/links', async (req, res, next) => {
     }
 });
 
+// ── GET /api/campaigns/:id/recipients ──────────────────────────────
+// Returns paginated list of email_logs for this campaign with status and tracking events
+router.get('/:id/recipients', async (req, res, next) => {
+    try {
+        const { limit = 100, offset = 0 } = req.query;
+        
+        const campaign = await query('SELECT job_id, id FROM campaigns WHERE id = $1', [req.params.id]);
+        
+        if (campaign.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Campaign not found' });
+        }
+        
+        const jobId = campaign.rows[0].job_id;
+        const campaignId = campaign.rows[0].id;
+        
+        if (!jobId) {
+            return res.json({ success: true, data: [], count: 0, total: 0 });
+        }
+        
+        const result = await query(
+            `SELECT 
+                el.to_email,
+                el.status,
+                el.sent_at,
+                el.error_message,
+                EXISTS(SELECT 1 FROM open_tracking WHERE job_id = $1 AND to_email = el.to_email AND opened = TRUE) as has_opened,
+                EXISTS(SELECT 1 FROM click_tracking WHERE job_id = $1 AND to_email = el.to_email AND clicked = TRUE) as has_clicked,
+                (SELECT COUNT(*) FROM click_tracking WHERE job_id = $1 AND to_email = el.to_email AND clicked = TRUE) as click_count
+             FROM email_logs el
+             WHERE el.job_id = $1
+             ORDER BY el.sent_at DESC
+             LIMIT $2 OFFSET $3`,
+            [jobId, parseInt(limit), parseInt(offset)]
+        );
+        
+        const countResult = await query(
+            'SELECT COUNT(*) as total FROM email_logs WHERE job_id = $1',
+            [jobId]
+        );
+        
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/clicks ──────────────────────────────────
+// Returns click_tracking records for this campaign with device/geo breakdown
+router.get('/:id/clicks', async (req, res, next) => {
+    try {
+        const { limit = 100, offset = 0 } = req.query;
+        
+        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        
+        if (campaign.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Campaign not found' });
+        }
+        
+        const jobId = campaign.rows[0].job_id;
+        
+        if (!jobId) {
+            return res.json({ success: true, data: [], count: 0, total: 0 });
+        }
+        
+        const result = await query(
+            `SELECT 
+                ct.to_email,
+                ct.original_url,
+                ct.clicked,
+                ct.clicked_at,
+                ce.device,
+                ce.browser,
+                ce.os,
+                ce.ip_address,
+                ce.country as geo
+             FROM click_tracking ct
+             LEFT JOIN click_events ce ON ce.tracking_id = ct.id
+             WHERE ct.job_id = $1 AND ct.clicked = TRUE
+             ORDER BY ct.clicked_at DESC
+             LIMIT $2 OFFSET $3`,
+            [jobId, parseInt(limit), parseInt(offset)]
+        );
+        
+        const countResult = await query(
+            'SELECT COUNT(*) as total FROM click_tracking WHERE job_id = $1 AND clicked = TRUE',
+            [jobId]
+        );
+        
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/opens ───────────────────────────────────
+// Returns open_tracking records for this campaign
+router.get('/:id/opens', async (req, res, next) => {
+    try {
+        const { limit = 100, offset = 0 } = req.query;
+        
+        const campaign = await query('SELECT job_id FROM campaigns WHERE id = $1', [req.params.id]);
+        
+        if (campaign.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Campaign not found' });
+        }
+        
+        const jobId = campaign.rows[0].job_id;
+        
+        if (!jobId) {
+            return res.json({ success: true, data: [], count: 0, total: 0 });
+        }
+        
+        const result = await query(
+            `SELECT 
+                ot.to_email,
+                ot.opened,
+                ot.opened_at,
+                oe.device,
+                oe.browser,
+                oe.os,
+                oe.ip_address
+             FROM open_tracking ot
+             LEFT JOIN open_events oe ON oe.tracking_id = ot.id
+             WHERE ot.job_id = $1 AND ot.opened = TRUE
+             ORDER BY ot.opened_at DESC
+             LIMIT $2 OFFSET $3`,
+            [jobId, parseInt(limit), parseInt(offset)]
+        );
+        
+        const countResult = await query(
+            'SELECT COUNT(*) as total FROM open_tracking WHERE job_id = $1 AND opened = TRUE',
+            [jobId]
+        );
+        
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total: parseInt(countResult.rows[0].total)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/:id/leads ───────────────────────────────────
+// Returns leads for this campaign with payout totals
+router.get('/:id/leads', async (req, res, next) => {
+    try {
+        const { limit = 100, offset = 0 } = req.query;
+        
+        const result = await query(
+            `SELECT 
+                l.id,
+                l.to_email,
+                l.payout,
+                l.geo,
+                l.device,
+                l.browser,
+                l.os,
+                l.created_at,
+                o.name as offer_name,
+                an.name as network_name
+             FROM leads l
+             LEFT JOIN offers o ON o.id = l.offer_id
+             LEFT JOIN affiliate_networks an ON an.id = l.affiliate_network_id
+             WHERE l.campaign_id = $1
+             ORDER BY l.created_at DESC
+             LIMIT $2 OFFSET $3`,
+            [req.params.id, parseInt(limit), parseInt(offset)]
+        );
+        
+        const statsResult = await query(
+            `SELECT 
+                COUNT(*) as total_leads,
+                SUM(payout) as total_payout
+             FROM leads
+             WHERE campaign_id = $1`,
+            [req.params.id]
+        );
+        
+        const stats = statsResult.rows[0] || { total_leads: 0, total_payout: 0 };
+        
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length,
+            total_leads: parseInt(stats.total_leads),
+            total_payout: parseFloat(stats.total_payout) || 0
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ── GET /api/campaigns/compare ─────────────────────────────────────
+// Returns side-by-side stats for multiple campaigns (A/B testing comparison)
+router.get('/compare', async (req, res, next) => {
+    try {
+        const { campaign_ids } = req.query;
+        
+        if (!campaign_ids) {
+            return res.status(400).json({ success: false, error: 'campaign_ids query parameter is required' });
+        }
+        
+        // Parse campaign_ids (could be comma-separated string or array)
+        const ids = Array.isArray(campaign_ids) 
+            ? campaign_ids 
+            : campaign_ids.split(',').map(id => parseInt(id.trim(), 10));
+        
+        const comparisons = await Promise.all(ids.map(async (campaign_id) => {
+            const campaign = await query('SELECT * FROM campaigns WHERE id = $1', [campaign_id]);
+            
+            if (campaign.rows.length === 0) {
+                return { campaign_id, error: 'Not found' };
+            }
+            
+            const c = campaign.rows[0];
+            const jobId = c.job_id;
+            
+            if (!jobId) {
+                return {
+                    campaign_id,
+                    name: c.name,
+                    sent: 0,
+                    failed: 0,
+                    opened: 0,
+                    clicked: 0,
+                    leads: 0
+                };
+            }
+            
+            // Get stats
+            const logResult = await query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE status = 'sent') AS sent,
+                    COUNT(*) FILTER (WHERE status = 'failed') AS failed
+                 FROM email_logs WHERE job_id = $1`,
+                [jobId]
+            );
+            
+            const clickResult = await query(
+                'SELECT COUNT(DISTINCT to_email) as unique_clickers FROM click_tracking WHERE job_id = $1 AND clicked = TRUE',
+                [jobId]
+            );
+            
+            const openResult = await query(
+                'SELECT COUNT(DISTINCT to_email) as unique_openers FROM open_tracking WHERE job_id = $1 AND opened = TRUE',
+                [jobId]
+            );
+            
+            const leadResult = await query(
+                'SELECT COUNT(*) as total_leads, SUM(payout) as total_payout FROM leads WHERE campaign_id = $1',
+                [campaign_id]
+            );
+            
+            const sent = parseInt(logResult.rows[0].sent || 0);
+            const failed = parseInt(logResult.rows[0].failed || 0);
+            const unique_openers = parseInt(openResult.rows[0].unique_openers || 0);
+            const unique_clickers = parseInt(clickResult.rows[0].unique_clickers || 0);
+            const total_leads = parseInt(leadResult.rows[0].total_leads || 0);
+            const total_payout = parseFloat(leadResult.rows[0].total_payout || 0);
+            
+            return {
+                campaign_id,
+                name: c.name,
+                sent,
+                failed,
+                opened: unique_openers,
+                open_rate: sent > 0 ? Math.round((unique_openers / sent) * 10000) / 100 : 0,
+                clicked: unique_clickers,
+                click_rate: sent > 0 ? Math.round((unique_clickers / sent) * 10000) / 100 : 0,
+                leads: total_leads,
+                conversion_rate: sent > 0 ? Math.round((total_leads / sent) * 10000) / 100 : 0,
+                total_payout
+            };
+        }));
+        
+        res.json({
+            success: true,
+            data: comparisons
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 module.exports = router;
