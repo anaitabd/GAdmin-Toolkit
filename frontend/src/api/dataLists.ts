@@ -1,7 +1,7 @@
 import apiClient from './client'
 import type { DataList, ApiResponse } from './types'
 
-export const getAll = (params?: { provider_id?: number; status?: string; search?: string; limit?: number; offset?: number }) =>
+export const getAll = (params?: { data_provider_id?: number; status?: string; search?: string; limit?: number; offset?: number }) =>
   apiClient.get<ApiResponse<DataList[]>>('/data-lists', { params }).then(r => r.data)
 
 export const getById = (id: number) =>
@@ -9,7 +9,7 @@ export const getById = (id: number) =>
 
 export const create = (data: {
   name: string
-  provider_id: number
+  data_provider_id: number
   description?: string
   vertical_id?: number
   total_count?: number
@@ -20,7 +20,7 @@ export const create = (data: {
 
 export const update = (id: number, data: Partial<{
   name: string
-  provider_id: number
+  data_provider_id: number
   description: string | null
   vertical_id: number | null
   total_count: number | null

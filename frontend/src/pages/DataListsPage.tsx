@@ -15,7 +15,7 @@ import * as verticalsApi from '../api/verticals'
 const columns: Column<DataList>[] = [
   { key: 'id', header: 'ID' },
   { key: 'name', header: 'Name' },
-  { key: 'provider_id', header: 'Provider ID' },
+  { key: 'data_provider_id', header: 'Provider ID' },
   { key: 'vertical_id', header: 'Vertical ID' },
   { key: 'total_count', header: 'Total Count' },
   { key: 'status', header: 'Status', render: (item) => (
@@ -35,7 +35,7 @@ function DataListForm({ initial, onSubmit, onCancel, isPending }: {
   isPending: boolean
 }) {
   const [name, setName] = useState(initial?.name ?? '')
-  const [providerId, setProviderId] = useState(initial?.provider_id?.toString() ?? '')
+  const [providerId, setProviderId] = useState(initial?.data_provider_id?.toString() ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [verticalId, setVerticalId] = useState(initial?.vertical_id?.toString() ?? '')
   const [totalCount, setTotalCount] = useState(initial?.total_count?.toString() ?? '')
@@ -123,7 +123,7 @@ function DataListForm({ initial, onSubmit, onCancel, isPending }: {
           Cancel
         </button>
         <button type="button" onClick={() => onSubmit({
-          name, provider_id: parseInt(providerId), description: description || undefined,
+          name, data_provider_id: parseInt(providerId), description: description || undefined,
           vertical_id: verticalId ? parseInt(verticalId) : undefined,
           total_count: totalCount ? parseInt(totalCount) : undefined,
           status, notes: notes || undefined
@@ -145,8 +145,8 @@ export default function DataListsPage() {
   const limit = 50
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['data-lists', { search: search || undefined, status: statusFilter || undefined, provider_id: providerFilter || undefined, limit, offset }],
-    queryFn: () => dataListsApi.getAll({ search: search || undefined, status: statusFilter || undefined, provider_id: providerFilter ? parseInt(providerFilter) : undefined, limit, offset })
+    queryKey: ['data-lists', { search: search || undefined, status: statusFilter || undefined, data_provider_id: providerFilter || undefined, limit, offset }],
+    queryFn: () => dataListsApi.getAll({ search: search || undefined, status: statusFilter || undefined, data_provider_id: providerFilter ? parseInt(providerFilter) : undefined, limit, offset })
   })
 
   const { data: providers } = useQuery({
