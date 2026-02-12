@@ -30,7 +30,6 @@ function LeadForm({ initial, onSubmit, onCancel, isPending }: {
 }) {
   const [offerId, setOfferId] = useState(initial?.offer_id?.toString() ?? '')
   const [campaignId, setCampaignId] = useState(initial?.campaign_id?.toString() ?? '')
-  const [affiliateNetworkId, setAffiliateNetworkId] = useState(initial?.affiliate_network_id?.toString() ?? '')
   const [toEmail, setToEmail] = useState(initial?.to_email ?? '')
   const [payout, setPayout] = useState(initial?.payout?.toString() ?? '')
   const [ipAddress, setIpAddress] = useState(initial?.ip_address ?? '')
@@ -101,7 +100,6 @@ function LeadForm({ initial, onSubmit, onCancel, isPending }: {
         <button type="button" onClick={() => onSubmit({
           offer_id: parseInt(offerId), 
           campaign_id: campaignId ? parseInt(campaignId) : undefined,
-          affiliate_network_id: affiliateNetworkId ? parseInt(affiliateNetworkId) : undefined,
           to_email: toEmail, 
           payout: payout ? parseFloat(payout) : undefined,
           ip_address: ipAddress || undefined

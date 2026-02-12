@@ -134,7 +134,7 @@ router.put('/:id', async (req, res, next) => {
     try {
         const { payout, ip_address } = req.body;
 
-        const checkResult = await query('SELECT * FROM leads WHERE id = $1', [req.params.id]);
+        const checkResult = await query('SELECT id FROM leads WHERE id = $1', [req.params.id]);
         if (checkResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Lead not found' });
         }
@@ -153,7 +153,9 @@ router.put('/:id', async (req, res, next) => {
         }
 
         if (updates.length === 0) {
-            return res.json({ success: true, data: checkResult.rows[0] });
+            // No updates requested, fetch and return the current record
+            const currentResult = await query('SELECT * FROM leads WHERE id = $1', [req.params.id]);
+            return res.json({ success: true, data: currentResult.rows[0] });
         }
 
         params.push(req.params.id);

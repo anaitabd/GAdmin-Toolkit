@@ -2,3 +2,5 @@ main/api/cred.json
 .env
 .env.*
 node_modules/
+frontend/dist/
+frontend/node_modules/
