@@ -22,20 +22,19 @@ const emailColumns: Column<SuppressionEmail>[] = [
 const processColumns: Column<SuppressionProcess>[] = [
   { key: 'id', header: 'ID' },
   { key: 'offer_id', header: 'Offer ID' },
-  { key: 'name', header: 'Name' },
+  { key: 'affiliate_network_id', header: 'Network ID' },
   { key: 'status', header: 'Status', render: (item) => (
     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
       item.status === 'completed' ? 'bg-green-100 text-green-700' :
-      item.status === 'running' ? 'bg-blue-100 text-blue-700' :
+      item.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
       item.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
     }`}>
       {item.status}
     </span>
   )},
-  { key: 'total_count', header: 'Total' },
-  { key: 'processed_count', header: 'Processed' },
-  { key: 'added_count', header: 'Added' },
-  { key: 'created_at', header: 'Created At', render: (item) => new Date(item.created_at).toLocaleDateString() },
+  { key: 'progress', header: 'Progress', render: (item) => item.progress ? `${item.progress}%` : '-' },
+  { key: 'emails_found', header: 'Emails Found' },
+  { key: 'started_at', header: 'Started At', render: (item) => new Date(item.started_at).toLocaleDateString() },
 ]
 
 function EmailForm({ initial, onSubmit, onCancel, isPending }: {

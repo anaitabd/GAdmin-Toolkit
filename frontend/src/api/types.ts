@@ -477,33 +477,32 @@ export interface SuppressionEmail {
 
 export interface SuppressionProcess {
   id: number
-  offer_id: number
-  name: string
-  description: string | null
-  source_file: string | null
+  affiliate_network_id: number | null
+  offer_id: number | null
+  data_list_ids: string | null
   status: string
-  total_count: number | null
-  processed_count: number | null
-  added_count: number | null
-  error_message: string | null
-  created_at: string
-  updated_at: string
+  progress: number | null
+  emails_found: number | null
+  started_at: string
   completed_at: string | null
 }
 
 export interface Lead {
   id: number
-  offer_id: number
+  job_id: number | null
   campaign_id: number | null
-  email: string
-  first_name: string | null
-  last_name: string | null
-  phone: string | null
+  offer_id: number | null
+  affiliate_network_id: number | null
+  data_list_id: number | null
+  to_email: string
+  payout: string | number | null
   ip_address: string | null
-  status: string
-  notes: string | null
+  user_agent: string | null
+  geo: string | null
+  device: string | null
+  browser: string | null
+  os: string | null
   created_at: string
-  updated_at: string
 }
 
 export interface AuditLog {

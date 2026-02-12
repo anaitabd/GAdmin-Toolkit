@@ -94,7 +94,7 @@ router.get('/:id', async (req, res, next) => {
 // ── POST /api/leads ────────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
     try {
-        const { offer_id, campaign_id, affiliate_network_id, email, payout, transaction_id } = req.body;
+        const { offer_id, campaign_id, affiliate_network_id, to_email, payout } = req.body;
 
         if (!offer_id) {
             return res.status(400).json({
@@ -103,17 +103,23 @@ router.post('/', async (req, res, next) => {
             });
         }
 
+        if (!to_email) {
+            return res.status(400).json({
+                success: false,
+                error: 'to_email is required'
+            });
+        }
+
         const result = await query(
-            `INSERT INTO leads (offer_id, campaign_id, affiliate_network_id, email, payout, transaction_id)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO leads (offer_id, campaign_id, affiliate_network_id, to_email, payout)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
             [
                 parseInt(offer_id),
                 campaign_id ? parseInt(campaign_id) : null,
                 affiliate_network_id ? parseInt(affiliate_network_id) : null,
-                email || null,
-                payout || null,
-                transaction_id || null
+                to_email,
+                payout || null
             ]
         );
 
