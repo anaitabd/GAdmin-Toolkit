@@ -34,6 +34,12 @@ import RolesPage from './pages/RolesPage'
 import GoogleAccountsPage from './pages/GoogleAccountsPage'
 import HeadersPage from './pages/HeadersPage'
 import PlaceholderPage from './pages/PlaceholderPage'
+import AutoRespondersPage from './pages/AutoRespondersPage'
+import SessionsPage from './pages/SessionsPage'
+import UploadImagesPage from './pages/UploadImagesPage'
+import SPFCheckerPage from './pages/SPFCheckerPage'
+import ReputationPage from './pages/ReputationPage'
+import ValueExtractorPage from './pages/ValueExtractorPage'
 
 export const router = createBrowserRouter([
   {
@@ -95,21 +101,21 @@ export const router = createBrowserRouter([
       { path: 'headers', element: <HeadersPage /> },
       { path: 'headers/add', element: <PlaceholderPage title="Add Header" description="Create a new predefined header" /> },
       // Auto-Responders
-      { path: 'auto-responders', element: <PlaceholderPage title="AutoResponders" description="Manage automated follow-up emails" /> },
-      { path: 'auto-responders/create', element: <PlaceholderPage title="Create AutoResponder" description="Create a new auto-responder" /> },
+      { path: 'auto-responders', element: <AutoRespondersPage /> },
+      { path: 'auto-responders/create', element: <AutoRespondersPage /> },
       // Google Accounts
       { path: 'google-accounts', element: <GoogleAccountsPage /> },
       // Sessions
-      { path: 'sessions', element: <PlaceholderPage title="Active Sessions" description="Manage active user sessions" /> },
+      { path: 'sessions', element: <SessionsPage /> },
       // Revenue Report
       { path: 'revenue-report', element: <PlaceholderPage title="Revenue Report" description="View revenue analytics and statistics" /> },
       // Upload Images
-      { path: 'upload-images', element: <PlaceholderPage title="Upload Images" description="Upload images for email creatives" /> },
+      { path: 'upload-images', element: <UploadImagesPage /> },
       // Tools
-      { path: 'tools/spf-lookup', element: <PlaceholderPage title="SPF Checker" description="Check SPF records for domains" /> },
-      { path: 'tools/reputation', element: <PlaceholderPage title="Domain/IP Reputation" description="Check domain and IP reputation" /> },
+      { path: 'tools/spf-lookup', element: <SPFCheckerPage /> },
+      { path: 'tools/reputation', element: <ReputationPage /> },
       { path: 'tools/mailbox-extractor', element: <PlaceholderPage title="Mailbox Extractor" description="Extract email addresses from mailboxes" /> },
-      { path: 'tools/extractor', element: <PlaceholderPage title="Value Extractor" description="Extract values using regex patterns" /> },
+      { path: 'tools/extractor', element: <ValueExtractorPage /> },
     ],
   },
 ])
