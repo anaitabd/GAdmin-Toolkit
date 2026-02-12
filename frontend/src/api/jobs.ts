@@ -35,6 +35,8 @@ export const sendCampaign = (params: {
   user_ids?: number[] | null
   offer_id?: number | null
   headers?: Record<string, string>
+  campaign_name?: string
+  campaign_description?: string | null
 }) =>
   apiClient.post<ApiResponse<Job>>('/jobs/send-campaign', params).then(r => r.data)
 
