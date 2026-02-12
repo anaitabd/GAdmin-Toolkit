@@ -47,6 +47,18 @@ const auditLogsRouter = require('./routes/auditLogs');
 const campaignSendRouter = require('./routes/campaignSend');
 const postbackRouter = require('./routes/postback');
 
+// New routes for iresponse-pro parity (roles, teams, features)
+const rolesRouter = require('./routes/roles');
+const teamsRouter = require('./routes/teams');
+const headersRouter = require('./routes/headers');
+const autoRespondersRouter = require('./routes/autoResponders');
+const googleAccountsRouter = require('./routes/googleAccounts');
+const sessionsRouter = require('./routes/sessions');
+const logsRouter = require('./routes/logs');
+const statisticsRouter = require('./routes/statistics');
+const imagesRouter = require('./routes/images');
+const toolsRouter = require('./routes/tools');
+
 // Use routes
 app.use('/t', trackingRouter);
 app.use('/api/users', usersRouter);
@@ -83,6 +95,18 @@ app.use('/api/audit-logs', auditLogsRouter);
 // Campaign send orchestration and postback (Phase 7)
 app.use('/api/campaign-send', campaignSendRouter);
 app.use('/postback', postbackRouter);
+
+// New routes for iresponse-pro parity
+app.use('/api/roles', rolesRouter);
+app.use('/api/teams', teamsRouter);
+app.use('/api/headers', headersRouter);
+app.use('/api/auto-responders', autoRespondersRouter);
+app.use('/api/google-accounts', googleAccountsRouter);
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/logs', logsRouter);
+app.use('/api/statistics', statisticsRouter);
+app.use('/api/images', imagesRouter);
+app.use('/api/tools', toolsRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
