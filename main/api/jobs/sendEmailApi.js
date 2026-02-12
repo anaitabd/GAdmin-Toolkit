@@ -14,6 +14,7 @@ const {
     updateJob,
 } = require('../db/queries');
 const { loadGoogleCreds } = require('../googleCreds');
+const { filterRecipients, replacePlaceholders } = require('../lib/sendFilters');
 
 const REQUESTS_PER_EMAIL = 300;
 const INTERVAL = 50; // ms between emails
@@ -37,16 +38,23 @@ async function run() {
     try {
         const creds = await loadGoogleCreds();
         const users = await getUsers();
-        const data = await getEmailData();
+        let data = await getEmailData();
         const info = await getActiveEmailInfo();
         const template = await getActiveEmailTemplate();
 
         if (!info || !template) throw new Error('Missing active email_info or template');
 
+        // Apply recipient filtering (blacklists, suppressions, bounces, unsubscribes)
+        console.log(`[Job ${jobId}] Before filtering: ${data.length} recipients`);
+        data = await filterRecipients(data);
+        console.log(`[Job ${jobId}] After filtering: ${data.length} recipients`);
+
         const { from_name: from, subject } = info;
         const baseHtml = template.html_content;
         const total = data.length;
         let processed = 0;
+        let sent = 0;
+        let failed = 0;
 
         await updateJob(jobId, { total_items: total });
 
@@ -65,8 +73,10 @@ async function run() {
 
             for (let j = 0; j < REQUESTS_PER_EMAIL && dataIndex < total; j++) {
                 const emailData = data[dataIndex++];
-                const to_ = emailData.to_email.split('@')[0];
-                const htmlContent = baseHtml.replace(/\[to\]/g, to_);
+                
+                // Replace placeholders with recipient data
+                const htmlContent = replacePlaceholders(baseHtml, emailData);
+                
                 const raw = createMimeMessage(user.email, emailData.to_email, from, subject, htmlContent);
 
                 try {
@@ -80,12 +90,16 @@ async function run() {
                         messageIndex: dataIndex, status: 'sent', provider: 'gmail_api',
                         errorMessage: null, sentAt: new Date(),
                     });
+                    sent++;
+                    console.log(`[Job ${jobId}] Sent ${sent}/${total}: ${emailData.to_email}`);
                 } catch (error) {
                     await insertEmailLog({
                         userEmail: user.email, toEmail: emailData.to_email,
                         messageIndex: dataIndex, status: 'failed', provider: 'gmail_api',
                         errorMessage: error?.message || 'send failed', sentAt: new Date(),
                     });
+                    failed++;
+                    console.error(`[Job ${jobId}] Failed ${failed}: ${emailData.to_email} - ${error?.message}`);
                 }
 
                 processed++;
@@ -98,9 +112,11 @@ async function run() {
             }
         }
 
+        console.log(`[Job ${jobId}] Completed: ${sent} sent, ${failed} failed out of ${total} total`);
         await updateJob(jobId, { status: 'completed', progress: 100, processed_items: processed, completed_at: new Date() });
         process.exit(0);
     } catch (err) {
+        console.error(`[Job ${jobId}] Job failed: ${err.message}`);
         await updateJob(jobId, { status: 'failed', error_message: err.message, completed_at: new Date() });
         process.exit(1);
     }

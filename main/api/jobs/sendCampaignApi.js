@@ -18,6 +18,7 @@ const {
 } = require('../db/queries');
 const { loadGoogleCreds } = require('../googleCreds');
 const { extractUrls, rewriteLinks, injectOpenPixel, replaceOfferTags, detectOfferTags, htmlContainsUrl, replaceUrlInHtml } = require('./utils/linkRewriter');
+const { filterRecipients, pickCreative, pickFromName, pickSubject, getOfferLinks, replacePlaceholders } = require('../lib/sendFilters');
 
 const INTERVAL = 50; // ms between emails
 
@@ -136,11 +137,60 @@ async function run() {
 
         const creds = await loadGoogleCreds();
         const allUsers = await getUsers();
-        const data = await getEmailData(params.geo || null, effLimit, effOffset, params.list_name || null);
+        let data = await getEmailData(params.geo || null, effLimit, effOffset, params.list_name || null);
+        
+        // Apply recipient filtering (blacklists, suppressions, bounces, unsubscribes)
+        console.log(`[Job ${jobId}] Before filtering: ${data.length} recipients`);
+        data = await filterRecipients(data, offerId);
+        console.log(`[Job ${jobId}] After filtering: ${data.length} recipients`);
+        
+        // Optional: Use content rotation if offer is specified and params.use_rotation is true
+        let finalFromName = from_name;
+        let finalSubject = subject;
+        let finalHtmlContent = processedHtml;
+        
+        if (offerId && params.use_rotation) {
+            console.log(`[Job ${jobId}] Using content rotation for offer ${offerId}`);
+            // Try to pick a creative
+            const creative = await pickCreative(offerId);
+            if (creative) {
+                console.log(`[Job ${jobId}] Using creative ${creative.id}`);
+                finalFromName = creative.from_name;
+                finalSubject = creative.subject;
+                finalHtmlContent = creative.html_content;
+                // Re-process HTML with offer tags
+                if (offer) {
+                    finalHtmlContent = replaceOfferTags(finalHtmlContent, offer.click_url, offer.unsub_url);
+                }
+            } else {
+                // No creative found, try individual rotations
+                const rotatedFromName = await pickFromName(offerId);
+                const rotatedSubject = await pickSubject(offerId);
+                if (rotatedFromName) {
+                    console.log(`[Job ${jobId}] Rotating from_name: ${rotatedFromName}`);
+                    finalFromName = rotatedFromName;
+                }
+                if (rotatedSubject) {
+                    console.log(`[Job ${jobId}] Rotating subject: ${rotatedSubject}`);
+                    finalSubject = rotatedSubject;
+                }
+            }
+            
+            // Get offer links (may override default click/unsub URLs)
+            const offerLinks = await getOfferLinks(offerId);
+            if (offerLinks.clickUrl && offer) {
+                console.log(`[Job ${jobId}] Using offer click link: ${offerLinks.clickUrl}`);
+                offer.click_url = offerLinks.clickUrl;
+            }
+            if (offerLinks.unsubUrl && offer) {
+                console.log(`[Job ${jobId}] Using offer unsub link: ${offerLinks.unsubUrl}`);
+                offer.unsub_url = offerLinks.unsubUrl;
+            }
+        }
 
-        // Extract URLs from processedHtml for click tracking
+        // Extract URLs from finalHtmlContent for click tracking
         const baseUrl = process.env.BASE_URL || 'http://localhost';
-        let originalUrls = extractUrls(processedHtml);
+        let originalUrls = extractUrls(finalHtmlContent);
 
         // Exclude offer click_url and unsub_url from normal batch tracking
         // (they get dedicated per-recipient tracking rows with link_type)
@@ -179,8 +229,9 @@ async function run() {
 
             for (let j = 0; j < batchSize && dataIndex < total; j++) {
                 const emailData = data[dataIndex++];
-                const to_ = emailData.to_email.split('@')[0];
-                let htmlBody = processedHtml.replace(/\[to\]/g, to_);
+                
+                // Use enhanced placeholder replacement from sendFilters
+                let htmlBody = replacePlaceholders(finalHtmlContent, emailData);
 
                 // Insert offer-specific tracking rows BEFORE normal link rewriting
                 // These create per-recipient tracking for offer click and unsub URLs
@@ -219,7 +270,7 @@ async function run() {
                     htmlBody = injectOpenPixel(htmlBody, openTrack.track_id, baseUrl);
                 } catch (_) { /* open tracking failed, send without pixel */ }
 
-                const raw = createMimeMessage(user.email, emailData.to_email, from_name, subject, htmlBody, customHeaders);
+                const raw = createMimeMessage(user.email, emailData.to_email, finalFromName, finalSubject, htmlBody, customHeaders);
 
                 try {
                     await axios.post(
