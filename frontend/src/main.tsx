@@ -8,8 +8,10 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
       retry: 1,
+      refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
+      refetchOnMount: false, // Disable refetch on component remount if data exists
     },
   },
 })
