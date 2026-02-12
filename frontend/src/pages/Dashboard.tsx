@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import {
   UsersIcon, PaperAirplaneIcon, ExclamationCircleIcon, ExclamationTriangleIcon,
-  CheckCircleIcon, XCircleIcon,
+  CheckCircleIcon, XCircleIcon, BuildingOfficeIcon, TagIcon, GiftIcon, UserPlusIcon,
 } from '@heroicons/react/24/outline'
 import StatCard from '../components/ui/StatCard'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -13,6 +13,11 @@ import { useEmailTemplates } from '../hooks/useEmailTemplates'
 import { useCredentials } from '../hooks/useCredentials'
 import { useEmailLogStats } from '../hooks/useEmailLogs'
 import { useBounceLogStats } from '../hooks/useBounceLogs'
+import { useQuery } from '@tanstack/react-query'
+import * as dataProvidersApi from '../api/dataProviders'
+import * as verticalsApi from '../api/verticals'
+import * as offersApi from '../api/offers'
+import * as leadsApi from '../api/leads'
 
 function SetupItem({ ok, label, link }: { ok: boolean; label: string; link: string }) {
   return (
@@ -34,8 +39,28 @@ export default function Dashboard() {
   const { data: credsRes, isLoading: credsLoading } = useCredentials()
   const { data: emailStats, isLoading: emailLoading } = useEmailLogStats()
   const { data: bounceStats, isLoading: bounceLoading } = useBounceLogStats()
+  
+  // New entity stats
+  const { data: providersData, isLoading: providersLoading } = useQuery({
+    queryKey: ['data-providers', { limit: 1 }],
+    queryFn: () => dataProvidersApi.getAll({ limit: 1 })
+  })
+  const { data: verticalsData, isLoading: verticalsLoading } = useQuery({
+    queryKey: ['verticals', { limit: 1 }],
+    queryFn: () => verticalsApi.getAll({ limit: 1 })
+  })
+  const { data: offersData, isLoading: offersLoading } = useQuery({
+    queryKey: ['offers', { limit: 1 }],
+    queryFn: () => offersApi.getAll({ limit: 1 })
+  })
+  const { data: leadsData, isLoading: leadsLoading } = useQuery({
+    queryKey: ['leads', { limit: 1 }],
+    queryFn: () => leadsApi.getAll({ limit: 1 })
+  })
 
-  const loading = usersLoading || namesLoading || edLoading || eiLoading || tmplLoading || credsLoading || emailLoading || bounceLoading
+  const loading = usersLoading || namesLoading || edLoading || eiLoading || tmplLoading || 
+    credsLoading || emailLoading || bounceLoading || providersLoading || verticalsLoading || 
+    offersLoading || leadsLoading
   if (loading) return <LoadingSpinner />
 
   const hasUsers = (usersData?.count ?? 0) > 0
@@ -50,11 +75,20 @@ export default function Dashboard() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Primary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <StatCard title="Total Users" value={usersData?.count ?? 0} icon={UsersIcon} color="text-indigo-600" />
         <StatCard title="Emails Sent" value={Number(emailStats?.data?.successful_emails ?? 0)} icon={PaperAirplaneIcon} color="text-green-600" />
         <StatCard title="Failed Emails" value={Number(emailStats?.data?.failed_emails ?? 0)} icon={ExclamationCircleIcon} color="text-red-600" />
         <StatCard title="Bounced Emails" value={Number(bounceStats?.data?.total_bounces ?? 0)} icon={ExclamationTriangleIcon} color="text-amber-600" />
+      </div>
+
+      {/* Data Management Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard title="Data Providers" value={providersData?.count ?? 0} icon={BuildingOfficeIcon} color="text-blue-600" />
+        <StatCard title="Verticals" value={verticalsData?.count ?? 0} icon={TagIcon} color="text-purple-600" />
+        <StatCard title="Active Offers" value={offersData?.count ?? 0} icon={GiftIcon} color="text-pink-600" />
+        <StatCard title="Total Leads" value={leadsData?.count ?? 0} icon={UserPlusIcon} color="text-teal-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

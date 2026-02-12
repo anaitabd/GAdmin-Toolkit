@@ -15,6 +15,18 @@ import {
   MegaphoneIcon,
   LinkIcon,
   GiftIcon,
+  CircleStackIcon,
+  ListBulletIcon,
+  TagIcon,
+  BuildingOfficeIcon,
+  NoSymbolIcon,
+  SparklesIcon,
+  LinkSlashIcon,
+  UserCircleIcon,
+  ChatBubbleBottomCenterTextIcon,
+  ShieldExclamationIcon,
+  UserPlusIcon,
+  DocumentMagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
 const navGroups = [
@@ -30,6 +42,27 @@ const navGroups = [
       { to: '/offers', icon: GiftIcon, label: 'Offers' },
       { to: '/tracking-links', icon: LinkIcon, label: 'Tracking Links' },
       { to: '/jobs', icon: QueueListIcon, label: 'Jobs' },
+    ],
+  },
+  {
+    label: 'Data Management',
+    items: [
+      { to: '/data-providers', icon: BuildingOfficeIcon, label: 'Data Providers' },
+      { to: '/data-lists', icon: ListBulletIcon, label: 'Data Lists' },
+      { to: '/verticals', icon: TagIcon, label: 'Verticals' },
+      { to: '/affiliate-networks', icon: CircleStackIcon, label: 'Affiliate Networks' },
+      { to: '/blacklists', icon: NoSymbolIcon, label: 'Blacklists' },
+    ],
+  },
+  {
+    label: 'Offer Content',
+    items: [
+      { to: '/creatives', icon: SparklesIcon, label: 'Creatives' },
+      { to: '/offer-links', icon: LinkSlashIcon, label: 'Offer Links' },
+      { to: '/from-names', icon: UserCircleIcon, label: 'From Names' },
+      { to: '/subjects', icon: ChatBubbleBottomCenterTextIcon, label: 'Subjects' },
+      { to: '/suppressions', icon: ShieldExclamationIcon, label: 'Suppressions' },
+      { to: '/leads', icon: UserPlusIcon, label: 'Leads' },
     ],
   },
   {
@@ -53,6 +86,7 @@ const navGroups = [
     items: [
       { to: '/email-logs', icon: ClipboardDocumentListIcon, label: 'Email Logs' },
       { to: '/bounce-logs', icon: ExclamationTriangleIcon, label: 'Bounce Logs' },
+      { to: '/audit-logs', icon: DocumentMagnifyingGlassIcon, label: 'Audit Logs' },
     ],
   },
   {

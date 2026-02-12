@@ -16,6 +16,7 @@ const {
     getOffer,
 } = require('../db/queries');
 const { extractUrls, rewriteLinks, injectOpenPixel, replaceOfferTags, detectOfferTags, htmlContainsUrl, replaceUrlInHtml } = require('./utils/linkRewriter');
+const { filterRecipients, pickCreative, pickFromName, pickSubject, getOfferLinks, replacePlaceholders } = require('../lib/sendFilters');
 
 const INTERVAL = 50;
 
@@ -66,11 +67,56 @@ async function run() {
             : (params.recipient_limit ? Number(params.recipient_limit) : null);
 
         const allUsers = await getUsers();
-        const data = await getEmailData(params.geo || null, effLimit, effOffset, params.list_name || null);
+        let data = await getEmailData(params.geo || null, effLimit, effOffset, params.list_name || null);
+        
+        // Apply recipient filtering (blacklists, suppressions, bounces, unsubscribes)
+        console.log(`[Job ${jobId}] Before filtering: ${data.length} recipients`);
+        data = await filterRecipients(data, offerId);
+        console.log(`[Job ${jobId}] After filtering: ${data.length} recipients`);
+        
+        // Optional: Use content rotation if offer is specified and params.use_rotation is true
+        let finalFromName = from_name;
+        let finalSubject = subject;
+        let finalHtmlContent = processedHtml;
+        
+        if (offerId && params.use_rotation) {
+            console.log(`[Job ${jobId}] Using content rotation for offer ${offerId}`);
+            const creative = await pickCreative(offerId);
+            if (creative) {
+                console.log(`[Job ${jobId}] Using creative ${creative.id}`);
+                finalFromName = creative.from_name;
+                finalSubject = creative.subject;
+                finalHtmlContent = creative.html_content;
+                if (offer) {
+                    finalHtmlContent = replaceOfferTags(finalHtmlContent, offer.click_url, offer.unsub_url);
+                }
+            } else {
+                const rotatedFromName = await pickFromName(offerId);
+                const rotatedSubject = await pickSubject(offerId);
+                if (rotatedFromName) {
+                    console.log(`[Job ${jobId}] Rotating from_name: ${rotatedFromName}`);
+                    finalFromName = rotatedFromName;
+                }
+                if (rotatedSubject) {
+                    console.log(`[Job ${jobId}] Rotating subject: ${rotatedSubject}`);
+                    finalSubject = rotatedSubject;
+                }
+            }
+            
+            const offerLinks = await getOfferLinks(offerId);
+            if (offerLinks.clickUrl && offer) {
+                console.log(`[Job ${jobId}] Using offer click link: ${offerLinks.clickUrl}`);
+                offer.click_url = offerLinks.clickUrl;
+            }
+            if (offerLinks.unsubUrl && offer) {
+                console.log(`[Job ${jobId}] Using offer unsub link: ${offerLinks.unsubUrl}`);
+                offer.unsub_url = offerLinks.unsubUrl;
+            }
+        }
 
-        // Extract URLs from processedHtml for click tracking
+        // Extract URLs from finalHtmlContent for click tracking
         const baseUrl = process.env.BASE_URL || 'http://localhost';
-        let originalUrls = extractUrls(processedHtml);
+        let originalUrls = extractUrls(finalHtmlContent);
 
         // Exclude offer click_url and unsub_url from normal batch tracking
         if (offer) {
@@ -106,8 +152,10 @@ async function run() {
 
             for (let j = 0; j < batchSize && dataIndex < total; j++) {
                 const emailData = data[dataIndex++];
-                const to_ = emailData.to_email.split('@')[0];
-                let htmlBody = processedHtml.replace(/\[to\]/g, to_);
+                
+                // Use enhanced placeholder replacement from sendFilters
+                // Supports: [to] (username), [email] (full email), [first_name], [last_name], [geo]
+                let htmlBody = replacePlaceholders(finalHtmlContent, emailData);
 
                 // Insert offer-specific tracking rows BEFORE normal link rewriting
                 // Works with [click]/[unsub] tags AND direct href URLs from the offer
@@ -147,9 +195,9 @@ async function run() {
 
                 try {
                     await transporter.sendMail({
-                        from: `"${from_name}" <${user.email}>`,
+                        from: `"${finalFromName}" <${user.email}>`,
                         to: emailData.to_email,
-                        subject,
+                        subject: finalSubject,
                         html: htmlBody,
                         encoding: 'base64',
                         headers: customHeaders,
