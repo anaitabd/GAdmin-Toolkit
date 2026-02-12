@@ -43,7 +43,7 @@ function OfferLinkForm({ initial, onSubmit, onCancel, isPending }: {
 }) {
   const [offerId, setOfferId] = useState(initial?.offer_id?.toString() ?? '')
   const [creativeId, setCreativeId] = useState(initial?.creative_id?.toString() ?? '')
-  const [type, setType] = useState<'click' | 'unsub'>(initial?.type ?? 'click')
+  const [linkType, setLinkType] = useState<'click' | 'unsub'>(initial?.type ?? 'click')
   const [value, setValue] = useState(initial?.value ?? '')
   const [status, setStatus] = useState(initial?.status ?? 'active')
 
@@ -89,12 +89,12 @@ function OfferLinkForm({ initial, onSubmit, onCancel, isPending }: {
         <label className="block text-sm font-medium text-gray-700 mb-2">Type *</label>
         <div className="flex gap-4">
           <label className="flex items-center">
-            <input type="radio" value="click" checked={type === 'click'} onChange={e => setType('click')}
+            <input type="radio" value="click" checked={linkType === 'click'} onChange={() => setLinkType('click')}
               className="mr-2" />
             Click
           </label>
           <label className="flex items-center">
-            <input type="radio" value="unsub" checked={type === 'unsub'} onChange={e => setType('unsub')}
+            <input type="radio" value="unsub" checked={linkType === 'unsub'} onChange={() => setLinkType('unsub')}
               className="mr-2" />
             Unsubscribe
           </label>
@@ -124,7 +124,7 @@ function OfferLinkForm({ initial, onSubmit, onCancel, isPending }: {
         </button>
         <button type="button" onClick={() => onSubmit({
           offer_id: parseInt(offerId), creative_id: creativeId ? parseInt(creativeId) : undefined,
-          type, value, status
+          type: linkType, value, status
         })} disabled={!canSubmit}
           className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">
           {isPending ? 'Saving...' : initial ? 'Update' : 'Create'}

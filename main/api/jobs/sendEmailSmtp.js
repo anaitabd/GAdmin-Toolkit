@@ -56,7 +56,8 @@ async function run() {
             for (let j = 0; j < REQUESTS_PER_EMAIL && dataIndex < total; j++) {
                 const emailData = data[dataIndex++];
                 
-                // Replace placeholders with recipient data
+                // Use enhanced placeholder replacement from sendFilters
+                // Supports: [to] (username), [email] (full email), [first_name], [last_name], [geo]
                 const html = replacePlaceholders(htmlContent, emailData);
 
                 try {

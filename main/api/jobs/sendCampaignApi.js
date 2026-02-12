@@ -231,6 +231,7 @@ async function run() {
                 const emailData = data[dataIndex++];
                 
                 // Use enhanced placeholder replacement from sendFilters
+                // Supports: [to] (username), [email] (full email), [first_name], [last_name], [geo]
                 let htmlBody = replacePlaceholders(finalHtmlContent, emailData);
 
                 // Insert offer-specific tracking rows BEFORE normal link rewriting

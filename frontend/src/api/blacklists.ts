@@ -27,11 +27,11 @@ export const deleteById = (id: number) =>
 export const getEmails = (id: number, params?: { search?: string; limit?: number; offset?: number }) =>
   apiClient.get<ApiResponse<{ id: number; blacklist_id: number; email: string; created_at: string }[]>>(`/blacklists/${id}/emails`, { params }).then(r => r.data)
 
-export const addEmail = (id: number, data: { email: string }) =>
-  apiClient.post<ApiResponse<{ id: number; blacklist_id: number; email: string }>>(`/blacklists/${id}/emails`, data).then(r => r.data)
+export const addEmail = (id: number, emailData: { email: string }) =>
+  apiClient.post<ApiResponse<{ id: number; blacklist_id: number; email: string }>>(`/blacklists/${id}/emails`, emailData).then(r => r.data)
 
 export const deleteEmail = (id: number, emailId: number) =>
   apiClient.delete<{ success: boolean; message: string }>(`/blacklists/${id}/emails/${emailId}`).then(r => r.data)
 
-export const bulkAddEmails = (id: number, data: { emails: string[] }) =>
-  apiClient.post<ApiResponse<{ added: number }>>(`/blacklists/${id}/emails/bulk`, data).then(r => r.data)
+export const bulkAddEmails = (id: number, bulkEmailData: { emails: string[] }) =>
+  apiClient.post<ApiResponse<{ added: number }>>(`/blacklists/${id}/emails/bulk`, bulkEmailData).then(r => r.data)

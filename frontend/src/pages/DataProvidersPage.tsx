@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DataProvider } from '../api/types'
-import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import DataTable from '../components/ui/DataTable'
 import type { Column } from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
