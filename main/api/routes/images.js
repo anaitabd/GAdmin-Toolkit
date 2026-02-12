@@ -127,7 +127,25 @@ router.get('/:id/file', async (req, res, next) => {
 });
 
 // POST /api/images/upload - Upload image(s)
-router.post('/upload', upload.array('images', 10), async (req, res, next) => {
+router.post('/upload', (req, res, next) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading
+      return res.status(400).json({
+        success: false,
+        error: `Upload error: ${err.message}`
+      });
+    } else if (err) {
+      // An unknown error occurred
+      return res.status(400).json({
+        success: false,
+        error: err.message
+      });
+    }
+    // Everything went fine, proceed to handler
+    next();
+  });
+}, async (req, res, next) => {
   try {
     const actionBy = getActionBy(req);
     
