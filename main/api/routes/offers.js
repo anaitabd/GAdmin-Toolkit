@@ -45,7 +45,23 @@ router.get('/:id', async (req, res, next) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Offer not found' });
         }
-        res.json({ success: true, data: result.rows[0] });
+
+        const offer = result.rows[0];
+
+        // Get counts for related entities
+        const [creativesCount, linksCount, fromNamesCount, subjectsCount] = await Promise.all([
+            query('SELECT COUNT(*) FROM creatives WHERE offer_id = $1', [req.params.id]),
+            query('SELECT COUNT(*) FROM offer_links WHERE offer_id = $1', [req.params.id]),
+            query('SELECT COUNT(*) FROM from_names WHERE offer_id = $1', [req.params.id]),
+            query('SELECT COUNT(*) FROM subjects WHERE offer_id = $1', [req.params.id])
+        ]);
+
+        offer.creatives_count = parseInt(creativesCount.rows[0].count);
+        offer.links_count = parseInt(linksCount.rows[0].count);
+        offer.from_names_count = parseInt(fromNamesCount.rows[0].count);
+        offer.subjects_count = parseInt(subjectsCount.rows[0].count);
+
+        res.json({ success: true, data: offer });
     } catch (error) {
         next(error);
     }
@@ -54,7 +70,11 @@ router.get('/:id', async (req, res, next) => {
 // ── POST /api/offers ───────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
     try {
-        const { name, subject, from_name, html_content, click_url, unsub_url } = req.body;
+        const {
+            name, subject, from_name, html_content, click_url, unsub_url,
+            affiliate_network_id, vertical_id, production_id, description,
+            rules, payout, status = 'active'
+        } = req.body;
 
         if (!name || !subject || !from_name || !html_content || !click_url) {
             return res.status(400).json({
@@ -64,10 +84,14 @@ router.post('/', async (req, res, next) => {
         }
 
         const result = await query(
-            `INSERT INTO offers (name, subject, from_name, html_content, click_url, unsub_url)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO offers (name, subject, from_name, html_content, click_url, unsub_url,
+                                 affiliate_network_id, vertical_id, production_id, description,
+                                 rules, payout, status, active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
              RETURNING *`,
-            [name, subject, from_name, html_content, click_url, unsub_url || null]
+            [name, subject, from_name, html_content, click_url, unsub_url || null,
+             affiliate_network_id || null, vertical_id || null, production_id || null,
+             description || null, rules || null, payout || null, status, status === 'active']
         );
 
         res.status(201).json({ success: true, data: result.rows[0] });
@@ -79,7 +103,11 @@ router.post('/', async (req, res, next) => {
 // ── PUT /api/offers/:id ────────────────────────────────────────────
 router.put('/:id', async (req, res, next) => {
     try {
-        const { name, subject, from_name, html_content, click_url, unsub_url, active } = req.body;
+        const {
+            name, subject, from_name, html_content, click_url, unsub_url, active,
+            affiliate_network_id, vertical_id, production_id, description,
+            rules, payout, status
+        } = req.body;
 
         const result = await query(
             `UPDATE offers SET
@@ -90,10 +118,19 @@ router.put('/:id', async (req, res, next) => {
                 click_url = COALESCE($5, click_url),
                 unsub_url = COALESCE($6, unsub_url),
                 active = COALESCE($7, active),
+                affiliate_network_id = COALESCE($8, affiliate_network_id),
+                vertical_id = COALESCE($9, vertical_id),
+                production_id = COALESCE($10, production_id),
+                description = COALESCE($11, description),
+                rules = COALESCE($12, rules),
+                payout = COALESCE($13, payout),
+                status = COALESCE($14, status),
                 updated_at = NOW()
-             WHERE id = $8
+             WHERE id = $15
              RETURNING *`,
-            [name, subject, from_name, html_content, click_url, unsub_url, active, req.params.id]
+            [name, subject, from_name, html_content, click_url, unsub_url, active,
+             affiliate_network_id, vertical_id, production_id, description, rules,
+             payout, status, req.params.id]
         );
 
         if (result.rows.length === 0) {
