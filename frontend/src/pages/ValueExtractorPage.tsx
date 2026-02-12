@@ -164,19 +164,19 @@ export default function ValueExtractorPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
           <div>
             <span className="font-medium text-gray-700">Email:</span>
-            <code className="ml-2 text-gray-600">[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]&#123;2,&#125;</code>
+            <code className="ml-2 text-gray-600">{'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}'}</code>
           </div>
           <div>
             <span className="font-medium text-gray-700">URL:</span>
-            <code className="ml-2 text-gray-600">https?://[^\s]+</code>
+            <code className="ml-2 text-gray-600">{'https?://[^\\s]+'}</code>
           </div>
           <div>
             <span className="font-medium text-gray-700">Phone (US):</span>
-            <code className="ml-2 text-gray-600">\d&#123;3&#125;-\d&#123;3&#125;-\d&#123;4&#125;</code>
+            <code className="ml-2 text-gray-600">{'\\d{3}-\\d{3}-\\d{4}'}</code>
           </div>
           <div>
             <span className="font-medium text-gray-700">IPv4:</span>
-            <code className="ml-2 text-gray-600">\b\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;\.\d&#123;1,3&#125;\b</code>
+            <code className="ml-2 text-gray-600">{'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b'}</code>
           </div>
         </div>
       </div>

@@ -56,7 +56,9 @@ export default function SPFCheckerPage() {
             <textarea
               value={domainsInput}
               onChange={(e) => setDomainsInput(e.target.value)}
-              placeholder="example.com&#10;another-domain.com&#10;third-domain.com"
+              placeholder="example.com
+another-domain.com
+third-domain.com"
               rows={8}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono"
             />
