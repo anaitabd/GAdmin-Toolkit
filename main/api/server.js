@@ -30,6 +30,21 @@ const campaignTemplatesRouter = require('./routes/campaignTemplates');
 const offersRouter = require('./routes/offers');
 const emailSendRouter = require('./routes/emailSend');
 
+// New routes for data and sponsor management
+const dataProvidersRouter = require('./routes/dataProviders');
+const dataListsRouter = require('./routes/dataLists');
+const blacklistsRouter = require('./routes/blacklists');
+const verticalsRouter = require('./routes/verticals');
+const affiliateNetworksRouter = require('./routes/affiliateNetworks');
+const creativesRouter = require('./routes/creatives');
+const offerLinksRouter = require('./routes/offerLinks');
+const fromNamesRouter = require('./routes/fromNames');
+const subjectsRouter = require('./routes/subjects');
+const suppressionEmailsRouter = require('./routes/suppressionEmails');
+const suppressionProcessesRouter = require('./routes/suppressionProcesses');
+const leadsRouter = require('./routes/leads');
+const auditLogsRouter = require('./routes/auditLogs');
+
 // Use routes
 app.use('/t', trackingRouter);
 app.use('/api/users', usersRouter);
@@ -47,6 +62,21 @@ app.use('/api/campaign-templates', campaignTemplatesRouter);
 app.use('/api/tracking-links', trackingLinksRouter);
 app.use('/api/offers', offersRouter);
 app.use('/api/email-send', emailSendRouter);
+
+// New routes for data and sponsor management
+app.use('/api/data-providers', dataProvidersRouter);
+app.use('/api/data-lists', dataListsRouter);
+app.use('/api/blacklists', blacklistsRouter);
+app.use('/api/verticals', verticalsRouter);
+app.use('/api/affiliate-networks', affiliateNetworksRouter);
+app.use('/api/creatives', creativesRouter);
+app.use('/api/offer-links', offerLinksRouter);
+app.use('/api/from-names', fromNamesRouter);
+app.use('/api/subjects', subjectsRouter);
+app.use('/api/suppression-emails', suppressionEmailsRouter);
+app.use('/api/suppression-processes', suppressionProcessesRouter);
+app.use('/api/leads', leadsRouter);
+app.use('/api/audit-logs', auditLogsRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -73,6 +103,22 @@ app.get('/', (req, res) => {
             offers: '/api/offers',
             emailSend: '/api/email-send',
             tracking: '/t/c/:trackId',
+            // Data Management
+            dataProviders: '/api/data-providers',
+            dataLists: '/api/data-lists',
+            blacklists: '/api/blacklists',
+            // Sponsor/Affiliate Management
+            verticals: '/api/verticals',
+            affiliateNetworks: '/api/affiliate-networks',
+            creatives: '/api/creatives',
+            offerLinks: '/api/offer-links',
+            fromNames: '/api/from-names',
+            subjects: '/api/subjects',
+            suppressionEmails: '/api/suppression-emails',
+            suppressionProcesses: '/api/suppression-processes',
+            // Tracking & Analytics
+            leads: '/api/leads',
+            auditLogs: '/api/audit-logs',
             health: '/health'
         }
     });
