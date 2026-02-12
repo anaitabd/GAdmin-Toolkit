@@ -33,13 +33,23 @@ import CampaignMonitor from './pages/CampaignMonitor'
 import RolesPage from './pages/RolesPage'
 import GoogleAccountsPage from './pages/GoogleAccountsPage'
 import HeadersPage from './pages/HeadersPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import TeamsPage from './pages/TeamsPage'
+import TeamAuthorizationsPage from './pages/TeamAuthorizationsPage'
+import TeamUsersPage from './pages/TeamUsersPage'
+import AssignRolesPage from './pages/AssignRolesPage'
+import UsersByRolePage from './pages/UsersByRolePage'
+import FrontendLogsPage from './pages/FrontendLogsPage'
+import BackendLogsPage from './pages/BackendLogsPage'
 import AutoRespondersPage from './pages/AutoRespondersPage'
 import SessionsPage from './pages/SessionsPage'
+import RevenueReportPage from './pages/RevenueReportPage'
 import UploadImagesPage from './pages/UploadImagesPage'
 import SPFCheckerPage from './pages/SPFCheckerPage'
 import ReputationPage from './pages/ReputationPage'
+import MailboxExtractorPage from './pages/MailboxExtractorPage'
 import ValueExtractorPage from './pages/ValueExtractorPage'
+import CampaignTestsPage from './pages/CampaignTestsPage'
+import FetchBlacklistPage from './pages/FetchBlacklistPage'
 
 export const router = createBrowserRouter([
   {
@@ -60,7 +70,7 @@ export const router = createBrowserRouter([
       { path: 'campaign', element: <CampaignPage /> },
       { path: 'campaign-send', element: <CampaignSend /> },
       { path: 'campaign-monitor/:id', element: <CampaignMonitor /> },
-      { path: 'campaign-tests', element: <PlaceholderPage title="Campaign Tests Monitor" description="Monitor test campaigns" /> },
+      { path: 'campaign-tests', element: <CampaignTestsPage /> },
       { path: 'offers', element: <OffersPage /> },
       { path: 'offers/add', element: <OffersPage /> },
       { path: 'tracking-links', element: <TrackingLinksPage /> },
@@ -70,7 +80,7 @@ export const router = createBrowserRouter([
       { path: 'data-providers', element: <DataProvidersPage /> },
       { path: 'data-providers/add', element: <DataProvidersPage /> },
       { path: 'data-lists', element: <DataListsPage /> },
-      { path: 'data-lists/fetch', element: <PlaceholderPage title="Fetch Blacklist Emails" description="Fetch blacklist emails from data sources" /> },
+      { path: 'data-lists/fetch', element: <FetchBlacklistPage /> },
       { path: 'verticals', element: <VerticalsPage /> },
       { path: 'verticals/add', element: <VerticalsPage /> },
       { path: 'affiliate-networks', element: <AffiliateNetworksPage /> },
@@ -85,21 +95,21 @@ export const router = createBrowserRouter([
       { path: 'leads', element: <LeadsPage /> },
       // Logs
       { path: 'audit-logs', element: <AuditLogsPage /> },
-      { path: 'logs/frontend', element: <PlaceholderPage title="Frontend Logs" description="View application frontend logs" /> },
-      { path: 'logs/backend', element: <PlaceholderPage title="Backend Logs" description="View application backend logs" /> },
+      { path: 'logs/frontend', element: <FrontendLogsPage /> },
+      { path: 'logs/backend', element: <BackendLogsPage /> },
       // Roles & Permissions
       { path: 'roles', element: <RolesPage /> },
-      { path: 'roles/add', element: <PlaceholderPage title="Add Role" description="Create a new role with permissions" /> },
-      { path: 'roles/assign', element: <PlaceholderPage title="Assign Roles" description="Assign roles to users" /> },
-      { path: 'roles/users', element: <PlaceholderPage title="Users by Role" description="View users grouped by role" /> },
+      { path: 'roles/add', element: <RolesPage /> },
+      { path: 'roles/assign', element: <AssignRolesPage /> },
+      { path: 'roles/users', element: <UsersByRolePage /> },
       // Teams
-      { path: 'teams', element: <PlaceholderPage title="Teams" description="Manage teams" /> },
-      { path: 'teams/add', element: <PlaceholderPage title="Add Team" description="Create a new team" /> },
-      { path: 'teams/authorizations', element: <PlaceholderPage title="Team Authorizations" description="Manage team resource authorizations" /> },
-      { path: 'teams/users', element: <PlaceholderPage title="Assign Users to Teams" description="Assign users to teams" /> },
+      { path: 'teams', element: <TeamsPage /> },
+      { path: 'teams/add', element: <TeamsPage /> },
+      { path: 'teams/authorizations', element: <TeamAuthorizationsPage /> },
+      { path: 'teams/users', element: <TeamUsersPage /> },
       // Headers
       { path: 'headers', element: <HeadersPage /> },
-      { path: 'headers/add', element: <PlaceholderPage title="Add Header" description="Create a new predefined header" /> },
+      { path: 'headers/add', element: <HeadersPage /> },
       // Auto-Responders
       { path: 'auto-responders', element: <AutoRespondersPage /> },
       { path: 'auto-responders/create', element: <AutoRespondersPage /> },
@@ -108,13 +118,13 @@ export const router = createBrowserRouter([
       // Sessions
       { path: 'sessions', element: <SessionsPage /> },
       // Revenue Report
-      { path: 'revenue-report', element: <PlaceholderPage title="Revenue Report" description="View revenue analytics and statistics" /> },
+      { path: 'revenue-report', element: <RevenueReportPage /> },
       // Upload Images
       { path: 'upload-images', element: <UploadImagesPage /> },
       // Tools
       { path: 'tools/spf-lookup', element: <SPFCheckerPage /> },
       { path: 'tools/reputation', element: <ReputationPage /> },
-      { path: 'tools/mailbox-extractor', element: <PlaceholderPage title="Mailbox Extractor" description="Extract email addresses from mailboxes" /> },
+      { path: 'tools/mailbox-extractor', element: <MailboxExtractorPage /> },
       { path: 'tools/extractor', element: <ValueExtractorPage /> },
     ],
   },
