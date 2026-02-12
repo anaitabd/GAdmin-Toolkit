@@ -13,23 +13,20 @@ export const deleteEmail = (id: number) =>
 export const bulkAddEmails = (data: { offer_id: number; emails: string[] }) =>
   apiClient.post<ApiResponse<{ added: number }>>('/suppression-emails/bulk', data).then(r => r.data)
 
-export const getProcesses = (params?: { offer_id?: number; status?: string; limit?: number; offset?: number }) =>
+export const getProcesses = (params?: { affiliate_network_id?: number; offer_id?: number; status?: string; limit?: number; offset?: number }) =>
   apiClient.get<ApiResponse<SuppressionProcess[]>>('/suppression-processes', { params }).then(r => r.data)
 
 export const createProcess = (data: {
+  affiliate_network_id: number
   offer_id: number
-  name: string
-  description?: string
-  source_file?: string
-  total_count?: number
+  data_list_ids: number[]
 }) =>
-  apiClient.post<ApiResponse<SuppressionProcess>>('/suppression-processes', data).then(r => r.data)
+  apiClient.post<ApiResponse<SuppressionProcess>>('/suppression-processes/start', data).then(r => r.data)
 
 export const updateProcess = (id: number, data: Partial<{
   status: string
-  processed_count: number
-  added_count: number
-  error_message: string | null
+  progress: number
+  emails_found: number
 }>) =>
   apiClient.put<ApiResponse<SuppressionProcess>>(`/suppression-processes/${id}`, data).then(r => r.data)
 

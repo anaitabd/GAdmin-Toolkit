@@ -10,14 +10,14 @@ const { logAudit, getActionBy } = require('../middleware/auditLog');
 // ── GET /api/suppression-processes ─────────────────────────────────
 router.get('/', async (req, res, next) => {
     try {
-        const { network_id, offer_id, status, limit = 50, offset = 0 } = req.query;
+        const { affiliate_network_id, offer_id, status, limit = 50, offset = 0 } = req.query;
         let sql = 'SELECT * FROM suppression_processes';
         const params = [];
         const conditions = [];
 
-        if (network_id) {
-            params.push(parseInt(network_id));
-            conditions.push(`network_id = $${params.length}`);
+        if (affiliate_network_id) {
+            params.push(parseInt(affiliate_network_id));
+            conditions.push(`affiliate_network_id = $${params.length}`);
         }
         if (offer_id) {
             params.push(parseInt(offer_id));
@@ -30,7 +30,7 @@ router.get('/', async (req, res, next) => {
         if (conditions.length > 0) {
             sql += ' WHERE ' + conditions.join(' AND ');
         }
-        sql += ' ORDER BY created_at DESC';
+        sql += ' ORDER BY started_at DESC';
         params.push(parseInt(limit));
         sql += ` LIMIT $${params.length}`;
         params.push(parseInt(offset));
@@ -59,20 +59,20 @@ router.get('/:id', async (req, res, next) => {
 // ── POST /api/suppression-processes/start ──────────────────────────
 router.post('/start', async (req, res, next) => {
     try {
-        const { network_id, offer_id, data_list_ids } = req.body;
+        const { affiliate_network_id, offer_id, data_list_ids } = req.body;
 
-        if (!network_id || !offer_id || !data_list_ids || !Array.isArray(data_list_ids)) {
+        if (!affiliate_network_id || !offer_id || !data_list_ids || !Array.isArray(data_list_ids)) {
             return res.status(400).json({
                 success: false,
-                error: 'network_id, offer_id, and data_list_ids array are required'
+                error: 'affiliate_network_id, offer_id, and data_list_ids array are required'
             });
         }
 
         const result = await query(
-            `INSERT INTO suppression_processes (network_id, offer_id, data_list_ids, status)
+            `INSERT INTO suppression_processes (affiliate_network_id, offer_id, data_list_ids, status)
              VALUES ($1, $2, $3, $4)
              RETURNING *`,
-            [parseInt(network_id), parseInt(offer_id), JSON.stringify(data_list_ids), 'pending']
+            [parseInt(affiliate_network_id), parseInt(offer_id), JSON.stringify(data_list_ids), 'in_progress']
         );
 
         await logAudit(
@@ -81,7 +81,7 @@ router.post('/start', async (req, res, next) => {
             `Process ${result.rows[0].id}`,
             'suppression_process',
             'insert',
-            { network_id, offer_id, data_list_ids }
+            { affiliate_network_id, offer_id, data_list_ids }
         );
 
         res.status(201).json({

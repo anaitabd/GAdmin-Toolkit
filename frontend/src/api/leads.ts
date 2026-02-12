@@ -10,19 +10,16 @@ export const getById = (id: number) =>
 export const create = (data: {
   offer_id: number
   campaign_id?: number
-  email: string
-  first_name?: string
-  last_name?: string
-  phone?: string
+  affiliate_network_id?: number
+  to_email: string
+  payout?: number
   ip_address?: string
-  status?: string
-  notes?: string
 }) =>
   apiClient.post<ApiResponse<Lead>>('/leads', data).then(r => r.data)
 
 export const update = (id: number, data: Partial<{
-  status: string
-  notes: string | null
+  payout: number | null
+  ip_address: string | null
 }>) =>
   apiClient.put<ApiResponse<Lead>>(`/leads/${id}`, data).then(r => r.data)
 
