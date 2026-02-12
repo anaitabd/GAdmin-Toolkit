@@ -360,3 +360,159 @@ export interface OfferClickerFilters {
   limit?: number
   offset?: number
 }
+
+// ── Data Management ────────────────────────────────────────────────
+export interface DataProvider {
+  id: number
+  name: string
+  description: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  api_endpoint: string | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DataList {
+  id: number
+  name: string
+  provider_id: number
+  description: string | null
+  vertical_id: number | null
+  total_count: number | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Vertical {
+  id: number
+  name: string
+  description: string | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AffiliateNetwork {
+  id: number
+  name: string
+  description: string | null
+  contact_name: string | null
+  contact_email: string | null
+  api_endpoint: string | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Blacklist {
+  id: number
+  name: string
+  description: string | null
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface BlacklistEmail {
+  id: number
+  blacklist_id: number
+  email: string
+  created_at: string
+}
+
+export interface Creative {
+  id: number
+  offer_id: number
+  subject: string
+  from_name: string
+  html_content: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface OfferLink {
+  id: number
+  offer_id: number
+  creative_id: number | null
+  type: 'click' | 'unsub'
+  value: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FromName {
+  id: number
+  offer_id: number
+  value: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Subject {
+  id: number
+  offer_id: number
+  value: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SuppressionEmail {
+  id: number
+  offer_id: number
+  email: string
+  reason: string | null
+  created_at: string
+}
+
+export interface SuppressionProcess {
+  id: number
+  offer_id: number
+  name: string
+  description: string | null
+  source_file: string | null
+  status: string
+  total_count: number | null
+  processed_count: number | null
+  added_count: number | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+}
+
+export interface Lead {
+  id: number
+  offer_id: number
+  campaign_id: number | null
+  email: string
+  first_name: string | null
+  last_name: string | null
+  phone: string | null
+  ip_address: string | null
+  status: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AuditLog {
+  id: number
+  entity_type: string
+  entity_id: number | null
+  action: string
+  changes: Record<string, unknown> | null
+  user_email: string | null
+  ip_address: string | null
+  created_at: string
+}
