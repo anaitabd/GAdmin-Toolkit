@@ -208,7 +208,6 @@ export default function AutoRespondersPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const [triggerTypeFilter, setTriggerTypeFilter] = useState<string>('')
   const limit = 50
 
   const { data, isLoading, error } = useQuery({
@@ -274,10 +273,6 @@ export default function AutoRespondersPage() {
     })
   }
 
-  const filteredData = triggerTypeFilter && data?.data
-    ? data.data.filter(item => item.trigger_type === triggerTypeFilter)
-    : data?.data
-
   if (error) return <ErrorAlert message={error.message} />
 
   return (
@@ -311,19 +306,11 @@ export default function AutoRespondersPage() {
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <select value={triggerTypeFilter} onChange={e => setTriggerTypeFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">All Triggers</option>
-          <option value="open">Open</option>
-          <option value="click">Click</option>
-          <option value="lead">Lead</option>
-          <option value="schedule">Schedule</option>
-        </select>
       </div>
 
       <DataTable
         columns={columns}
-        data={filteredData ?? []}
+        data={data?.data ?? []}
         isLoading={isLoading}
         onEdit={openEdit}
         onDelete={setDeleteItem}
