@@ -39,6 +39,7 @@ const navGroups = [
     items: [
       { to: '/actions', icon: BoltIcon, label: 'Actions' },
       { to: '/campaign', icon: MegaphoneIcon, label: 'Campaign' },
+      { to: '/campaign-send', icon: MegaphoneIcon, label: 'Campaign Send' },
       { to: '/offers', icon: GiftIcon, label: 'Offers' },
       { to: '/tracking-links', icon: LinkIcon, label: 'Tracking Links' },
       { to: '/jobs', icon: QueueListIcon, label: 'Jobs' },

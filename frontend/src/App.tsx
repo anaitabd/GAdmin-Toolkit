@@ -27,6 +27,8 @@ import SubjectsPage from './pages/SubjectsPage'
 import SuppressionsPage from './pages/SuppressionsPage'
 import LeadsPage from './pages/LeadsPage'
 import AuditLogsPage from './pages/AuditLogsPage'
+import CampaignSend from './pages/CampaignSend'
+import CampaignMonitor from './pages/CampaignMonitor'
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
       { path: 'bounce-logs', element: <BounceLogsPage /> },
       { path: 'actions', element: <ActionsPage /> },
       { path: 'campaign', element: <CampaignPage /> },
+      { path: 'campaign-send', element: <CampaignSend /> },
+      { path: 'campaign-monitor/:id', element: <CampaignMonitor /> },
       { path: 'offers', element: <OffersPage /> },
       { path: 'tracking-links', element: <TrackingLinksPage /> },
       { path: 'jobs', element: <JobsPage /> },

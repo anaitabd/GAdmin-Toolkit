@@ -60,3 +60,19 @@ export const getClickers = (id: number, params?: { limit?: number; offset?: numb
 
 export const getLinks = (id: number) =>
   apiClient.get<ApiResponse<CampaignLink[]>>(`/campaigns/${id}/links`).then(r => r.data)
+
+export const getRecipients = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<any[]> & { total: number }>(`/campaigns/${id}/recipients`, { params }).then(r => r.data)
+
+export const getClicks = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<any[]> & { total: number }>(`/campaigns/${id}/clicks`, { params }).then(r => r.data)
+
+export const getOpens = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<any[]> & { total: number }>(`/campaigns/${id}/opens`, { params }).then(r => r.data)
+
+export const getLeads = (id: number, params?: { limit?: number; offset?: number }) =>
+  apiClient.get<ApiResponse<any[]> & { total_leads: number; total_payout: number }>(`/campaigns/${id}/leads`, { params }).then(r => r.data)
+
+export const compareCampaigns = (campaign_ids: number[]) =>
+  apiClient.get<ApiResponse<any[]>>('/campaigns/compare', { params: { campaign_ids: campaign_ids.join(',') } }).then(r => r.data)
+

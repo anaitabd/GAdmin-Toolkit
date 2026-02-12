@@ -378,7 +378,7 @@ export interface DataProvider {
 export interface DataList {
   id: number
   name: string
-  provider_id: number
+  data_provider_id: number
   description: string | null
   vertical_id: number | null
   total_count: number | null
