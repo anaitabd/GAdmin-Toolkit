@@ -29,6 +29,11 @@ import LeadsPage from './pages/LeadsPage'
 import AuditLogsPage from './pages/AuditLogsPage'
 import CampaignSend from './pages/CampaignSend'
 import CampaignMonitor from './pages/CampaignMonitor'
+// New pages for iresponse-pro parity
+import RolesPage from './pages/RolesPage'
+import GoogleAccountsPage from './pages/GoogleAccountsPage'
+import HeadersPage from './pages/HeadersPage'
+import PlaceholderPage from './pages/PlaceholderPage'
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +42,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'users', element: <UsersPage /> },
+      { path: 'users/add', element: <UsersPage /> },
       { path: 'names', element: <NamesPage /> },
       { path: 'email-data', element: <EmailDataPage /> },
       { path: 'email-info', element: <EmailInfoPage /> },
@@ -48,15 +54,21 @@ export const router = createBrowserRouter([
       { path: 'campaign', element: <CampaignPage /> },
       { path: 'campaign-send', element: <CampaignSend /> },
       { path: 'campaign-monitor/:id', element: <CampaignMonitor /> },
+      { path: 'campaign-tests', element: <PlaceholderPage title="Campaign Tests Monitor" description="Monitor test campaigns" /> },
       { path: 'offers', element: <OffersPage /> },
+      { path: 'offers/add', element: <OffersPage /> },
       { path: 'tracking-links', element: <TrackingLinksPage /> },
       { path: 'jobs', element: <JobsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       // Data Management
       { path: 'data-providers', element: <DataProvidersPage /> },
+      { path: 'data-providers/add', element: <DataProvidersPage /> },
       { path: 'data-lists', element: <DataListsPage /> },
+      { path: 'data-lists/fetch', element: <PlaceholderPage title="Fetch Blacklist Emails" description="Fetch blacklist emails from data sources" /> },
       { path: 'verticals', element: <VerticalsPage /> },
+      { path: 'verticals/add', element: <VerticalsPage /> },
       { path: 'affiliate-networks', element: <AffiliateNetworksPage /> },
+      { path: 'affiliate-networks/add', element: <AffiliateNetworksPage /> },
       { path: 'blacklists', element: <BlacklistsPage /> },
       // Offer Management
       { path: 'creatives', element: <CreativesPage /> },
@@ -67,6 +79,37 @@ export const router = createBrowserRouter([
       { path: 'leads', element: <LeadsPage /> },
       // Logs
       { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: 'logs/frontend', element: <PlaceholderPage title="Frontend Logs" description="View application frontend logs" /> },
+      { path: 'logs/backend', element: <PlaceholderPage title="Backend Logs" description="View application backend logs" /> },
+      // Roles & Permissions
+      { path: 'roles', element: <RolesPage /> },
+      { path: 'roles/add', element: <PlaceholderPage title="Add Role" description="Create a new role with permissions" /> },
+      { path: 'roles/assign', element: <PlaceholderPage title="Assign Roles" description="Assign roles to users" /> },
+      { path: 'roles/users', element: <PlaceholderPage title="Users by Role" description="View users grouped by role" /> },
+      // Teams
+      { path: 'teams', element: <PlaceholderPage title="Teams" description="Manage teams" /> },
+      { path: 'teams/add', element: <PlaceholderPage title="Add Team" description="Create a new team" /> },
+      { path: 'teams/authorizations', element: <PlaceholderPage title="Team Authorizations" description="Manage team resource authorizations" /> },
+      { path: 'teams/users', element: <PlaceholderPage title="Assign Users to Teams" description="Assign users to teams" /> },
+      // Headers
+      { path: 'headers', element: <HeadersPage /> },
+      { path: 'headers/add', element: <PlaceholderPage title="Add Header" description="Create a new predefined header" /> },
+      // Auto-Responders
+      { path: 'auto-responders', element: <PlaceholderPage title="AutoResponders" description="Manage automated follow-up emails" /> },
+      { path: 'auto-responders/create', element: <PlaceholderPage title="Create AutoResponder" description="Create a new auto-responder" /> },
+      // Google Accounts
+      { path: 'google-accounts', element: <GoogleAccountsPage /> },
+      // Sessions
+      { path: 'sessions', element: <PlaceholderPage title="Active Sessions" description="Manage active user sessions" /> },
+      // Revenue Report
+      { path: 'revenue-report', element: <PlaceholderPage title="Revenue Report" description="View revenue analytics and statistics" /> },
+      // Upload Images
+      { path: 'upload-images', element: <PlaceholderPage title="Upload Images" description="Upload images for email creatives" /> },
+      // Tools
+      { path: 'tools/spf-lookup', element: <PlaceholderPage title="SPF Checker" description="Check SPF records for domains" /> },
+      { path: 'tools/reputation', element: <PlaceholderPage title="Domain/IP Reputation" description="Check domain and IP reputation" /> },
+      { path: 'tools/mailbox-extractor', element: <PlaceholderPage title="Mailbox Extractor" description="Extract email addresses from mailboxes" /> },
+      { path: 'tools/extractor', element: <PlaceholderPage title="Value Extractor" description="Extract values using regex patterns" /> },
     ],
   },
 ])
