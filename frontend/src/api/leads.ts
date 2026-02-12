@@ -25,3 +25,6 @@ export const update = (id: number, data: Partial<{
 
 export const deleteById = (id: number) =>
   apiClient.delete<{ success: boolean; message: string }>(`/leads/${id}`).then(r => r.data)
+
+export const getStats = (params?: { date_from?: string; date_to?: string; offer_id?: number; affiliate_network_id?: number }) =>
+  apiClient.get<ApiResponse<any[]>>('/leads/stats', { params }).then(r => r.data)

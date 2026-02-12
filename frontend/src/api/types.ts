@@ -515,3 +515,120 @@ export interface AuditLog {
   ip_address: string | null
   created_at: string
 }
+
+// ── Teams ──────────────────────────────────────────────────────────
+export interface Team {
+  id: number
+  name: string
+  status: string
+  member_count?: number
+  authorization_count?: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TeamMember {
+  id: number
+  team_id: number
+  user_id: number
+  user_email?: string
+  added_at: string
+}
+
+export interface TeamAuthorization {
+  id: number
+  team_id: number
+  resource_type: string
+  resource_id: number
+  created_at: string
+}
+
+// ── Sessions ───────────────────────────────────────────────────────
+export interface UserSession {
+  id: number
+  session_token?: string
+  user_id: number
+  email?: string
+  given_name?: string | null
+  family_name?: string | null
+  ip_address: string | null
+  user_agent: string | null
+  last_activity: string
+  created_at: string
+  expires_at: string | null
+}
+
+// ── Application Logs ───────────────────────────────────────────────
+export interface ApplicationLog {
+  id: number
+  log_type: string
+  level: string
+  message: string
+  user_email: string | null
+  context: Record<string, unknown> | null
+  ip_address: string | null
+  stack_trace: string | null
+  created_at: string
+}
+
+// ── Auto-Responders ────────────────────────────────────────────────
+export interface AutoResponder {
+  id: number
+  name: string
+  offer_id: number
+  offer_name?: string
+  affiliate_network_id: number | null
+  network_name?: string
+  trigger_type: string
+  delay_value: number | null
+  delay_unit: string | null
+  creative_id: number | null
+  creative_name?: string
+  from_name_id: number | null
+  from_name?: string
+  subject_id: number | null
+  subject?: string
+  send_limit: number | null
+  status: string
+  total_sent: number
+  total_opened: number
+  total_clicked: number
+  created_at: string
+  updated_at: string
+}
+
+// ── Uploaded Images ────────────────────────────────────────────────
+export interface UploadedImage {
+  id: number
+  name: string
+  filename: string
+  filepath: string
+  filesize: number
+  mime_type: string
+  url: string
+  uploaded_by: string | null
+  created_at: string
+}
+
+// ── Roles ──────────────────────────────────────────────────────────
+export interface Role {
+  id: number
+  name: string
+  role_type: string
+  description: string | null
+  status: string
+  permissions: string[] | null
+  user_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface UserRole {
+  id: number
+  user_id: number
+  role_id: number
+  user_email?: string
+  role_name?: string
+  assigned_at: string
+}
