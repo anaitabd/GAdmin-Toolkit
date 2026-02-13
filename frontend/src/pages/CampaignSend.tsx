@@ -58,6 +58,27 @@ export default function CampaignSend() {
   // Loading and error states
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
+  // Validate form
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+    
+    if (!campaignName.trim()) {
+      errors.campaignName = 'Campaign name is required'
+    }
+    
+    if (!selectedOfferId) {
+      errors.offer = 'Please select an offer'
+    }
+    
+    if (selectedListIds.length === 0) {
+      errors.dataLists = 'Please select at least one data list'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   // Load offer details when offer is selected
   useEffect(() => {
@@ -101,6 +122,7 @@ export default function CampaignSend() {
     }
 
     setLoading(true)
+    setError('')
     campaignSendApi.preview({
       offer_id: selectedOfferId || undefined,
       creative_id: selectedCreativeId || undefined,
@@ -113,14 +135,22 @@ export default function CampaignSend() {
         setPreviewData(response.data)
         setError('')
       })
-      .catch(err => setError(err.response?.data?.error || 'Failed to generate preview'))
+      .catch(err => {
+        setError(err.response?.data?.error || 'Failed to generate preview')
+        setPreviewData(null)
+      })
       .finally(() => setLoading(false))
   }
 
   // Start campaign
   const handleStart = () => {
-    if (!campaignName || !selectedOfferId || selectedListIds.length === 0) {
-      setError('Please fill in all required fields: Campaign Name, Offer, and Data Lists')
+    // Clear previous errors
+    setError('')
+    setValidationErrors({})
+    
+    // Validate form
+    if (!validateForm()) {
+      setError('Please fix the validation errors before starting the campaign')
       return
     }
 
@@ -153,290 +183,436 @@ export default function CampaignSend() {
   const availableProviders = providers?.data || []
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Create Campaign</h1>
-        <p className="mt-2 text-sm text-gray-600">Configure and launch a new email campaign</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4">
-          <p className="text-sm text-red-800">{error}</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Campaign</h1>
+          <p className="text-lg text-gray-600">
+            Configure and launch a new email campaign with G Suite management
+          </p>
         </div>
-      )}
 
-      {/* Basic Info */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Campaign Info</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name *</label>
-            <input
-              type="text"
-              value={campaignName}
-              onChange={e => setCampaignName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-              placeholder="e.g., February Health Drop"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Provider</label>
-            <select
-              value={provider}
-              onChange={e => setProvider(e.target.value as 'gmail_api' | 'smtp')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="gmail_api">Gmail API</option>
-              <option value="smtp">SMTP</option>
-            </select>
-          </div>
-          <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-              rows={2}
-              placeholder="Optional campaign description"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Sponsor Section */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sponsor Section</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Affiliate Network</label>
-            <select
-              value={selectedNetworkId || ''}
-              onChange={e => setSelectedNetworkId(e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="">Select Network (Optional)</option>
-              {availableNetworks.map((n: any) => (
-                <option key={n.id} value={n.id}>{n.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Offer *</label>
-            <select
-              value={selectedOfferId || ''}
-              onChange={e => setSelectedOfferId(e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="">Select Offer</option>
-              {filteredOffers.map((o: any) => (
-                <option key={o.id} value={o.id}>{o.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {selectedOfferId && (
-            <>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={rotationEnabled}
-                    onChange={e => setRotationEnabled(e.target.checked)}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Enable Rotation (cycle through all active options)</span>
-                </label>
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 rounded-xl bg-red-50 border-2 border-red-200 p-5 shadow-sm">
+            <div className="flex items-start">
+              <svg className="h-6 w-6 text-red-600 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-semibold text-red-800">Error</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
-
-              {!rotationEnabled && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Creative</label>
-                    <select
-                      value={selectedCreativeId || ''}
-                      onChange={e => setSelectedCreativeId(e.target.value ? parseInt(e.target.value) : null)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                      <option value="">Random</option>
-                      {creatives.map(c => (
-                        <option key={c.id} value={c.id}>{c.subject}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">From Name</label>
-                    <select
-                      value={selectedFromNameId || ''}
-                      onChange={e => setSelectedFromNameId(e.target.value ? parseInt(e.target.value) : null)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                      <option value="">Random</option>
-                      {fromNames.map(f => (
-                        <option key={f.id} value={f.id}>{f.value}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                    <select
-                      value={selectedSubjectId || ''}
-                      onChange={e => setSelectedSubjectId(e.target.value ? parseInt(e.target.value) : null)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                      <option value="">Random</option>
-                      {subjects.map(s => (
-                        <option key={s.id} value={s.id}>{s.value}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Data Section */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Data Section</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data Providers *</label>
-            <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-lg p-2">
-              {availableProviders.map((p: any) => (
-                <label key={p.id} className="flex items-center gap-2 py-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedProviderIds.includes(p.id)}
-                    onChange={e => {
-                      if (e.target.checked) {
-                        setSelectedProviderIds([...selectedProviderIds, p.id])
-                      } else {
-                        setSelectedProviderIds(selectedProviderIds.filter(id => id !== p.id))
-                      }
-                    }}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm text-gray-700">{p.name}</span>
-                </label>
-              ))}
             </div>
           </div>
+        )}
 
-          {dataLists.length > 0 && (
+        {/* Step 1: Campaign Info */}
+        <div className="mb-6 rounded-xl border-2 border-gray-200 bg-white p-8 shadow-lg hover:shadow-xl transition-shadow duration-200">
+          <div className="flex items-center mb-6">
+            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+              1
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 ml-4">Campaign Information</h2>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data Lists *</label>
-              <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                {dataLists.map(list => (
-                  <label key={list.id} className="flex items-center gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedListIds.includes(list.id)}
-                      onChange={e => {
-                        if (e.target.checked) {
-                          setSelectedListIds([...selectedListIds, list.id])
-                        } else {
-                          setSelectedListIds(selectedListIds.filter(id => id !== list.id))
-                        }
-                      }}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-700">{list.name} ({list.available_count.toLocaleString()})</span>
-                  </label>
-                ))}
-              </div>
-              <p className="mt-2 text-sm text-gray-600">
-                Total Selected: {dataLists.filter(l => selectedListIds.includes(l.id)).reduce((sum, l) => sum + l.available_count, 0).toLocaleString()} emails
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Campaign Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={campaignName}
+                onChange={e => {
+                  setCampaignName(e.target.value)
+                  if (validationErrors.campaignName) {
+                    setValidationErrors(prev => ({ ...prev, campaignName: '' }))
+                  }
+                }}
+                className={`w-full rounded-lg border-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                  validationErrors.campaignName ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="e.g., February Health Drop 2026"
+              />
+              {validationErrors.campaignName && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.campaignName}</p>
+              )}
+              <p className="mt-2 text-xs text-gray-500">Choose a descriptive name to identify this campaign</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Provider
+              </label>
+              <select
+                value={provider}
+                onChange={e => setProvider(e.target.value as 'gmail_api' | 'smtp')}
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              >
+                <option value="gmail_api">Gmail API (Recommended)</option>
+                <option value="smtp">SMTP</option>
+              </select>
+              <p className="mt-2 text-xs text-gray-500">
+                {provider === 'gmail_api' 
+                  ? 'Uses Google API for better deliverability and tracking' 
+                  : 'Uses SMTP protocol for email delivery'}
               </p>
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Geo Filter</label>
-            <input
-              type="text"
-              value={geoFilter}
-              onChange={e => setGeoFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-              placeholder="e.g., US, UK"
-            />
+            
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                rows={3}
+                placeholder="Optional: Add details about this campaign's purpose and audience"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Sending Config */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sending Config</h2>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Batch Size</label>
-            <input
-              type="number"
-              value={batchSize}
-              onChange={e => setBatchSize(parseInt(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-            />
+        {/* Step 2: Sponsor Section */}
+        <div className="mb-6 rounded-xl border-2 border-gray-200 bg-white p-8 shadow-lg hover:shadow-xl transition-shadow duration-200">
+          <div className="flex items-center mb-6">
+            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+              2
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 ml-4">Sponsor & Content</h2>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Delay (ms)</label>
-            <input
-              type="number"
-              value={batchDelay}
-              onChange={e => setBatchDelay(parseInt(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Limit (optional)</label>
-            <input
-              type="number"
-              value={recipientLimit}
-              onChange={e => setRecipientLimit(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
-              placeholder="No limit"
-            />
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Affiliate Network</label>
+              <select
+                value={selectedNetworkId || ''}
+                onChange={e => setSelectedNetworkId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              >
+                <option value="">Select Network (Optional)</option>
+                {availableNetworks.map((n: any) => (
+                  <option key={n.id} value={n.id}>{n.name}</option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-gray-500">Select an affiliate network if this campaign is network-specific</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Offer <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedOfferId || ''}
+                onChange={e => {
+                  setSelectedOfferId(e.target.value ? parseInt(e.target.value) : null)
+                  if (validationErrors.offer) {
+                    setValidationErrors(prev => ({ ...prev, offer: '' }))
+                  }
+                }}
+                className={`w-full rounded-lg border-2 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+                  validationErrors.offer ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Select an Offer</option>
+                {filteredOffers.map((o: any) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+              {validationErrors.offer && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.offer}</p>
+              )}
+              {loading && selectedOfferId && (
+                <p className="mt-2 text-xs text-indigo-600">Loading offer details...</p>
+              )}
+            </div>
+
+            {selectedOfferId && (
+              <>
+                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border-2 border-indigo-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rotationEnabled}
+                      onChange={e => setRotationEnabled(e.target.checked)}
+                      className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-gray-800">Enable Content Rotation</span>
+                      <p className="text-xs text-gray-600 mt-1">Automatically cycle through all active creatives, from names, and subjects for better engagement</p>
+                    </div>
+                  </label>
+                </div>
+
+                {!rotationEnabled && (
+                  <div className="grid grid-cols-3 gap-4 pl-4 border-l-4 border-gray-200">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Creative</label>
+                      <select
+                        value={selectedCreativeId || ''}
+                        onChange={e => setSelectedCreativeId(e.target.value ? parseInt(e.target.value) : null)}
+                        className="w-full rounded-lg border-2 border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">Random</option>
+                        {creatives.map(c => (
+                          <option key={c.id} value={c.id}>{c.subject}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">{creatives.length} available</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">From Name</label>
+                      <select
+                        value={selectedFromNameId || ''}
+                        onChange={e => setSelectedFromNameId(e.target.value ? parseInt(e.target.value) : null)}
+                        className="w-full rounded-lg border-2 border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">Random</option>
+                        {fromNames.map(f => (
+                          <option key={f.id} value={f.id}>{f.value}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">{fromNames.length} available</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Subject Line</label>
+                      <select
+                        value={selectedSubjectId || ''}
+                        onChange={e => setSelectedSubjectId(e.target.value ? parseInt(e.target.value) : null)}
+                        className="w-full rounded-lg border-2 border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="">Random</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.id}>{s.value}</option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">{subjects.length} available</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Preview */}
-      {previewData && (
-        <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Preview</h2>
-          <div className="space-y-2 text-sm">
-            <p><strong>Estimated Recipients:</strong> {previewData.estimated_recipients.toLocaleString()}</p>
-            <p><strong>Excluded:</strong> {previewData.excluded_count.total.toLocaleString()} 
-              (blacklisted: {previewData.excluded_count.blacklisted}, 
-               suppressed: {previewData.excluded_count.suppressed}, 
-               bounced: {previewData.excluded_count.bounced}, 
-               unsubbed: {previewData.excluded_count.unsubbed})
-            </p>
+        {/* Step 3: Data Section */}
+        <div className="mb-6 rounded-xl border-2 border-gray-200 bg-white p-8 shadow-lg hover:shadow-xl transition-shadow duration-200">
+          <div className="flex items-center mb-6">
+            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+              3
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 ml-4">Recipient Data</h2>
+          </div>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Data Providers <span className="text-red-500">*</span>
+              </label>
+              <div className="max-h-40 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 bg-gray-50">
+                {availableProviders.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-2">No data providers available</p>
+                ) : (
+                  availableProviders.map((p: any) => (
+                    <label key={p.id} className="flex items-center gap-3 py-2 px-2 hover:bg-white rounded transition-colors cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedProviderIds.includes(p.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedProviderIds([...selectedProviderIds, p.id])
+                          } else {
+                            setSelectedProviderIds(selectedProviderIds.filter(id => id !== p.id))
+                          }
+                        }}
+                        className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{p.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+              <p className="mt-2 text-xs text-gray-500">Select one or more data providers to source recipients</p>
+            </div>
+
+            {dataLists.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Data Lists <span className="text-red-500">*</span>
+                </label>
+                <div className="max-h-56 overflow-y-auto border-2 border-gray-300 rounded-lg p-3 bg-gray-50">
+                  {dataLists.map(list => (
+                    <label key={list.id} className="flex items-center justify-between gap-3 py-2 px-2 hover:bg-white rounded transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedListIds.includes(list.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSelectedListIds([...selectedListIds, list.id])
+                            } else {
+                              setSelectedListIds(selectedListIds.filter(id => id !== list.id))
+                            }
+                            if (validationErrors.dataLists) {
+                              setValidationErrors(prev => ({ ...prev, dataLists: '' }))
+                            }
+                          }}
+                          className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{list.name}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-indigo-600">
+                        {list.available_count.toLocaleString()}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {validationErrors.dataLists && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataLists}</p>
+                )}
+                <div className="mt-3 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <p className="text-sm font-semibold text-indigo-900">
+                    Total Selected: {dataLists.filter(l => selectedListIds.includes(l.id)).reduce((sum, l) => sum + l.available_count, 0).toLocaleString()} emails
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Geographic Filter</label>
+              <input
+                type="text"
+                value={geoFilter}
+                onChange={e => setGeoFilter(e.target.value)}
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                placeholder="e.g., US, UK, CA (comma separated)"
+              />
+              <p className="mt-2 text-xs text-gray-500">Optional: Filter recipients by country codes</p>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Actions */}
-      <div className="flex justify-end gap-4">
-        <button
-          onClick={handlePreview}
-          disabled={loading || selectedListIds.length === 0}
-          className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          Preview
-        </button>
-        <button
-          onClick={handleStart}
-          disabled={loading || !campaignName || !selectedOfferId || selectedListIds.length === 0}
-          className="px-8 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {loading ? 'Starting...' : 'START CAMPAIGN'}
-        </button>
+        {/* Step 4: Sending Config */}
+        <div className="mb-6 rounded-xl border-2 border-gray-200 bg-white p-8 shadow-lg hover:shadow-xl transition-shadow duration-200">
+          <div className="flex items-center mb-6">
+            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+              4
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 ml-4">Sending Configuration</h2>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Batch Size</label>
+              <input
+                type="number"
+                value={batchSize}
+                onChange={e => setBatchSize(parseInt(e.target.value) || 300)}
+                min="1"
+                max="1000"
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              />
+              <p className="mt-2 text-xs text-gray-500">Emails per batch (1-1000)</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Delay (ms)</label>
+              <input
+                type="number"
+                value={batchDelay}
+                onChange={e => setBatchDelay(parseInt(e.target.value) || 50)}
+                min="0"
+                max="10000"
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+              />
+              <p className="mt-2 text-xs text-gray-500">Delay between batches (0-10000ms)</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Recipient Limit</label>
+              <input
+                type="number"
+                value={recipientLimit}
+                onChange={e => setRecipientLimit(e.target.value)}
+                min="0"
+                className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
+                placeholder="No limit"
+              />
+              <p className="mt-2 text-xs text-gray-500">Max recipients (optional)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Preview */}
+        {previewData && (
+          <div className="mb-6 rounded-xl border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-8 shadow-lg">
+            <div className="flex items-center mb-4">
+              <svg className="h-8 w-8 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h2 className="text-2xl font-bold text-green-900">Campaign Preview</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg p-4 border-2 border-green-200">
+                <p className="text-sm text-gray-600 mb-1">Estimated Recipients</p>
+                <p className="text-3xl font-bold text-green-700">{previewData.estimated_recipients.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 border-2 border-red-200">
+                <p className="text-sm text-gray-600 mb-1">Total Excluded</p>
+                <p className="text-3xl font-bold text-red-700">{previewData.excluded_count.total.toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-600">Blacklisted</p>
+                <p className="text-lg font-bold text-gray-900">{previewData.excluded_count.blacklisted.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-600">Suppressed</p>
+                <p className="text-lg font-bold text-gray-900">{previewData.excluded_count.suppressed.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-600">Bounced</p>
+                <p className="text-lg font-bold text-gray-900">{previewData.excluded_count.bounced.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-600">Unsubscribed</p>
+                <p className="text-lg font-bold text-gray-900">{previewData.excluded_count.unsubbed.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4 sticky bottom-4 bg-white border-2 border-gray-200 rounded-xl p-6 shadow-2xl">
+          <button
+            onClick={handlePreview}
+            disabled={loading || selectedListIds.length === 0}
+            className="px-8 py-3 rounded-lg border-2 border-indigo-600 text-indigo-600 font-semibold hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+          >
+            {loading ? 'Generating Preview...' : 'Preview Campaign'}
+          </button>
+          <button
+            onClick={handleStart}
+            disabled={loading || !campaignName || !selectedOfferId || selectedListIds.length === 0}
+            className="px-10 py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+          >
+            {loading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Starting Campaign...
+              </span>
+            ) : (
+              '🚀 START CAMPAIGN'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
