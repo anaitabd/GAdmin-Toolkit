@@ -9,6 +9,7 @@ const {
     insertEmailLog,
 } = require('./db/queries');
 const { loadGoogleCreds } = require('./googleCreds');
+const { isValidEmail, isValidGoogleCreds } = require('./lib/validation');
 
 // Constants for email sending configuration
 const QUOTA_LIMIT = 1200000;
@@ -17,13 +18,6 @@ const INTERVAL = 60000 / QUOTA_LIMIT;
 
 // Variables to track successful email sending and request count
 let successfulEmails = 0;
-
-// Email validation helper
-const isValidEmail = (email) => {
-    if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-};
 
 // Function to generate a random string of given length
 const generateRandomString = (length) => {
@@ -57,7 +51,7 @@ const createMimeMessage = (user, to, from, subject, htmlContent) => {
 // Function to send email using Google APIs
 const sendEmail = async (creds, user, to, from, subject, htmlContent, messageIndex) => {
     // Validate inputs
-    if (!creds || !creds.client_email || !creds.private_key) {
+    if (!isValidGoogleCreds(creds)) {
         throw new Error('Invalid Google credentials');
     }
     if (!isValidEmail(user)) {

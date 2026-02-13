@@ -1,17 +1,11 @@
 const { google } = require('googleapis');
 const { loadGoogleCreds } = require('./googleCreds');
 const { getUsers } = require('./db/queries');
+const { isValidEmail, validatePassword } = require('./lib/validation');
 
 const admin_user = "contact@naitabdallah.dev";
 
 let jwtClient = null;
-
-// Email validation helper
-const isValidEmail = (email) => {
-    if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-};
 
 function createUser(user, password, firstname, lastname, callback) {
     // Validate inputs
@@ -19,10 +13,13 @@ function createUser(user, password, firstname, lastname, callback) {
         callback(new Error(`Invalid email address: ${user}`), null);
         return;
     }
-    if (!password || password.length < 8) {
-        callback(new Error('Password must be at least 8 characters'), null);
+    
+    const passwordValidation = validatePassword(password, 8);
+    if (!passwordValidation.valid) {
+        callback(new Error(passwordValidation.message), null);
         return;
     }
+    
     if (!firstname || !lastname) {
         callback(new Error('First name and last name are required'), null);
         return;

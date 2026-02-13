@@ -1,13 +1,6 @@
 const { query } = require('./db');
 const { getNames } = require('./db/queries');
-
-// Domain validation helper
-const isValidDomain = (domain) => {
-    if (!domain || typeof domain !== 'string') return false;
-    // Check for basic domain format: at least one char, then dot, then at least 2 chars
-    const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
-    return domainRegex.test(domain.trim());
-};
+const { isValidDomain } = require('./lib/validation');
 
 // Function to generate random string of given length
 function generateRandomString(length) {

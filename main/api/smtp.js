@@ -7,6 +7,7 @@ const {
     getActiveEmailTemplate,
     insertEmailLog,
 } = require('./db/queries');
+const { isValidEmail } = require('./lib/validation');
 
 // Constants for email sending configuration
 const QUOTA_LIMIT = 1200000;
@@ -15,13 +16,6 @@ const INTERVAL = 60000 / QUOTA_LIMIT;
 
 // Variables to track successful email sending and request count
 let successfulEmails = 0;
-
-// Email validation helper
-const isValidEmail = (email) => {
-    if (!email || typeof email !== 'string') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
-};
 
 const generateRandomString = (length) => {
     let result = '';
