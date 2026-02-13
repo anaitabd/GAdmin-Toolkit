@@ -1,13 +1,14 @@
 # Google Workspace Automation Toolkit
 
-This project is a full automation suite designed to manage users in Google Workspace. It includes scripts for creating, deleting, and configuring accounts using Node.js and Python, plus a comprehensive REST API for database management.
+This project is a full automation suite designed to manage users in Google Workspace (G Suite). It includes scripts for creating, deleting, and configuring accounts using Node.js and Python, plus a comprehensive REST API for database management and email campaign orchestration.
 
 ---
 
 ## ✨ Features
 
+### Core Features
 - **REST API** - Complete CRUD operations for all database entities
-- **Google Workspace Integration** - Automated user creation and management
+- **Google Workspace Integration** - Automated user creation and management with validation
 - **Email Automation** - Bulk email sending with Gmail API and SMTP support
 - **Campaign Management** - Create, track, and manage email campaigns with pause/resume/kill controls
 - **Click Tracking** - Track email link clicks with unique tracking IDs
@@ -15,7 +16,38 @@ This project is a full automation suite designed to manage users in Google Works
 - **Campaign Analytics** - Real-time campaign statistics (sent, failed, clicks, CTR)
 - **Campaign Templates** - Save and reuse campaign configurations
 - **Database Management** - PostgreSQL backend with comprehensive schema
-- **Python Utilities** - Additional tools for email processing and validation
+
+### G Suite Management Features
+- **User Creation** - Batch create Google Workspace users with validation
+  - Email format validation
+  - Password strength requirements (min 8 characters)
+  - Duplicate email detection
+  - Comprehensive error handling and logging
+  
+- **User Deletion** - Safely delete users from Google Workspace
+  - Admin account protection
+  - Batch processing with rate limiting
+  - Progress tracking
+  
+- **Bounce Detection** - Automated bounce email detection
+  - Scans Mail Delivery Subsystem messages
+  - Extracts bounced email addresses
+  - Stores bounce logs in database
+  
+- **User Generation** - Generate random test users
+  - Uses name database for realistic data
+  - Domain-specific email generation
+  - Configurable batch sizes
+  
+- **SMTP Integration** - Direct SMTP email sending
+  - Nodemailer integration
+  - Rate limiting and quota management
+  - Email placeholder support
+  
+- **Gmail API Integration** - Advanced email sending via Gmail API
+  - OAuth 2.0 JWT authentication
+  - Better deliverability
+  - Enhanced tracking capabilities
 
 ---
 
@@ -69,56 +101,202 @@ This project is a full automation suite designed to manage users in Google Works
 
 ## ⚙️ Setup Instructions
 
+### Prerequisites
+- Node.js (v16 or higher)
+- PostgreSQL (v12 or higher)
+- Google Cloud Platform account with Workspace API enabled
+- Python 3.8+ (for utilities)
+
 ### 1. Install Dependencies
 
-**Node.js**
+**Node.js Backend**
 ```bash
 cd main
 npm install
-
-Database
-
-Create schema and import data (see one-liner below) after setting env vars.
-
-Python
-
-pip install -r py/requirement.txt
-
-2. Google API Credentials
-
-Add your Google API credentials:
-	•	Store the JSON as base64 in `GOOGLE_CRED_JSON_B64`.
-	•	Optional: set `KMS_KEY_ID` to decrypt via Google KMS at runtime.
-
-⸻
-
-Database Setup (PostgreSQL)
-
-Required env vars:
-`PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, `PGSSL`
-
-Optional env vars:
-`GOOGLE_CRED_JSON_B64`, `KMS_KEY_ID`
-
-One-liner (schema + import):
-```bash
-psql "$PGDATABASE" -f main/api/db/schema.sql && node main/api/db/import.js
 ```
 
-⸻
+**Frontend (React + TypeScript)**
+```bash
+cd frontend
+npm install
+```
+
+**Database**
+
+Create schema and import data after setting environment variables.
+
+**Python Utilities**
+```bash
+pip install -r py/requirement.txt
+```
+
+### 2. Google API Credentials
+
+To use G Suite management features, you need proper Google API credentials:
+
+1. **Create a Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+
+2. **Enable Required APIs**
+   - Enable Google Workspace Admin SDK API
+   - Enable Gmail API
+
+3. **Create Service Account**
+   - Navigate to IAM & Admin → Service Accounts
+   - Create a new service account with domain-wide delegation
+   - Download the JSON key file
+
+4. **Configure Domain-Wide Delegation**
+   - In Google Workspace Admin console
+   - Go to Security → API Controls → Domain-wide Delegation
+   - Add your service account with required scopes:
+     - `https://www.googleapis.com/auth/admin.directory.user`
+     - `https://mail.google.com/`
+
+5. **Store Credentials**
+   - Encode your JSON key as base64: `cat service-account.json | base64`
+   - Set environment variable `GOOGLE_CRED_JSON_B64` with the base64 string
+   - Optional: Use `KMS_KEY_ID` for encrypted credentials with Google KMS
+
+**Example:**
+```bash
+export GOOGLE_CRED_JSON_B64="eyJjbGllbnRfZW1haWwiOiJ5b3VyLXNlcnZpY2UtYWNjb3VudEBwcm9qZWN0LmlhbS5nc2VydmljZWFjY291bnQuY29tIiw..."
+```
+
+---
+
+### 3. Database Setup (PostgreSQL)
+
+**Required Environment Variables:**
+```bash
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=gadmin
+export PGUSER=postgres
+export PGPASSWORD=your_password
+export PGSSL=false  # Set to true for production
+```
+
+**Optional Environment Variables:**
+```bash
+export GOOGLE_CRED_JSON_B64="<base64-encoded-credentials>"
+export KMS_KEY_ID="projects/your-project/locations/global/keyRings/your-ring/cryptoKeys/your-key"
+export PORT=3000  # API server port
+export JWT_SECRET="your-secret-key"  # For authentication
+```
+
+**Initialize Database:**
+```bash
+# Create database schema
+psql "$PGDATABASE" -f main/api/db/schema.sql
+
+# Import sample data (optional)
+node main/api/db/import.js
+```
+
+---
 
 ## 🚀 Usage
 
-### Option 1: REST API Server (Recommended)
+### Option 1: Full Stack Development (Recommended)
 
-Start the API server to manage all database entities via REST endpoints:
+Start both backend API and frontend development servers:
 
+**Terminal 1 - Backend API:**
 ```bash
 cd main/api
-node server.js
+npm run dev  # Uses nodemon for auto-reload
 ```
 
-The API will be available at `http://localhost:3000` (or custom PORT env var).
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev  # Vite dev server with hot reload
+```
+
+The API will be available at `http://localhost:3000` and the frontend at `http://localhost:5173`.
+
+### Option 2: Production Build
+
+**Build Frontend:**
+```bash
+cd frontend
+npm run build
+```
+
+**Start Backend:**
+```bash
+cd main/api
+npm start
+```
+
+### Option 3: G Suite Management Scripts
+
+#### Generate Users
+Generate random users and insert them into the database:
+```bash
+node main/api/generate.js <domain> <count>
+# Example: node main/api/generate.js example.com 100
+```
+
+#### Create Users in Google Workspace
+Create users from database in Google Workspace:
+```bash
+node main/api/create.js
+```
+- Validates email format and password strength
+- Creates users with first name, last name
+- Handles errors gracefully with detailed logging
+
+#### Delete Users from Google Workspace
+Delete all users except admin:
+```bash
+node main/api/delete.js
+```
+- Protected admin account (won't delete admin)
+- Batch processing with rate limiting
+- Progress tracking
+
+#### Detect Bounced Emails
+Scan Gmail for bounced emails:
+```bash
+node main/api/bounce.js
+```
+- Scans "Mail Delivery Subsystem" messages
+- Extracts bounced email addresses
+- Stores results in bounce_logs table
+
+#### Send Bulk Emails
+
+**Via SMTP:**
+```bash
+node main/api/smtp.js
+```
+
+**Via Gmail API:**
+```bash
+node main/api/sendApi.js
+```
+
+Both methods:
+- Use active email template and info from database
+- Support placeholder replacement
+- Log all send attempts
+- Handle rate limiting
+
+### Option 4: Automated Script
+Use the all-in-one script for complete workflow:
+```bash
+bash script.sh
+```
+This script will:
+1. Delete existing users
+2. Generate new user data
+3. Create users in Google Workspace
+4. Activate less secure app access (if needed)
+
+---
 
 #### API Endpoints
 
@@ -175,6 +353,61 @@ The API will be available at `http://localhost:3000` (or custom PORT env var).
 - `POST /api/email-send/generate-users` - Generate random users
 - `POST /api/email-send/bulk-recipients` - Add email recipients in bulk
 - `GET /api/email-send/status` - Get email sending statistics and recent logs
+
+**Campaign Management** (`/api/campaigns`, `/api/campaign-send`)
+- Campaign Send endpoints for creating campaigns with cascading selection
+- Campaign monitoring and control (pause, resume, kill)
+- Real-time statistics and progress tracking
+- Template management for reusable configurations
+
+See the [API Documentation](main/api/API_DOCUMENTATION.md) for complete details on all endpoints.
+
+---
+
+## 🎨 Enhanced Campaign Send UI
+
+The campaign creation interface has been redesigned for better usability and visual appeal:
+
+### Key Features
+
+**1. Stepped Process Flow**
+- **Step 1: Campaign Information** - Basic details and provider selection
+- **Step 2: Sponsor & Content** - Offer selection with rotation options
+- **Step 3: Recipient Data** - Data providers and list selection
+- **Step 4: Sending Configuration** - Batch size, delays, and limits
+
+**2. Visual Enhancements**
+- Gradient backgrounds for modern look
+- Numbered step indicators
+- Hover effects and smooth transitions
+- Color-coded validation messages
+- Sticky action bar for easy access
+
+**3. Improved Validation**
+- Real-time field validation
+- Clear error messages under each field
+- Required field indicators (red asterisk)
+- Disabled state management
+
+**4. Better User Guidance**
+- Helper text under each field
+- Contextual descriptions
+- Loading states with spinners
+- Success/error notifications
+
+**5. Enhanced Preview**
+- Beautiful green-themed preview card
+- Grid layout showing key statistics
+- Breakdown of exclusions (blacklisted, suppressed, bounced, unsubscribed)
+- Large, readable numbers with proper formatting
+
+**6. Content Rotation**
+- Toggle to enable/disable rotation
+- Visual indicator when rotation is active
+- Manual selection when rotation is disabled
+- Shows count of available creatives, from names, and subjects
+
+---
 
 **Tracking Links** (`/api/tracking-links`)
 - `GET /api/tracking-links` - Get all standalone tracking links
