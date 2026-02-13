@@ -512,7 +512,21 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchSize}
-                onChange={e => setBatchSize(parseInt(e.target.value) || 300)}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || value === null) {
+                    setBatchSize(0);
+                  } else {
+                    const parsed = parseInt(value);
+                    setBatchSize(isNaN(parsed) ? 0 : Math.max(1, Math.min(1000, parsed)));
+                  }
+                }}
+                onBlur={e => {
+                  // Set to default if empty on blur
+                  if (batchSize === 0 || batchSize === null) {
+                    setBatchSize(300);
+                  }
+                }}
                 min="1"
                 max="1000"
                 className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
@@ -524,7 +538,21 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchDelay}
-                onChange={e => setBatchDelay(parseInt(e.target.value) || 50)}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === '' || value === null) {
+                    setBatchDelay(0);
+                  } else {
+                    const parsed = parseInt(value);
+                    setBatchDelay(isNaN(parsed) ? 0 : Math.max(0, Math.min(10000, parsed)));
+                  }
+                }}
+                onBlur={e => {
+                  // Set to default if empty on blur
+                  if (batchDelay === 0 || batchDelay === null) {
+                    setBatchDelay(50);
+                  }
+                }}
                 min="0"
                 max="10000"
                 className="w-full rounded-lg border-2 border-gray-300 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"

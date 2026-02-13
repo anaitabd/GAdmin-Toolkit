@@ -10,9 +10,19 @@
  */
 const isValidEmail = (email) => {
     if (!email || typeof email !== 'string') return false;
-    // RFC 5322 simplified email regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
+    
+    // More robust email validation
+    // Prevents: consecutive dots, multiple @ signs, invalid characters
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    
+    const trimmedEmail = email.trim();
+    
+    // Additional checks
+    if (trimmedEmail.includes('..')) return false; // No consecutive dots
+    if (trimmedEmail.includes('@@')) return false; // No consecutive @ signs
+    if (trimmedEmail.startsWith('.') || trimmedEmail.endsWith('.')) return false; // No dots at start/end
+    
+    return emailRegex.test(trimmedEmail);
 };
 
 /**
