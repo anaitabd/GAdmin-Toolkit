@@ -7,9 +7,23 @@ const admin_user = "contact@naitabdallah.dev";
 let jwtClient = null;
 
 function createUser(user, password, firstname, lastname, callback) {
+    // Validate inputs
+    if (!user || !user.includes('@')) {
+        callback(new Error('Invalid email address'), null);
+        return;
+    }
+    if (!password || password.length < 8) {
+        callback(new Error('Password must be at least 8 characters'), null);
+        return;
+    }
+    if (!firstname || !lastname) {
+        callback(new Error('First name and last name are required'), null);
+        return;
+    }
+
     jwtClient.authorize(function (err, tokens) {
         if (err) {
-            console.error(err);
+            console.error('JWT authorization failed:', err.message);
             callback(err, null);
             return;
         }
@@ -46,13 +60,19 @@ let createdUsersCount = 0;
 
 const loadQueue = async () => {
     const users = await getUsers();
+    if (!users || users.length === 0) {
+        console.error('No users found in database to create');
+        process.exit(1);
+    }
+    
     queue = users.map((row) => ({
         email: row.email,
         password: row.password,
         givenName: row.given_name,
         familyName: row.family_name,
     }));
-    console.log('DB users loaded. Starting user creation...');
+    
+    console.log(`Loaded ${queue.length} users from database. Starting user creation...`);
     processQueue();
 };
 
@@ -88,18 +108,25 @@ function processQueue() {
 }
 
 const main = async () => {
-    const privateKey = await loadGoogleCreds();
-    jwtClient = new google.auth.JWT(
-        privateKey.client_email,
-        null,
-        privateKey.private_key,
-        ['https://www.googleapis.com/auth/admin.directory.user'],
-        admin_user
-    );
-    await loadQueue();
+    try {
+        const privateKey = await loadGoogleCreds();
+        if (!privateKey || !privateKey.client_email || !privateKey.private_key) {
+            throw new Error('Invalid Google credentials');
+        }
+        
+        jwtClient = new google.auth.JWT(
+            privateKey.client_email,
+            null,
+            privateKey.private_key,
+            ['https://www.googleapis.com/auth/admin.directory.user'],
+            admin_user
+        );
+        
+        await loadQueue();
+    } catch (err) {
+        console.error('Failed to start user creation:', err.message);
+        process.exit(1);
+    }
 };
 
-main().catch((err) => {
-    console.error('Failed to start user creation:', err);
-    process.exit(1);
-});
+main();

@@ -95,8 +95,14 @@ function saveBouncedEmail(email) {
 }
 
 // Function to process each user
-// Function to process each user
 function processUsers(creds, users) {
+    if (!users || users.length === 0) {
+        console.log('No users to process');
+        return;
+    }
+    
+    console.log(`Processing ${users.length} users for bounce detection...`);
+    
     for (let i = 0; i < users.length; i++) {
         const userEmail = users[i];
         console.log(`Processing user: ${userEmail}`);
@@ -113,14 +119,25 @@ function processUsers(creds, users) {
 
 // Function to process CSV file and find bounced emails
 async function main() {
-    const creds = await loadGoogleCreds();
-    const users = await getUsers();
-    const emails = users.map((u) => u.email).filter(Boolean);
-    console.log(`Total ${emails.length} users found.`);
-    processUsers(creds, emails);
+    try {
+        const creds = await loadGoogleCreds();
+        if (!creds || !creds.client_email || !creds.private_key) {
+            throw new Error('Invalid Google credentials');
+        }
+        
+        const users = await getUsers();
+        if (!users || users.length === 0) {
+            console.log('No users found in database');
+            return;
+        }
+        
+        const emails = users.map((u) => u.email).filter(Boolean);
+        console.log(`Total ${emails.length} users found. Starting bounce detection...`);
+        processUsers(creds, emails);
+    } catch (err) {
+        console.error('Failed to process bounce logs:', err.message);
+        process.exit(1);
+    }
 }
 
-main().catch((err) => {
-    console.error('Failed to process bounce logs:', err);
-    process.exit(1);
-});
+main();

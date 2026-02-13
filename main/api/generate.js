@@ -45,25 +45,41 @@ function generateRandomCSVFromNames(givenNames, surnames, domain, numRecords) {
 }
 
 async function generateAndInsertUsers(numRecords, domain) {
-    const names = await getNames();
-    if (!names.length) {
-        console.error('No names found in DB. Run import or insert into names table.');
-        process.exit(1);
+    try {
+        if (!domain || !domain.includes('.')) {
+            throw new Error('Invalid domain format');
+        }
+        if (numRecords <= 0) {
+            throw new Error('Number of records must be positive');
+        }
+        
+        const names = await getNames();
+        if (!names.length) {
+            console.error('No names found in DB. Run import or insert into names table.');
+            process.exit(1);
+        }
+        
+        const givenNames = names.map((row) => row.given_name);
+        const surnames = names.map((row) => row.family_name);
+        const csvContent = generateRandomCSVFromNames(givenNames, surnames, domain, numRecords);
+        const rows = csvContent.trim().split('\n').slice(1);
+        
+        console.log(`Generating ${rows.length} users for domain ${domain}...`);
+        
+        for (const row of rows) {
+            const [email, password, givenName, familyName] = row.split(',');
+            await query(
+                `INSERT INTO users (email, password, given_name, family_name)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (email) DO NOTHING`,
+                [email, password, givenName, familyName]
+            );
+        }
+        console.log(`Successfully inserted ${rows.length} users into DB.`);
+    } catch (err) {
+        console.error('Failed to generate and insert users:', err.message);
+        throw err;
     }
-    const givenNames = names.map((row) => row.given_name);
-    const surnames = names.map((row) => row.family_name);
-    const csvContent = generateRandomCSVFromNames(givenNames, surnames, domain, numRecords);
-    const rows = csvContent.trim().split('\n').slice(1);
-    for (const row of rows) {
-        const [email, password, givenName, familyName] = row.split(',');
-        await query(
-            `INSERT INTO users (email, password, given_name, family_name)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (email) DO NOTHING`,
-            [email, password, givenName, familyName]
-        );
-    }
-    console.log(`Inserted ${rows.length} users into DB.`);
 }
 
 // Example usage: Generate CSV with input parameters
@@ -82,6 +98,6 @@ if (isNaN(numRecords) || numRecords <= 0) {
 }
 
 generateAndInsertUsers(numRecords, domain).catch((err) => {
-    console.error('Failed to insert users:', err);
+    console.error('Failed to insert users:', err.message);
     process.exit(1);
 });

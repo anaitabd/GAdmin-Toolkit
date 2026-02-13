@@ -8,14 +8,19 @@ const adminEmail = "admin@decieodom.com";
 
 // Function to delete users in Google Admin
 const deleteUser = async () => {
-    const privateKey = await loadGoogleCreds();
-    const jwtClient = new google.auth.JWT(
-        privateKey.client_email,
-        null,
-        privateKey.private_key,
-        ['https://www.googleapis.com/auth/admin.directory.user'],
-        adminEmail
-    );
+    try {
+        const privateKey = await loadGoogleCreds();
+        if (!privateKey || !privateKey.client_email || !privateKey.private_key) {
+            throw new Error('Invalid Google credentials');
+        }
+        
+        const jwtClient = new google.auth.JWT(
+            privateKey.client_email,
+            null,
+            privateKey.private_key,
+            ['https://www.googleapis.com/auth/admin.directory.user'],
+            adminEmail
+        );
 
     jwtClient.authorize(function (err, tokens) {
         if (err) {
@@ -99,6 +104,6 @@ const deleteUser = async () => {
 };
 
 deleteUser().catch((err) => {
-    console.error('Failed to delete users:', err);
+    console.error('Failed to delete users:', err.message);
     process.exit(1);
 });
