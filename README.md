@@ -188,6 +188,9 @@ export JWT_SECRET="your-secret-key"  # For authentication
 
 **Initialize Database:**
 ```bash
+# Note: Ensure environment variables (PGDATABASE, PGHOST, etc.) are set first
+# You can verify with: echo $PGDATABASE
+
 # Create database schema
 psql "$PGDATABASE" -f main/api/db/schema.sql
 

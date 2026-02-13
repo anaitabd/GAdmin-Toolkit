@@ -3,6 +3,12 @@
  * Provides reusable validation functions for email, domain, and other inputs
  */
 
+// RFC 5322 compliant email validation pattern
+// Allows: alphanumerics, dots, special chars (!#$%&'*+/=?^_`{|}~-) in local part
+// Requires: @ symbol, valid domain with alphanumerics and hyphens
+// Prevents: consecutive dots, dots at start/end, invalid special characters
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
 /**
  * Validate email address format
  * @param {string} email - Email address to validate
@@ -11,18 +17,14 @@
 const isValidEmail = (email) => {
     if (!email || typeof email !== 'string') return false;
     
-    // More robust email validation
-    // Prevents: consecutive dots, multiple @ signs, invalid characters
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
     const trimmedEmail = email.trim();
     
-    // Additional checks
+    // Additional checks for edge cases
     if (trimmedEmail.includes('..')) return false; // No consecutive dots
     if (trimmedEmail.includes('@@')) return false; // No consecutive @ signs
     if (trimmedEmail.startsWith('.') || trimmedEmail.endsWith('.')) return false; // No dots at start/end
     
-    return emailRegex.test(trimmedEmail);
+    return EMAIL_REGEX.test(trimmedEmail);
 };
 
 /**

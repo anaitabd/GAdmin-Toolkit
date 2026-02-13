@@ -140,4 +140,7 @@ async function main() {
     }
 }
 
-main();
+main().catch((err) => {
+    console.error('Unhandled error in main:', err.message);
+    process.exit(1);
+});

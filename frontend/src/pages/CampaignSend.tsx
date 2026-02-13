@@ -182,6 +182,16 @@ export default function CampaignSend() {
   const availableNetworks = networks?.data || []
   const availableProviders = providers?.data || []
 
+  // Helper function for number input handling
+  const handleNumberInput = (value: string, min: number, max: number, defaultValue: number, setter: (val: number) => void) => {
+    if (value === '') {
+      setter(0);
+    } else {
+      const parsed = parseInt(value);
+      setter(isNaN(parsed) ? 0 : Math.max(min, Math.min(max, parsed)));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
       <div className="max-w-6xl mx-auto px-6">
@@ -512,20 +522,9 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchSize}
-                onChange={e => {
-                  const value = e.target.value;
-                  if (value === '' || value === null) {
-                    setBatchSize(0);
-                  } else {
-                    const parsed = parseInt(value);
-                    setBatchSize(isNaN(parsed) ? 0 : Math.max(1, Math.min(1000, parsed)));
-                  }
-                }}
-                onBlur={e => {
-                  // Set to default if empty on blur
-                  if (batchSize === 0 || batchSize === null) {
-                    setBatchSize(300);
-                  }
+                onChange={e => handleNumberInput(e.target.value, 1, 1000, 300, setBatchSize)}
+                onBlur={() => {
+                  if (batchSize === 0) setBatchSize(300);
                 }}
                 min="1"
                 max="1000"
@@ -538,20 +537,9 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchDelay}
-                onChange={e => {
-                  const value = e.target.value;
-                  if (value === '' || value === null) {
-                    setBatchDelay(0);
-                  } else {
-                    const parsed = parseInt(value);
-                    setBatchDelay(isNaN(parsed) ? 0 : Math.max(0, Math.min(10000, parsed)));
-                  }
-                }}
-                onBlur={e => {
-                  // Set to default if empty on blur
-                  if (batchDelay === 0 || batchDelay === null) {
-                    setBatchDelay(50);
-                  }
+                onChange={e => handleNumberInput(e.target.value, 0, 10000, 50, setBatchDelay)}
+                onBlur={() => {
+                  if (batchDelay === 0) setBatchDelay(50);
                 }}
                 min="0"
                 max="10000"
