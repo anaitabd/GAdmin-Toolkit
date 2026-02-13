@@ -6,10 +6,17 @@ const admin_user = "contact@naitabdallah.dev";
 
 let jwtClient = null;
 
+// Email validation helper
+const isValidEmail = (email) => {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+};
+
 function createUser(user, password, firstname, lastname, callback) {
     // Validate inputs
-    if (!user || !user.includes('@')) {
-        callback(new Error('Invalid email address'), null);
+    if (!isValidEmail(user)) {
+        callback(new Error(`Invalid email address: ${user}`), null);
         return;
     }
     if (!password || password.length < 8) {

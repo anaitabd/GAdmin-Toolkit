@@ -1,6 +1,14 @@
 const { query } = require('./db');
 const { getNames } = require('./db/queries');
 
+// Domain validation helper
+const isValidDomain = (domain) => {
+    if (!domain || typeof domain !== 'string') return false;
+    // Check for basic domain format: at least one char, then dot, then at least 2 chars
+    const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
+    return domainRegex.test(domain.trim());
+};
+
 // Function to generate random string of given length
 function generateRandomString(length) {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -46,8 +54,8 @@ function generateRandomCSVFromNames(givenNames, surnames, domain, numRecords) {
 
 async function generateAndInsertUsers(numRecords, domain) {
     try {
-        if (!domain || !domain.includes('.')) {
-            throw new Error('Invalid domain format');
+        if (!isValidDomain(domain)) {
+            throw new Error(`Invalid domain format: ${domain}. Must be a valid domain like example.com`);
         }
         if (numRecords <= 0) {
             throw new Error('Number of records must be positive');

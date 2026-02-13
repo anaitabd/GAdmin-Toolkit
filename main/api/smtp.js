@@ -16,6 +16,13 @@ const INTERVAL = 60000 / QUOTA_LIMIT;
 // Variables to track successful email sending and request count
 let successfulEmails = 0;
 
+// Email validation helper
+const isValidEmail = (email) => {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+};
+
 const generateRandomString = (length) => {
     let result = '';
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -31,8 +38,11 @@ const sendEmail = async (user, to, from, subject, htmlContent, messageIndex) => 
     if (!user || !user.email || !user.password) {
         throw new Error('Invalid user credentials');
     }
-    if (!to || !to.includes('@')) {
-        throw new Error('Invalid recipient email address');
+    if (!isValidEmail(user.email)) {
+        throw new Error(`Invalid sender email address: ${user.email}`);
+    }
+    if (!isValidEmail(to)) {
+        throw new Error(`Invalid recipient email address: ${to}`);
     }
     if (!from) {
         throw new Error('From name is required');

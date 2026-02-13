@@ -18,6 +18,13 @@ const INTERVAL = 60000 / QUOTA_LIMIT;
 // Variables to track successful email sending and request count
 let successfulEmails = 0;
 
+// Email validation helper
+const isValidEmail = (email) => {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+};
+
 // Function to generate a random string of given length
 const generateRandomString = (length) => {
     let result = '';
@@ -53,11 +60,11 @@ const sendEmail = async (creds, user, to, from, subject, htmlContent, messageInd
     if (!creds || !creds.client_email || !creds.private_key) {
         throw new Error('Invalid Google credentials');
     }
-    if (!user || !user.includes('@')) {
-        throw new Error('Invalid sender email address');
+    if (!isValidEmail(user)) {
+        throw new Error(`Invalid sender email address: ${user}`);
     }
-    if (!to || !to.includes('@')) {
-        throw new Error('Invalid recipient email address');
+    if (!isValidEmail(to)) {
+        throw new Error(`Invalid recipient email address: ${to}`);
     }
     if (!from) {
         throw new Error('From name is required');

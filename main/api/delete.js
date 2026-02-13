@@ -22,11 +22,11 @@ const deleteUser = async () => {
             adminEmail
         );
 
-    jwtClient.authorize(function (err, tokens) {
-        if (err) {
-            console.error(err);
-            return;
-        }
+        jwtClient.authorize(function (err, tokens) {
+            if (err) {
+                console.error(err);
+                return;
+            }
 
         const admin = google.admin({
             version: 'directory_v1',
@@ -101,6 +101,10 @@ const deleteUser = async () => {
 
         deleteUsers();
     });
+    } catch (err) {
+        console.error('Failed to initialize delete user:', err.message);
+        process.exit(1);
+    }
 };
 
 deleteUser().catch((err) => {
