@@ -1,4 +1,5 @@
 const { getActiveCredential } = require('./db/queries');
+const { isValidGoogleCreds } = require('./lib/validation');
 
 let cachedCreds = null;
 
@@ -9,10 +10,14 @@ async function loadGoogleCreds() {
     try {
         const dbCred = await getActiveCredential();
         if (dbCred && dbCred.cred_json) {
-            cachedCreds = typeof dbCred.cred_json === 'string'
+            const creds = typeof dbCred.cred_json === 'string'
                 ? JSON.parse(dbCred.cred_json)
                 : dbCred.cred_json;
-            return cachedCreds;
+            
+            if (isValidGoogleCreds(creds)) {
+                cachedCreds = creds;
+                return cachedCreds;
+            }
         }
     } catch (_) {
         // DB not available yet (e.g. during initial setup), fall through
@@ -43,6 +48,12 @@ async function loadGoogleCreds() {
     }
 
     cachedCreds = JSON.parse(jsonBuffer.toString('utf8'));
+    
+    // Validate parsed credentials
+    if (!isValidGoogleCreds(cachedCreds)) {
+        throw new Error('Invalid Google credentials format in environment variable');
+    }
+    
     return cachedCreds;
 }
 

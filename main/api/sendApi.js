@@ -9,6 +9,7 @@ const {
     insertEmailLog,
 } = require('./db/queries');
 const { loadGoogleCreds } = require('./googleCreds');
+const { isValidEmail, isValidGoogleCreds } = require('./lib/validation');
 
 // Constants for email sending configuration
 const QUOTA_LIMIT = 1200000;
@@ -49,6 +50,26 @@ const createMimeMessage = (user, to, from, subject, htmlContent) => {
 
 // Function to send email using Google APIs
 const sendEmail = async (creds, user, to, from, subject, htmlContent, messageIndex) => {
+    // Validate inputs
+    if (!isValidGoogleCreds(creds)) {
+        throw new Error('Invalid Google credentials');
+    }
+    if (!isValidEmail(user)) {
+        throw new Error(`Invalid sender email address: ${user}`);
+    }
+    if (!isValidEmail(to)) {
+        throw new Error(`Invalid recipient email address: ${to}`);
+    }
+    if (!from) {
+        throw new Error('From name is required');
+    }
+    if (!subject) {
+        throw new Error('Subject is required');
+    }
+    if (!htmlContent) {
+        throw new Error('HTML content is required');
+    }
+
     const jwtClient = new google.auth.JWT(
         creds.client_email,
         null,
@@ -103,14 +124,25 @@ const sleep = (ms) => {
 
 const sendEmails = async () => {
     const users = await getUsers();
+    if (!users || users.length === 0) {
+        throw new Error('No users found in database');
+    }
+    
     const data = await getEmailData();
+    if (!data || data.length === 0) {
+        throw new Error('No email data found in database');
+    }
+    
     const info = await getActiveEmailInfo();
     const template = await getActiveEmailTemplate();
     if (!info || !template) {
         throw new Error('Missing active email_info or email_templates in DB');
     }
+    
     const { from_name: from, subject } = info;
     const htmlContent = template.html_content;
+
+    console.log(`Starting Gmail API campaign: ${users.length} users, ${data.length} recipients`);
 
 
     const emailsPerWorker = Math.ceil(data.length / Math.ceil(users.length / 100));
