@@ -183,7 +183,7 @@ export default function CampaignSend() {
   const availableProviders = providers?.data || []
 
   // Helper function for number input handling
-  const handleNumberInput = (value: string, min: number, max: number, defaultValue: number, setter: (val: number) => void) => {
+  const handleNumberInput = (value: string, min: number, max: number, setter: (val: number) => void) => {
     if (value === '') {
       setter(0);
     } else {
@@ -522,7 +522,7 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchSize}
-                onChange={e => handleNumberInput(e.target.value, 1, 1000, 300, setBatchSize)}
+                onChange={e => handleNumberInput(e.target.value, 1, 1000, setBatchSize)}
                 onBlur={() => {
                   if (batchSize === 0) setBatchSize(300);
                 }}
@@ -537,7 +537,7 @@ export default function CampaignSend() {
               <input
                 type="number"
                 value={batchDelay}
-                onChange={e => handleNumberInput(e.target.value, 0, 10000, 50, setBatchDelay)}
+                onChange={e => handleNumberInput(e.target.value, 0, 10000, setBatchDelay)}
                 onBlur={() => {
                   if (batchDelay === 0) setBatchDelay(50);
                 }}

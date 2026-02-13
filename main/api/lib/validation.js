@@ -51,6 +51,13 @@ const isValidDomain = (domain) => {
 
 /**
  * Validate password strength
+ * Note: This only checks minimum length. For production use with Google Workspace,
+ * consider adding complexity requirements based on your organization's policies:
+ * - Uppercase letters
+ * - Lowercase letters  
+ * - Numbers
+ * - Special characters
+ * 
  * @param {string} password - Password to validate
  * @param {number} minLength - Minimum length required (default: 8)
  * @returns {object} - { valid: boolean, message: string }
@@ -66,6 +73,9 @@ const validatePassword = (password, minLength = 8) => {
             message: `Password must be at least ${minLength} characters` 
         };
     }
+    
+    // Note: Add complexity checks here if needed for your organization
+    // Example: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/
     
     return { valid: true, message: 'Password is valid' };
 };
