@@ -53,13 +53,27 @@ This project is a full automation suite designed to manage users in Google Works
 
 ## 📚 Documentation
 
+### Essential Documentation
+- **[COMPREHENSIVE CODEBASE ANALYSIS](COMPREHENSIVE_CODEBASE_ANALYSIS.md)** - **⭐ Complete 75KB guide covering everything you need to know**
+  - Project overview and architecture
+  - File-by-file analysis (all 192 code files)
+  - Data flow diagrams and API documentation
+  - Complete feature list and functionality
+  - Step-by-step rebuild instructions
+  - Security and performance assessment
+
+### Quick Start Guides
 - **[Quick Start Guide](main/api/QUICKSTART.md)** - Get started in 5 minutes
 - **[API Documentation](main/api/API_DOCUMENTATION.md)** - Complete API reference
 - **[Email Testing Guide](docs/EMAIL_TESTING_GUIDE.md)** - Test email delivery and verify inbox placement
+
+### Feature-Specific Guides
 - **[Tracking Links Quickstart](docs/TRACKING_LINKS_QUICKSTART.md)** - Get started with tracking links in 5 minutes
 - **[Tracking Links Guide](docs/TRACKING_LINKS.md)** - Complete tracking links API reference
 - **[Email Platforms Guide](docs/EMAIL_PLATFORMS.md)** - Best email sending platforms and recommendations
 - **[Scaling Guide](docs/SCALING_GUIDE.md)** - How to scale your application
+
+### Testing
 - **[Test Script](main/api/test-api.sh)** - Test all API endpoints
 
 ---
